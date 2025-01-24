@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(GBA-Emulator VERSION 0.1.0 LANGUAGES C CXX)
 
-add_executable(GBA-Emulator main.cpp)
+# Add the subdirectories for source, include, and lib files
+add_subdirectory(src)
+add_subdirectory(test)
+add_subdirectory(lib)
+add_subdirectory(include)
 
 include(CTest)
 enable_testing()

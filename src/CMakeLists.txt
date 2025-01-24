@@ -1,0 +1,1 @@
+add_executable(GBA-Emulator main.cpp)

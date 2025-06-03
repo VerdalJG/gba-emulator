@@ -1,11 +1,8 @@
 # Collect all files from src and subdirectories - put into SRC_FILES
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
-# Collect all header files and subdirectories - put into HEADER_FILES
-file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-
 # Create main executable
-add_executable(GBA-Emulator ${SRC_FILES} ${HEADER_FILES})
+add_executable(GBA-Emulator ${SRC_FILES})
 
 # Add include directory
 target_include_directories(GBA-Emulator PUBLIC ${PROJECT_SOURCE_DIR}/include)

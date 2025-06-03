@@ -1,4 +1,5 @@
 #pragma once
+
 #include <cstdint>
 #include <array>
 
@@ -15,3 +16,5 @@ public:
     void Reset();
     void Step();        // Fetch, decode, and execute loop
 };
+
+//https://problemkaputt.de/gbatek-arm-cpu-reference.htm - ARM CPU Reference

@@ -18,6 +18,7 @@ private:
     void Update();
     void Tick();
     void Render();
+    void HandleSDLEvents();
 
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;

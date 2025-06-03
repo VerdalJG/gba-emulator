@@ -4,7 +4,9 @@
 Timer::Timer() :
 currentTickCount(0),
 deltaTime(0),
-accumulatedTime(0)
+accumulatedCycles(0),
+timeScale(1.0),
+currentFPS(0.0)
 {
     pcTickFrequency = SDL_GetPerformanceFrequency();
     previousTickCount = SDL_GetPerformanceCounter();
@@ -22,8 +24,8 @@ void Timer::Update()
     // Calculate delta time in seconds
     deltaTime = static_cast<double>(elapsedMicroseconds) / 1000000;
 
-    // Accumulate time
-    accumulatedTime += deltaTime * timeScale;
+    // Accumulate cycles
+    accumulatedCycles += deltaTime * gbaCyclesPerSecond * timeScale;
 
     HandleDeathSpiral();
 
@@ -36,9 +38,9 @@ void Timer::Update()
 
 bool Timer::ShouldRunNewFrame()
 {
-    if (accumulatedTime >= 1 / GBA_FPS)
+    if (accumulatedCycles >= 1 / gbaCyclesPerFrame)
     {
-        accumulatedTime -= 1 / GBA_FPS; // Subtract the time for one frame
+        accumulatedCycles -= gbaCyclesPerFrame; // Subtract the cycles for one frame
         return true; // Enough time has passed to run a new frame
     }
 
@@ -47,13 +49,13 @@ bool Timer::ShouldRunNewFrame()
 
 void Timer::HandleDeathSpiral()
 {
-    if (accumulatedTime > maxAccumulatedTime)
+    if (accumulatedCycles > maxAccumulatedCycles)
     {
-        accumulatedTime = maxAccumulatedTime; // Cap the accumulated time to prevent death spiral
+        accumulatedCycles = maxAccumulatedCycles; // Cap the accumulated time to prevent death spiral
     }
-    else if (accumulatedTime < 0)
+    else if (accumulatedCycles < 0)
     {
-        accumulatedTime = 0; // Prevent negative accumulated time
+        accumulatedCycles = 0; // Prevent negative accumulated time
     }
 }
 

@@ -24,4 +24,5 @@ array<uint8_t, ROM_MAX_SIZE> rom; // ROM
 
 // TODO: Functions that interact with memory - memory init, load rom, read and write
 
+
 // https://problemkaputt.de/gbatek-gba-memory-map.htm REFERENCE

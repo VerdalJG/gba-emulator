@@ -41,6 +41,11 @@ bool Application::Init()
     return true;
 }
 
+bool Application::LoadROM(const char *romPath)
+{
+    return false;
+}
+
 void Application::Run()
 {
     while (isRunning)

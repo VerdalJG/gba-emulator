@@ -10,8 +10,9 @@ target_include_directories(GBA-Emulator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 # Use C++20 standard
 target_compile_features(GBA-Emulator PUBLIC cxx_std_20)
 
-# Link SDL3 library
+# Link Qt and SDL3 library
 target_link_libraries(GBA-Emulator PRIVATE SDL3::SDL3)
+
 
 if(WIN32)
     add_custom_command(

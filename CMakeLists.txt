@@ -8,10 +8,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #Find SDL3 package
 find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3-shared)
 
+#Find Qt package
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
 # Add the subdirectories for source, include, and lib files
 add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(lib)
+add_subdirectory(qt_ui)
 
 # CPack testing
 include(CTest)

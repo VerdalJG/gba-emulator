@@ -38,7 +38,7 @@ void Timer::Update()
 
 bool Timer::ShouldRunNewFrame()
 {
-    if (accumulatedCycles >= 1 / gbaCyclesPerFrame)
+    if (accumulatedCycles >= gbaCyclesPerFrame)
     {
         accumulatedCycles -= gbaCyclesPerFrame; // Subtract the cycles for one frame
         return true; // Enough time has passed to run a new frame

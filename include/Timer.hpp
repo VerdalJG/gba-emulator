@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 
+/// @brief 
 class Timer
 {
 public:

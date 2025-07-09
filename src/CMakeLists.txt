@@ -1,8 +1,11 @@
 # Collect all files from src and subdirectories - put into SRC_FILES
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
+qt_standard_project_setup()
+
 # Create main executable
-add_executable(GBA-Emulator ${SRC_FILES})
+#add_executable(GBA-Emulator ${SRC_FILES})
+qt_add_executable(GBA-Emulator main.cpp)
 
 # Add include directory
 target_include_directories(GBA-Emulator PUBLIC ${PROJECT_SOURCE_DIR}/include)
@@ -11,7 +14,16 @@ target_include_directories(GBA-Emulator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_compile_features(GBA-Emulator PUBLIC cxx_std_20)
 
 # Link Qt and SDL3 library
-target_link_libraries(GBA-Emulator PRIVATE SDL3::SDL3)
+target_link_libraries(GBA-Emulator PRIVATE 
+    SDL3::SDL3 
+    GBAQtUI
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Gui
+    
+    # Potentially not needed because it is linked publically in qt_ui
+    # Qt6::Widgets 
+)
 
 
 if(WIN32)

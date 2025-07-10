@@ -3,6 +3,7 @@
         "iostream": "cpp",
         "vector": "cpp",
         "xiosbase": "cpp",
-        "qapplication": "cpp"
+        "qapplication": "cpp",
+        "qsettings": "cpp"
     }
 }

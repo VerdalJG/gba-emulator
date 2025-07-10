@@ -1,35 +1,12 @@
 # Collect all files from src and subdirectories - put into SRC_FILES
-file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB_RECURSE CORE_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
-qt_standard_project_setup()
+# Create the library with name EmulatorCore
+add_library(EmulatorCore STATIC ${CORE_SOURCES})
 
-# Create main executable
-#add_executable(GBA-Emulator ${SRC_FILES})
-qt_add_executable(GBA-Emulator main.cpp)
-
-# Add include directory
-target_include_directories(GBA-Emulator PUBLIC ${PROJECT_SOURCE_DIR}/include)
+# Access to the include directory
+target_include_directories(EmulatorCore PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # Use C++20 standard
-target_compile_features(GBA-Emulator PUBLIC cxx_std_20)
+target_compile_features(EmulatorCore PUBLIC cxx_std_20)
 
-# Link Qt and SDL3 library
-target_link_libraries(GBA-Emulator PRIVATE 
-    SDL3::SDL3 
-    GBAQtUI
-    Qt6::Core
-    Qt6::Widgets
-    Qt6::Gui
-    
-    # Potentially not needed because it is linked publically in qt_ui
-    # Qt6::Widgets 
-)
-
-
-if(WIN32)
-    add_custom_command(
-        TARGET GBA-Emulator POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_FILE:SDL3::SDL3-shared> $<TARGET_FILE_DIR:GBA-Emulator>
-        VERBATIM
-    )
-endif()

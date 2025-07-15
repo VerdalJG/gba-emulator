@@ -3,7 +3,7 @@
 #include <QMainWindow>
 
 class SDLWidget;
-class EmulatorCore;
+class EmulatorHandler;
 
 class MainWindow : public QMainWindow
 {
@@ -14,8 +14,13 @@ public:
     ~MainWindow() override;
 
 private:
+    void SetupMenuBar();
+    void SetupFileMenu(QMenuBar* mainMenuBar);
+    void SetupEmulationMenu(QMenuBar* mainMenuBar);
+    void SetupOptionsMenu(QMenuBar* mainMenuBar);
+
     SDLWidget* sdlWidget;
-    EmulatorCore* emulatorCore;
+    EmulatorHandler* emulatorHandler;
     QThread* emulatorThread;
 
 };

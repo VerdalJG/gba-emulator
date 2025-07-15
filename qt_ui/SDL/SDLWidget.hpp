@@ -10,4 +10,6 @@ class SDLWidget : public QWidget
 public:
     SDLWidget(QWidget* parent = nullptr);
     ~SDLWidget();
+
+    void Render();
 };

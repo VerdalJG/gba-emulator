@@ -1,112 +1,111 @@
 #include "EmulatorCore.hpp"
 //#include "SDLUtils.hpp"
 
-// EmulatorCore::EmulatorCore() :
-//     window(nullptr),
-//     renderer(nullptr),
-//     isRunning(true)
-// {}
+EmulatorCore::EmulatorCore()
+{
+    
+}
 
-// bool EmulatorCore::Init()
-// {
-//     SDL_SetAppMetadata("GBAEmu", "Version 0.1", "GBAEmulator");
+bool EmulatorCore::Init()
+{
+    // SDL_SetAppMetadata("GBAEmu", "Version 0.1", "GBAEmulator");
 
-//     // Initialize SDL
-//     SDL_InitFlags flags = 0;
-//     AddInitFlag(flags, SDL_INIT_VIDEO); // Also initializes the events subsystem - must be on main thread
-//     AddInitFlag(flags, SDL_INIT_AUDIO); // Also initializes the events subsystem
-//     if (!InitSDL(flags))
-//     {
-//         return false;
-//     }
+    // // Initialize SDL
+    // SDL_InitFlags flags = 0;
+    // AddInitFlag(flags, SDL_INIT_VIDEO); // Also initializes the events subsystem - must be on main thread
+    // AddInitFlag(flags, SDL_INIT_AUDIO); // Also initializes the events subsystem
+    // if (!InitSDL(flags))
+    // {
+    //     return false;
+    // }
 
-//     // Window creation
-//     SDL_WindowFlags windowFlags = 0;
-//     AddWindowFlag(windowFlags, SDL_WINDOW_RESIZABLE); // Allow resizing the window
-//     SDL_Window* window;
-//     if (!CreateWindow(window, windowFlags))
-//     {
-//         return false;
-//     }
+    // // Window creation
+    // SDL_WindowFlags windowFlags = 0;
+    // AddWindowFlag(windowFlags, SDL_WINDOW_RESIZABLE); // Allow resizing the window
+    // SDL_Window* window;
+    // if (!CreateWindow(window, windowFlags))
+    // {
+    //     return false;
+    // }
 
-//     // Renderer creation
-//     SDL_Renderer* renderer;
-//     if (!CreateRenderer(renderer, window))
-//     {
-//         return false;
-//     }
+    // // Renderer creation
+    // SDL_Renderer* renderer;
+    // if (!CreateRenderer(renderer, window))
+    // {
+    //     return false;
+    // }
 
-//     // Initialize other components like CPU, PPU, APU, etc.
+    // // Initialize other components like CPU, PPU, APU, etc.
 
-//     return true;
-// }
+    return true;
+}
 
-// bool EmulatorCore::LoadROM(const char *romPath)
-// {
-//     return false;
-// }
+bool EmulatorCore::LoadROM(const std::string& romPath)
+{
+    return false;
+}
 
-// void EmulatorCore::Run()
-// {
-//     while (isRunning)
-//     {
-//         Update();
-//     }
-// }
+void EmulatorCore::Run()
+{
+    // while (isRunning)
+    // {
+    //     Update();
+    // }
+}
 
-// void EmulatorCore::Shutdown()
-// {
-//     // Clean up resources
-//     if (renderer)
-//     {
-//         SDL_DestroyRenderer(renderer);
-//         renderer = nullptr;
-//     }
-//     if (window)
-//     {
-//         SDL_DestroyWindow(window);
-//         window = nullptr;
-//     }
-//     SDL_Quit(); // Quit SDL subsystems
-// }
+void EmulatorCore::Shutdown()
+{
+    // // Clean up resources
+    // if (renderer)
+    // {
+    //     SDL_DestroyRenderer(renderer);
+    //     renderer = nullptr;
+    // }
+    // if (window)
+    // {
+    //     SDL_DestroyWindow(window);
+    //     window = nullptr;
+    // }
+    // SDL_Quit(); // Quit SDL subsystems
+}
 
-// void EmulatorCore::Update()
-// {
-//     HandleSDLEvents(); // Handle SDL events like input, window events, etc.
+void EmulatorCore::Update()
+{
+    // HandleSDLEvents(); // Handle SDL events like input, window events, etc.
 
-//     if (!isRunning)
-//     {
-//         return; // Exit if we reached a quit event
-//     }
+    // if (!isRunning)
+    // {
+    //     return; // Exit if we reached a quit event
+    // }
 
-//     // Update Timer
-//     timer.Update();
+    // // Update Timer
+    // timer.Update();
 
-//     if (timer.ShouldRunNewFrame())
-//     {
-//         Tick(); // Tick all components (CPU, PPU, APU, etc.)
-//     }
-// }
+    // if (timer.ShouldRunNewFrame())
+    // {
+    //     Tick(); // Tick all components (CPU, PPU, APU, etc.)
+    // }
+}
 
-// void EmulatorCore::Tick()
-// {
-//     int cyclesToRun = timer.GetCyclesToRunThisFrame();
-//     //cpu.Tick(cyclesToRun); // Run the CPU for the number of cycles needed for this frame
-//     //ppu.Tick(cyclesToRun); // Update PPU if implemented
-//     //apu.Tick(cyclesToRun); // Update APU if implemented
-//     Render(); // Render the current frame
-// }
+void EmulatorCore::Tick()
+{
+    //int cyclesToRun = timer.GetCyclesToRunThisFrame();
+    //cpu.Tick(cyclesToRun); // Run the CPU for the number of cycles needed for this frame
+    //ppu.Tick(cyclesToRun); // Update PPU if implemented
+    //apu.Tick(cyclesToRun); // Update APU if implemented
+    //Render(); // Render the current frame
+}
 
-// void EmulatorCore::Render()
-// {
-//     // 1. CPU/PPU renders to framebuffer (internal GBA memory)
-//     //cpu.Render(); // or ppu.Render();
+void EmulatorCore::Render()
+{
+    // 1. CPU/PPU renders to framebuffer (internal GBA memory)
+    //cpu.Render(); // or ppu.Render();
 
-//     // 2. Application reads that framebuffer and draws it via SDL
-// }
+    // 2. Application reads that framebuffer and draws it via SDL
+}
 
-// void EmulatorCore::HandleSDLEvents()
-// {
+void EmulatorCore::HandleSDLEvents()
+{
 //     // Handle input, update game state, etc.
 //     SDL_Event event;
 //     while (SDL_PollEvent(&event))
@@ -118,4 +117,4 @@
 //         }
 //         // Handle other events like keyboard, mouse, etc.
 //     }
-// }
+}

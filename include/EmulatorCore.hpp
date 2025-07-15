@@ -2,23 +2,24 @@
 //#include <SDL3/SDL.h>
 //#include "Timer.hpp"
 #include "GBACPU.hpp"
+#include <string>
 
 class EmulatorCore
 {
-// public:
-//     EmulatorCore();
-//     ~EmulatorCore() = default;
+public:
+    EmulatorCore();
+    ~EmulatorCore() = default;
 
-//     bool Init();
-//     bool LoadROM(const char* romPath);
-//     void Run();
-//     void Shutdown();
+    bool Init();
+    bool LoadROM(const std::string& romPath);
+    void Run();
+    void Shutdown();
 
 // private:
-//     void Update();
-//     void Tick();
-//     void Render();
-//     void HandleSDLEvents();
+    void Update();
+    void Tick();
+    void Render();
+    void HandleSDLEvents();
 
 //     SDL_Window* window = nullptr;
 //     SDL_Renderer* renderer = nullptr;

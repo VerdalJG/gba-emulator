@@ -4,6 +4,7 @@
         "vector": "cpp",
         "xiosbase": "cpp",
         "qapplication": "cpp",
-        "qsettings": "cpp"
+        "qsettings": "cpp",
+        "qobject": "cpp"
     }
 }

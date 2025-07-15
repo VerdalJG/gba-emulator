@@ -3,7 +3,7 @@
 all:
 	cmake -S . -B build
 	cmake --build build
-	./build/src/Debug/GBA-Emulator.exe
+	./build/Debug/GBA-Emulator.exe
 
 build:
 	cmake -S . -B build
@@ -13,4 +13,4 @@ clean:
 	cmake --build build --target clean
 	
 run:
-	./build/src/Debug/GBA-Emulator.exe
+	./build/Debug/GBA-Emulator.exe

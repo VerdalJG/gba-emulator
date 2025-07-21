@@ -83,11 +83,7 @@ void MainWindow::SetupFileMenu(QMenuBar* mainMenuBar)
         if (!filePath.isEmpty()) 
         {
             // Load the ROM into emulator
-            if (!emulatorHandler->LoadROM(filePath.toStdString()))
-            {
-                QMessageBox::critical(this, "Error", "Failed to load ROM. Check the file format or path.");
-            }
-            else
+            if (emulatorHandler->LoadROM(filePath.toStdString()))
             {
                 qDebug() << "ROM Loaded successfully:" << filePath;
             }

@@ -2,7 +2,9 @@
 //#include <SDL3/SDL.h>
 //#include "Timer.hpp"
 #include "GBACPU.hpp"
+#include "GBAMemory.hpp"
 #include <string>
+#include <vector>
 
 class EmulatorCore
 {
@@ -11,7 +13,8 @@ public:
     ~EmulatorCore() = default;
 
     bool Init();
-    bool LoadROM(const std::string& romPath);
+    void LoadBIOS(const std::vector<uint8_t>& biosData);
+    bool LoadROM(const std::vector<uint8_t>& romData);
     void Run();
     void Shutdown();
 
@@ -21,14 +24,19 @@ public:
     void Render();
     void HandleSDLEvents();
 
+private:
+    GBAMemory memory;
+    GBA_CPU cpu;
+    //GBA_PPU ppu; // For video
+    //GBA_APU apu; // For audio
+    //InputHandler inputHandler; // For input handling
+
+
 //     SDL_Window* window = nullptr;
 //     SDL_Renderer* renderer = nullptr;
 //     bool isRunning = true;
 
 //     Timer timer;
-//     GBA_CPU cpu;
-    //GBA_PPU ppu; // For video
-    //GBA_APU apu; // For audio
-    //InputHandler inputHandler; // For input handling
+
 
 };

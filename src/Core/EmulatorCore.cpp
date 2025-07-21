@@ -1,9 +1,8 @@
 #include "EmulatorCore.hpp"
 //#include "SDLUtils.hpp"
 
-EmulatorCore::EmulatorCore()
+EmulatorCore::EmulatorCore() : memory(GBAMemory())
 {
-    
 }
 
 bool EmulatorCore::Init()
@@ -40,9 +39,15 @@ bool EmulatorCore::Init()
     return true;
 }
 
-bool EmulatorCore::LoadROM(const std::string& romPath)
+void EmulatorCore::LoadBIOS(const std::vector<uint8_t> &biosData)
 {
-    return false;
+    memory.LoadBIOS(biosData);
+}
+
+bool EmulatorCore::LoadROM(const std::vector<uint8_t>& romData)
+{
+    memory.LoadROM(romData);
+    return true; // Assume it is loaded successfully for now
 }
 
 void EmulatorCore::Run()

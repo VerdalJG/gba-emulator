@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     QApplication app(argc, argv);
 
     // Main Window Setup
-    MainWindow mainWindow = MainWindow(800, 600, "Diego is Stupid");
+    MainWindow mainWindow = MainWindow(800, 600, "LE GROMP");
     mainWindow.show();
 
     // Run the application event loop - this will block the thread until the application is closed

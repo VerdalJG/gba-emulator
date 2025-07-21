@@ -48,6 +48,11 @@ struct MemoryRegion
         this->startAddress = startAddress;
         data = new std::vector<uint8_t>(regionSize);
     }
+
+    ~MemoryRegion()
+    {
+        delete data;
+    }
 }; 
 
 class GBAMemory 
@@ -85,6 +90,10 @@ private:
     MemoryRegion oam = MemoryRegion(Permissions::ReadWrite, OAM_START, OAM_SIZE);
     
     // External memory (cartridge)
+
+    // ROM0/1/2 all point to the same ROM data but differ by waitstate timing.
+    // ROM1 and ROM2 are mirrors of ROM0 at different addresses (for access timing differences).
+
     MemoryRegion rom0 = MemoryRegion(Permissions::ReadOnly, ROM0_START, ROM_BANK_SIZE);
     MemoryRegion rom1 = MemoryRegion(Permissions::ReadOnly, ROM1_START, ROM_BANK_SIZE);
     MemoryRegion rom2 = MemoryRegion(Permissions::ReadOnly, ROM2_START, ROM_BANK_SIZE);

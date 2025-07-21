@@ -145,12 +145,13 @@ void GBAMemory::Write32(uint32_t address, uint32_t value)
 
 void GBAMemory::LoadROM(const std::vector<uint8_t>& romData)
 {
-    if (romData.size() < ROM_BANK_SIZE)
-    {
-        // Error: Invalid rom size - Must be 32 MB
-    }
-
     rom = romData;
+
+    // Ensure rom data is at least 32 MB
+    if (rom.size() < ROM_BANK_SIZE)
+    {
+        rom.resize(ROM_BANK_SIZE, 0xFF);
+    }
 
     rom0.data = &rom;
     rom1.data = &rom;
@@ -159,7 +160,7 @@ void GBAMemory::LoadROM(const std::vector<uint8_t>& romData)
 
 void GBAMemory::LoadBIOS(const std::vector<uint8_t>& biosData)
 {
-    if (biosData.size() != 0x4000)
+    if (biosData.size() != BIOS_SIZE)
     {
         // Error: Invalid bios data size
     }

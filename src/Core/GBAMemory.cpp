@@ -163,6 +163,7 @@ void GBAMemory::LoadBIOS(const std::vector<uint8_t>& biosData)
     if (biosData.size() != BIOS_SIZE)
     {
         // Error: Invalid bios data size
+        return;
     }
 
     std::copy(biosData.begin(), biosData.end(), (*bios.data).begin());

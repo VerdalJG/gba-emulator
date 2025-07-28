@@ -33,3 +33,6 @@
 
 # Ignore build directory
 build/
+
+# Ignore cpp properties (for intellisense)
+.vscode/c_cpp_properties.json

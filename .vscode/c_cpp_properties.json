@@ -4,7 +4,9 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:/Program Files/SDL3-3.2.0/include/SDL3"
+                //"C:/Program Files/SDL3-3.2.0/include/SDL3",
+                //"C:/Users/vcupe/Documents/Coding/SDL/SDL3-3.2.18/include/SDL3",
+                //"C:/Users/vcupe/Documents/Coding/Qt/6.9.1/msvc2022_64/include"
             ],
             "defines": [
                 "_DEBUG",

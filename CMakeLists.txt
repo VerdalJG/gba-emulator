@@ -16,13 +16,19 @@ if (MSVC)
 endif()
 
 #Find SDL3 package
+if(NOT DEFINED ENV{SDL3_DIR})
+  message(FATAL_ERROR "Please set SDL3_DIR environment variable")
+endif()
+
+set(CMAKE_PREFIX_PATH "$ENV{SDL3_DIR}" CACHE PATH "SDL3 path")
 find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3-shared)
 
-# Set the CMake Path for Qt
-set(CMAKE_PREFIX_PATH "D:/WorkUni/Qt6/6.9.1/msvc2022_64")
-#set(CMAKE_VERBOSE_MAKEFILE ON)
-
 #Find Qt package
+if(NOT DEFINED ENV{Qt_DIR})
+  message(FATAL_ERROR "Please set Qt_DIR environment variable")
+endif()
+
+set(CMAKE_PREFIX_PATH "$ENV{Qt_DIR}" CACHE PATH "Qt path")
 find_package(Qt6 6.9 REQUIRED COMPONENTS Widgets Gui Qml Quick QuickControls2)
 
 qt_standard_project_setup()

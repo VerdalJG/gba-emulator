@@ -1,8 +1,8 @@
 #pragma once
 //#include <SDL3/SDL3.h>
 //#include "Timer.hpp"
-#include "GBACPU.hpp"
-#include "GBAMemory.hpp"
+#include "GBA_CPU.hpp"
+#include "GBA_Memory.hpp"
 #include <string>
 #include <vector>
 
@@ -25,7 +25,7 @@ public:
     void HandleSDLEvents();
 
 private:
-    GBAMemory memory;
+    GBA_Memory memory;
     GBA_CPU cpu;
     //GBA_PPU ppu; // For video
     //GBA_APU apu; // For audio

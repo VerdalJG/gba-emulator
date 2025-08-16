@@ -14,3 +14,7 @@ clean:
 	
 run:
 	./build/Debug/GBA-Emulator.exe
+
+tst:
+	cmake --build build
+	cd build && ctest --output-on-failure

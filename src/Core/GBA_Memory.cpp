@@ -1,6 +1,6 @@
-#include "GBAMemory.hpp"
+#include "GBA_Memory.hpp"
 
-MemoryRegion* GBAMemory::GetRegionFromAddress(uint32_t address) 
+MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) 
 {
     switch (address >> 24)
     {
@@ -37,7 +37,7 @@ MemoryRegion* GBAMemory::GetRegionFromAddress(uint32_t address)
     
 // }
 
-uint8_t GBAMemory::Read8(uint32_t address)
+uint8_t GBA_Memory::Read8(uint32_t address)
 {
     MemoryRegion* region = GetRegionFromAddress(address);
 
@@ -79,29 +79,29 @@ uint8_t GBAMemory::Read8(uint32_t address)
     return value;
 }
 
-uint16_t GBAMemory::Read16(uint32_t address)
+uint32_t GBA_Memory::Read16(uint32_t address)
 {
     address &= ~1; // Align to nearest even byte address
 
     uint8_t lowerByte = Read8(address);
     uint8_t upperByte = Read8(address + 1);
 
-    uint16_t combined = (static_cast<uint16_t>(upperByte) << 8) | lowerByte;
+    uint32_t combined = (static_cast<uint32_t>(upperByte) << 8) | lowerByte;
     return combined;
 }
 
-uint32_t GBAMemory::Read32(uint32_t address)
+uint32_t GBA_Memory::Read32(uint32_t address)
 {
     address &= ~3; // Align to nearest address that is a multiple of 4
 
-    uint16_t lowerBytes = Read16(address);
-    uint16_t upperBytes = Read16(address + 2);
+    uint32_t lowerBytes = Read16(address);
+    uint32_t upperBytes = Read16(address + 2);
 
     uint32_t combined = (static_cast<uint32_t>(upperBytes) << 16) | lowerBytes;
     return combined;
 }
 
-void GBAMemory::Write8(uint32_t address, uint8_t value)
+void GBA_Memory::Write8(uint32_t address, uint8_t value)
 {
     MemoryRegion* region = GetRegionFromAddress(address);
 
@@ -129,21 +129,21 @@ void GBAMemory::Write8(uint32_t address, uint8_t value)
     }
 }
 
-void GBAMemory::Write16(uint32_t address, uint16_t value)
+void GBA_Memory::Write16(uint32_t address, uint32_t value)
 {
     address &= ~1; // Alignment
     Write8(address, static_cast<uint8_t>(value & 0xFF)); // Write lower byte
     Write8(address + 1, static_cast<uint8_t>((value >> 8) & 0xFF)); // Write upper byte
 }
 
-void GBAMemory::Write32(uint32_t address, uint32_t value)
+void GBA_Memory::Write32(uint32_t address, uint32_t value)
 {
     address &= ~3; // Alignment
-    Write16(address, static_cast<uint16_t>(value & 0xFFFF)); // Write lower 16 bits
-    Write16(address + 2, static_cast<uint16_t>((value >> 16) & 0xFFFF)); // Write upper 16 bits
+    Write16(address, static_cast<uint32_t>(value & 0xFFFF)); // Write lower 16 bits
+    Write16(address + 2, static_cast<uint32_t>((value >> 16) & 0xFFFF)); // Write upper 16 bits
 }
 
-void GBAMemory::LoadROM(const std::vector<uint8_t>& romData)
+void GBA_Memory::LoadROM(const std::vector<uint8_t>& romData)
 {
     rom = romData;
 
@@ -158,7 +158,7 @@ void GBAMemory::LoadROM(const std::vector<uint8_t>& romData)
     rom2.data = &rom;
 }
 
-void GBAMemory::LoadBIOS(const std::vector<uint8_t>& biosData)
+void GBA_Memory::LoadBIOS(const std::vector<uint8_t>& biosData)
 {
     if (biosData.size() != BIOS_SIZE)
     {

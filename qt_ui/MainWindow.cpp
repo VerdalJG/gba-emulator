@@ -14,6 +14,7 @@
 #include <QStatusBar>
 
 
+
 // SDL headers
 #include "SDL/SDLWidget.hpp"
 
@@ -58,7 +59,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::SetupMenuBar()
 {
-    // MainWindow already has a menu bar
+    // MainWindow already has a menu bar so we use it
     QMenuBar* mainMenuBar = menuBar();
 
     SetupFileMenu(mainMenuBar);

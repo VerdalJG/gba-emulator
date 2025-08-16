@@ -15,6 +15,9 @@ if (MSVC)
     add_compile_options(/Zc:__cplusplus)
 endif()
 
+# FetchContent inclusion - required for googletest
+include(FetchContent)
+
 #Find SDL3 package
 if(NOT DEFINED ENV{SDL3_DIR})
   message(FATAL_ERROR "Please set SDL3_DIR environment variable")
@@ -44,9 +47,19 @@ target_link_libraries(GBA-Emulator PRIVATE
     GBAQtUI
 )
 
+# Google test
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+)
+
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 # Add the subdirectories for source, include, and lib files
 add_subdirectory(src)
-add_subdirectory(test)
+add_subdirectory(testing)
 add_subdirectory(lib)
 add_subdirectory(qt_ui)
 

@@ -24,7 +24,13 @@ public:
     void RequestInterrupt(); // Triggered by emulator core
 
     uint32_t GetValueAtRegister(int registerIndex);
-    inline uint32_t GetCPSR() { return cpsr; }
+
+    inline uint32_t GetCpsr() { return cpsr; }
+    inline bool GetCpsrN() { return (cpsr >> 31) & 1; }
+    inline bool GetCpsrZ() { return (cpsr >> 30) & 1; }
+    inline bool GetCpsrC() { return (cpsr >> 29) & 1; }
+    inline bool GetCpsrV() { return (cpsr >> 28) & 1; }
+
     inline uint32_t GetSPSR() { return spsr; }
     inline CPUMode GetCPUMode() { return mode; }
 

@@ -22,14 +22,28 @@ constexpr int CONDITION_SHIFT = 28;
 
 class GBA_CPU;
 
+struct Operand2Result 
+{
+    uint32_t value;
+    uint32_t carry : 1; // Store only 1 bit of information
+};
+
+enum ShiftType
+{
+    LSL,
+    LSR,
+    ASR,
+    ROR
+};
+
 struct DataProcessingDecodedInstruction
 {
     uint8_t rn, rd;
-    uint32_t op2;
+    Operand2Result op2;
     bool setFlags;
 };
 
-DataProcessingDecodedInstruction DataProcessing_Decode(uint32_t instruction);
+DataProcessingDecodedInstruction DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu);
 
 struct CPSRFlags
 {
@@ -89,7 +103,7 @@ std::pair<uint8_t, uint8_t> DataProcessing_ExtractRnRd(uint32_t instruction);
 /// @param instruction The current instruction being executed
 /// @param isImmediateValue Immediate value flag (bit 25)
 /// @return Operand2 (bits 11-0)
-uint32_t ExtractOperand2(uint32_t instruction, bool isImmediateValue, GBA_CPU& cpu);
+Operand2Result ExtractOperand2(uint32_t instruction, bool isImmediateValue, GBA_CPU& cpu);
 
 bool DataProcessing_ShouldSetFlags(uint32_t instruction);
 
@@ -100,5 +114,18 @@ DataProcessingOpcode GetDataProcessingOpcode(uint32_t instruction);
 // TODO: think about some operations that dont need op2
 CPSRFlags ProcessResultCPSRFlags(uint32_t result, uint32_t op1, uint32_t op2);
 
-uint32_t ShiftByRegister(uint16_t operand2, ShiftType shiftType, GBA_CPU& cpu);
-uint32_t ShiftByImmediate(uint16_t operand2, ShiftType shiftType,  GBA_CPU& cpu);
+Operand2Result ShiftByRegister(uint16_t operand2, ShiftType shiftType, GBA_CPU& cpu);
+Operand2Result ShiftByImmediate(uint16_t operand2, ShiftType shiftType,  GBA_CPU& cpu);
+
+
+/*General ARM rules for NZ flags
+
+All data-processing instructions (AND, ADD, SUB, ORR, MOV, CMP, TST, etc.) can update N and Z (and sometimes C/V).
+
+Whether they actually update depends on the S bit in the instruction encoding.
+
+If S=0: no flags updated.
+
+If S=1: flags updated.
+
+Special case: CMP, CMN, TST, TEQ always update flags. */

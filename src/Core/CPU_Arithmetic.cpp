@@ -3,15 +3,15 @@
 
 void GBA_CPU::Add(uint32_t instruction) // ADD Rd, Rn Op2
 {   
-    DataProcessingDecodedInstruction values = DataProcessing_Decode(instruction);
+    DataProcessingDecodedInstruction values = DataProcessing_Decode(instruction, *this);
 
-    uint32_t result = registers[values.rn] + values.op2;
+    uint32_t result = registers[values.rn] + values.op2.value;
     registers[values.rd] = result;
 
     // Set flags on CPSR
     if (values.setFlags) 
     {
-        CPSRFlags flags = ProcessResultCPSRFlags(result, registers[values.rn], values.op2);
+        CPSRFlags flags = ProcessResultCPSRFlags(result, registers[values.rn], values.op2.value);
         ApplyCPSRFlags(flags);
     }
 }

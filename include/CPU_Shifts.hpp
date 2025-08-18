@@ -1,31 +1,20 @@
 #pragma once
 #include <cstdint>
+#include "InstructionHelpers.hpp"
 
-enum ShiftType
-{
-    LSL,
-    LSR,
-    ASR,
-    ROR
-};
-
-struct ShiftResult 
-{
-    uint32_t result;
-    bool carry;
-};
+class GBA_CPU;
 
 // LSL
-ShiftResult LogicalLeft(uint32_t value, unsigned int shift);
+Operand2Result LogicalLeft(uint32_t value, uint32_t shift, GBA_CPU& cpu);
 
 // LSR
-ShiftResult LogicalRight(uint32_t value, unsigned int shift);
+Operand2Result LogicalRight(uint32_t value, uint32_t shift, bool isImmediate, GBA_CPU& cpu);
 
 // ASR
-ShiftResult ArithmeticRight(uint32_t value, unsigned int shift, bool isImmediate);
+Operand2Result ArithmeticRight(uint32_t value, uint32_t shift, bool isImmediate, GBA_CPU& cpu);
 
 // ROR
-ShiftResult RotateRight(uint32_t value, unsigned int rotation);
+Operand2Result RotateRight(uint32_t value, uint32_t rotation, bool isImmediate, GBA_CPU& cpu);
 
 //RRX
-ShiftResult RotateRightExtendCarry(uint32_t value, GBA_CPU& cpu);
+Operand2Result RotateRightExtendCarry(uint32_t value, GBA_CPU& cpu);

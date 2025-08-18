@@ -2,14 +2,14 @@
 #include "GBA_CPU.hpp"
 #include "CPU_Shifts.hpp"
 
-DataProcessingDecodedInstruction DataProcessing_Decode(uint32_t instruction)
+DataProcessingDecodedInstruction DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu)
 {
     DataProcessingDecodedInstruction result;
     auto pair = DataProcessing_ExtractRnRd(instruction);
     bool immediate = Bit25Set(instruction);
     result.rn = pair.first;
     result.rd = pair.second;
-    result.op2 = ExtractOperand2(instruction, immediate);
+    result.op2 = ExtractOperand2(instruction, immediate, cpu);
     result.setFlags = DataProcessing_ShouldSetFlags(instruction);
 
     return result;
@@ -22,7 +22,7 @@ std::pair<uint8_t, uint8_t> DataProcessing_ExtractRnRd(uint32_t instruction)
     return std::make_pair(rn, rd);
 }
 
-uint32_t ExtractOperand2(uint32_t instruction, bool IsImmediateValue, GBA_CPU& cpu)
+Operand2Result ExtractOperand2(uint32_t instruction, bool IsImmediateValue, GBA_CPU& cpu)
 {
     uint16_t operand2 = instruction & OPERAND2_MASK;
     if (IsImmediateValue)
@@ -32,7 +32,7 @@ uint32_t ExtractOperand2(uint32_t instruction, bool IsImmediateValue, GBA_CPU& c
         uint32_t immRot = ((operand2 >> 8) & 0xF) * 2;
 
         // Perform Rotation
-        return RotateRight(imm8, immRot);
+        return RotateRight(imm8, immRot, IsImmediateValue, cpu);
     }
     else // Register shift value
     {
@@ -75,7 +75,7 @@ CPSRFlags ProcessResultCPSRFlags(uint32_t result, uint32_t op1, uint32_t op2)
     return flags;
 }
 
-uint32_t ShiftByRegister(uint16_t operand2, ShiftType shiftType, GBA_CPU &cpu)
+Operand2Result ShiftByRegister(uint16_t operand2, ShiftType shiftType, GBA_CPU &cpu)
 {
     uint8_t rm = operand2 & 0xF; // Bits 3:0 carry the base register
     uint32_t rmValue = cpu.GetValueAtRegister(rm);
@@ -86,26 +86,20 @@ uint32_t ShiftByRegister(uint16_t operand2, ShiftType shiftType, GBA_CPU &cpu)
     switch (shiftType)
     {
         case ShiftType::LSL:
-        return LogicalLeft(rmValue, rsValue);
+        return LogicalLeft(rmValue, rsValue, cpu);
 
         case ShiftType::LSR:
-        return LogicalRight(rmValue, rsValue);
+        return LogicalRight(rmValue, rsValue, false, cpu);
 
         case ShiftType::ASR:
-        return ArithmeticRight(rmValue, rsValue, false);
+        return ArithmeticRight(rmValue, rsValue, false, cpu);
         
         case ShiftType::ROR:
-        if (rsValue == 0)
-        {
-            // Special case: RRX
-            return RotateRightExtendCarry(rmValue, cpu);
-        }
-        
-        return RotateRight(rmValue, rsValue);
+        return RotateRight(rmValue, rsValue, false, cpu);
     }
 }
 
-uint32_t ShiftByImmediate(uint16_t operand2, ShiftType shiftType, GBA_CPU &cpu)
+Operand2Result ShiftByImmediate(uint16_t operand2, ShiftType shiftType, GBA_CPU &cpu)
 {
     uint8_t rm = operand2 & 0xF; // Bits 3:0 carry the base register
     uint32_t rmValue = cpu.GetValueAtRegister(rm);
@@ -114,24 +108,16 @@ uint32_t ShiftByImmediate(uint16_t operand2, ShiftType shiftType, GBA_CPU &cpu)
     switch (shiftType)
     {
         case ShiftType::LSL:
-        return LogicalLeft(rmValue, shiftImm);
+        return LogicalLeft(rmValue, shiftImm, cpu);
 
         case ShiftType::LSR:
-        return LogicalRight(rmValue, shiftImm);
+        return LogicalRight(rmValue, shiftImm, true, cpu);
 
         case ShiftType::ASR:
-        return ArithmeticRight(rmValue, shiftImm, true);
+        return ArithmeticRight(rmValue, shiftImm, true, cpu);
         
-        case ShiftType::ROR:
-        if (shiftImm == 0)
-        {
-            // Special case: RRX
-            return RotateRightExtendCarry(rmValue, cpu);
-        }
-        else
-        {
-            return RotateRight(rmValue, shiftImm);
-        }
+        case ShiftType::ROR: // RRX handled inside ROR
+        return RotateRight(rmValue, shiftImm, true, cpu);
     }
 }
 

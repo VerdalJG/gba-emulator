@@ -1,61 +1,123 @@
 #include "CPU_Shifts.hpp"
 #include "GBA_CPU.hpp"
-#include "InstructionHelpers.hpp"
 
-ShiftResult LogicalLeft(uint32_t value, unsigned int shift)
+Operand2Result LogicalLeft(uint32_t value, uint32_t shift, GBA_CPU& cpu)
 {
-    ShiftResult 
-    return value << shift;
+    Operand2Result result;
+
+    if (shift == 0)
+    {
+        result.value = value;
+        result.carry = cpu.GetCpsrC(); // Use old cpsr C flag if shift is 0
+    }
+    else if (shift < 32)
+    {
+        result.value = value << shift;
+        result.carry = (value >> (32 - shift)) & 1;
+    }
+    else // Must cover for shift >= 32 due to C++ undefined behavior when shifting over 32 bits
+    {
+        result.value = 0;
+        result.carry = shift == 32 ? value & 1 : 0;
+    }
+
+    return result;
 }
 
-ShiftResult LogicalRight(uint32_t value, unsigned int shift)
+Operand2Result LogicalRight(uint32_t value, uint32_t shift, bool isImmediate, GBA_CPU& cpu)
 {
-    return (shift == 0) ? 0 : value >> shift; // ARM doesn't allow shift by 0, reads it as shift by 32
+    Operand2Result result;
+
+    // Special case - Shift == 0 means LSR #32 - Only when op2 has immediate shifter
+    if (shift == 0)
+    {
+        result.value = isImmediate ? 0 : value;
+        result.carry = isImmediate ? value >> 31 : cpu.GetCpsrC();
+    }
+    else if (shift < 32)
+    {
+        result.value = value >> shift;
+        result.carry = (value >> (shift - 1)) & 1;
+    }
+    else 
+    {
+        result.value = 0;
+        result.carry = shift == 32 ? (value >> 31) & 1 : 0;
+    }
+    
+    return result; 
 }
 
-ShiftResult ArithmeticRight(uint32_t value, unsigned int shift, bool isImmediate)
+Operand2Result ArithmeticRight(uint32_t value, uint32_t shift, bool isImmediate, GBA_CPU& cpu)
 {
+    Operand2Result result;
+
     if (shift == 0)
     {
         if (!isImmediate)
         {
-            return value;
+            result.value = value;
+            result.carry = cpu.GetCpsrC();
+            return result;
         }
 
-        shift = 32;
+        shift = 32;  // Special case - ASR #32 when op2 has immediate shifter
     }
 
     bool isNegative = (value & 0x80000000);
 
     if (shift >= 32)
     {
-        return isNegative ? 0xFFFFFFFF : 0;
+        result.value = isNegative ? 0xFFFFFFFF : 0;
+        result.carry = isNegative ? 1 : 0;
+        return result;
     }
 
     if (isNegative)
     {
         uint32_t sign = 0xFFFFFFFF << (32 - shift);
-        return (value >> shift) | sign;
+        result.value = (value >> shift) | sign;
     }
     else
     {
-        return value >> shift;
+        result.value = value >> shift;
     }
+
+    result.carry = (value >> (shift - 1)) & 1;
+    return result;
 }
 
-ShiftResult RotateRight(uint32_t value, unsigned int rotation)
+Operand2Result RotateRight(uint32_t value, uint32_t rotation, bool isImmediate, GBA_CPU& cpu)
 {
-    rotation &= 31; // Limit to 0-31
-    if (rotation == 0) 
+    Operand2Result result;
+
+    if (rotation == 0)
     {
-        return value;
+        if (isImmediate)
+        {
+            return RotateRightExtendCarry(value, cpu);
+        }
+        else 
+        {
+            result.value = value;
+            result.carry = cpu.GetCpsrC();
+        }
+
     }
 
-    return (value >> rotation) | (value << (32 - rotation));
+    rotation %= 32;
+    result.value = (value >> rotation) | (value << (32 - rotation));
+    result.carry = (value >> (rotation - 1)) & 1;
+    return result;
 }
 
-ShiftResult RotateRightExtendCarry(uint32_t value, GBA_CPU &cpu)
+Operand2Result RotateRightExtendCarry(uint32_t value, GBA_CPU &cpu)
 {
-    uint8_t cFlag = (cpu.GetCPSR() >> 29) & 1;
-    return (cFlag << 31) | (value >> 1);
+    Operand2Result result;
+    uint8_t cFlag = cpu.GetCpsrC();
+
+    result.value = (cFlag << 31) | (value >> 1);
+    result.carry = value & 1;
+
+    return result;
 }

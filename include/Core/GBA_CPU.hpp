@@ -48,6 +48,8 @@ protected:
     void ApplyCPSRFlags(CPSRFlags flags);
     CPSRFlags ProcessResultCPSRFlags(uint32_t result, uint32_t op1, uint32_t op2);
 
+    bool InstructionConditionCheck(uint8_t conditionByte);
+
     // ============================================ CPSR ============================================
 
     // Wrapper function for handling carry/overflow flags (ADD/ADC)

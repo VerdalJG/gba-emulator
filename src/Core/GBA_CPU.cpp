@@ -41,21 +41,21 @@ void GBA_CPU::Step()
 {
     // Fetch
     uint32_t instruction = memorySystem.Read32(ReadProgramCounter(true));
-    uint8_t condition;
+    uint8_t condition = GetConditionBits(instruction);
 
     // Decode
     InstructionFunction operationToExecute;
     // Thumb mode does not use condition bits
     if (mode == CPUMode::ARM) 
     {
-        condition = GetConditionBits(instruction);
         if (condition == 0xF)
         {
-            operationToExecute = &GBA_CPU::HandleUndefinedBehavior;
+            HandleUndefinedBehavior(instruction); // For now
+            return;
         }
-        else
+
+        if (InstructionConditionCheck(condition))
         {
-            // TODO: Check condition with CPSR flags first
             operationToExecute = DecodeARMInstruction(instruction);
         }
     }
@@ -65,6 +65,7 @@ void GBA_CPU::Step()
     }
     
     // Execute
+    if (!operationToExecute) return; // Condition failed
     (this->*operationToExecute)(instruction); // Dereference due to this being a member function pointer
 }
 

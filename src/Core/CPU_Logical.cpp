@@ -1,5 +1,5 @@
-#include "GBA_CPU.hpp"
-#include "InstructionHelpers.hpp"
+#include "Core/GBA_CPU.hpp"
+#include "Core/InstructionHelpers.hpp"
 
 void GBA_CPU::LogicalAND(uint32_t instruction)
 {

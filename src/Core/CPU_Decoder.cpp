@@ -1,6 +1,6 @@
-#include "InstructionHelpers.hpp"
-#include "GBA_CPU.hpp"
-#include "CPU_Shifts.hpp"
+#include "Core/InstructionHelpers.hpp"
+#include "Core/GBA_CPU.hpp"
+#include "Core/CPU_Shifts.hpp"
 
 GBA_CPU::InstructionFunction GBA_CPU::DecodePattern00(uint32_t instruction)
 {

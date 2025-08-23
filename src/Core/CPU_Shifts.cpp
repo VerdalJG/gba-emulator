@@ -1,5 +1,5 @@
-#include "CPU_Shifts.hpp"
-#include "GBA_CPU.hpp"
+#include "Core/CPU_Shifts.hpp"
+#include "Core/GBA_CPU.hpp"
 
 Operand2Result LogicalLeft(uint32_t value, uint32_t shift, GBA_CPU& cpu)
 {
@@ -114,7 +114,7 @@ Operand2Result RotateRight(uint32_t value, uint32_t rotation, bool isImmediate, 
 Operand2Result RotateRightExtendCarry(uint32_t value, GBA_CPU &cpu)
 {
     Operand2Result result;
-    uint8_t cFlag = cpu.GetCpsrC();
+    uint32_t cFlag = cpu.GetCpsrC();
 
     result.value = (cFlag << 31) | (value >> 1);
     result.carry = value & 1;

@@ -1,5 +1,5 @@
-#include "GBA_CPU.hpp"
-#include "InstructionHelpers.hpp"
+#include "Core/GBA_CPU.hpp"
+#include "Core/InstructionHelpers.hpp"
 
 void GBA_CPU::Add(uint32_t instruction) // ADD Rd, Rn Op2
 {   
@@ -9,7 +9,7 @@ void GBA_CPU::Add(uint32_t instruction) // ADD Rd, Rn Op2
     registers[values.rd] = result;
 
     // Set flags on CPSR
-    if (values.setFlags) 
+    if (values.sFlag) 
     {
         CPSRFlags flags = ProcessResultCPSRFlags(result, registers[values.rn], values.op2.value);
         ApplyCPSRFlags(flags);

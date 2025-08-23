@@ -1,4 +1,4 @@
-#include "GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 
 
 GBA_CPU::GBA_CPU(GBA_Memory& memory) :

@@ -24,6 +24,9 @@ set_target_properties(GBAQtUI PROPERTIES
     #AUTORCC ON
 )
 
+set(CMAKE_AUTOMOC_VERBOSE OFF)
+set(CMAKE_AUTOUIC_VERBOSE OFF)
+
 # Link to Qt and SDL3
 target_link_libraries(GBAQtUI PUBLIC 
     EmulatorCore

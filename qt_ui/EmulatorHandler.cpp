@@ -1,5 +1,5 @@
 #include "EmulatorHandler.hpp"
-#include "EmulatorCore.hpp"
+#include "Core/EmulatorCore.hpp"
 
 // std includes
 #include <fstream>

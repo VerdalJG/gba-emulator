@@ -1,4 +1,4 @@
-#include "GBA_Memory.hpp"
+#include "Core/GBA_Memory.hpp"
 
 MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) 
 {

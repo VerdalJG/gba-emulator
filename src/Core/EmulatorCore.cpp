@@ -1,4 +1,4 @@
-#include "EmulatorCore.hpp"
+#include "Core/EmulatorCore.hpp"
 //#include "SDLUtils.hpp"
 
 EmulatorCore::EmulatorCore() : memory(GBA_Memory()), cpu(memory)

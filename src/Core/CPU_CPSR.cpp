@@ -1,28 +1,6 @@
-#include "Core/CPU_CPSR.hpp"
 #include "Core/GBA_CPU.hpp"
 
-CPSRFlags GBA_CPU::ProcessResultCPSRFlags(uint32_t result, uint32_t op1, uint32_t op2)
-{
-    CPSRFlags flags;
-
-    // Negative check: Bit 31 is 1
-    flags.N = (result >> 31) & 1;
-
-    // Zero check: Result == 0
-    flags.Z = result == 0;
-
-    // Carry check: UNSIGNED integer overflow
-    flags.C = (static_cast<uint64_t>(op1) + static_cast<uint64_t>(op2)) >> 32;
-
-    // Overflow check: SIGNED integer overflow
-    bool operandsSameSign = ((op1 ^ op2) & 0x80000000) == 0;
-    bool resultDifferentSign = ((result ^ op1) & 0x80000000) != 0;
-    flags.V = operandsSameSign && resultDifferentSign;
-
-    return flags;
-}
-
-void GBA_CPU::UpdateCPSR_Add(uint32_t result, uint32_t op1, uint32_t op2, bool carryIn)
+void GBA_CPU::UpdateCPSR_Add(uint32_t result, uint32_t op1, uint32_t op2, bool carryIn) 
 {
     UpdateCPSR_Arithmetic(result, op1, op2, false, carryIn);
 }
@@ -106,4 +84,9 @@ void GBA_CPU::UpdateCPSR_Logical(uint32_t result, bool shifterCarryOut)
 
     // Update cpsr
     cpsr = (cpsr & 0x1FFFFFFF) | flags; // Preserve V flag by masking
+}
+
+bool GBA_CPU::CurrentModeHasSPSR()
+{
+    return false;
 }

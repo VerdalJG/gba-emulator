@@ -12,7 +12,7 @@ GBA_CPU::~GBA_CPU()
 
 }
 
-GBA_CPU::InstructionFunction GBA_CPU::dataProcessingTable[GBA_CPU::DATA_PROCESSING_OPCODE_COUNT] = 
+GBA_CPU::InstructionFunction GBA_CPU::dataProcessingFuncTable[GBA_CPU::DATA_PROCESSING_OPCODE_COUNT] = 
 {
     &GBA_CPU::LogicalAND,         
     &GBA_CPU::LogicalExclusiveOR,         
@@ -25,7 +25,7 @@ GBA_CPU::InstructionFunction GBA_CPU::dataProcessingTable[GBA_CPU::DATA_PROCESSI
     &GBA_CPU::Test,     
     &GBA_CPU::TestEquivalence,   
     &GBA_CPU::Compare,     
-    &GBA_CPU::CompareNegated,    
+    &GBA_CPU::CompareNegative,    
     &GBA_CPU::LogicalOR,        
     &GBA_CPU::Move,        
     &GBA_CPU::BitClear,      
@@ -50,7 +50,7 @@ void GBA_CPU::Step()
     {
         if (condition == 0xF)
         {
-            HandleUndefinedBehavior(instruction); // For now
+            HandleUndefinedBehavior(instruction); // TODO: Change later
             return;
         }
 
@@ -100,13 +100,6 @@ uint32_t GBA_CPU::ReadProgramCounter(bool isPartOfInstruction)
 }
 
 
-uint8_t GBA_CPU::GetConditionBits(uint32_t instruction)
-{
-    uint8_t result = (instruction >> CONDITION_SHIFT) & 0xF;
-    return result;
-}
-
-
 GBA_CPU::InstructionFunction GBA_CPU::DecodeARMInstruction(uint32_t instruction)
 {
     InstructionPattern pattern = static_cast<InstructionPattern>((instruction >> INSTRUCTION_TYPE_SHIFT) & INSTRUCTION_TYPE_MASK);
@@ -128,18 +121,3 @@ GBA_CPU::InstructionFunction GBA_CPU::DecodeARMInstruction(uint32_t instruction)
         return &GBA_CPU::HandleUndefinedBehavior;
     }
 }
-
-void GBA_CPU::ApplyCPSRFlags(CPSRFlags flags)
-{
-    uint32_t flagsMask = 0;
-
-    if (flags.N) flagsMask |= (1 << 31);
-    if (flags.Z) flagsMask |= (1 << 30);
-    if (flags.C) flagsMask |= (1 << 29);
-    if (flags.V) flagsMask |= (1 << 28);
-
-    cpsr &= ~(0xF << 28); // Clear bits 31-28 (N,Z,C,V)
-    cpsr |= flagsMask; // Apply flags
-}
-
-

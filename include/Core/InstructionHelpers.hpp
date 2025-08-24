@@ -25,7 +25,7 @@ class GBA_CPU;
 struct Operand2Result 
 {
     uint32_t value;
-    uint32_t carry : 1; // Store only 1 bit of information
+    uint32_t carryOut : 1; // Store only 1 bit of information
 };
 
 enum ShiftType

@@ -10,7 +10,7 @@ GBA_CPU::InstructionFunction GBA_CPU::DecodePattern00(uint32_t instruction)
     if (bit25)
     {
         DataProcessingOpcode opcode = GetDataProcessingOpcode(instruction);
-        return dataProcessingTable[static_cast<int>(opcode)];
+        return dataProcessingFuncTable[static_cast<int>(opcode)];
     }
 
     bool bit4 = (instruction >> 4) & 1;
@@ -29,7 +29,7 @@ GBA_CPU::InstructionFunction GBA_CPU::DecodePattern00(uint32_t instruction)
 
     // Data processing with shifts (immediate or register)
     DataProcessingOpcode opcode = GetDataProcessingOpcode(instruction);
-    return dataProcessingTable[static_cast<int>(opcode)];
+    return dataProcessingFuncTable[static_cast<int>(opcode)];
 }
 
 GBA_CPU::InstructionFunction GBA_CPU::DecodePattern01(uint32_t instruction)

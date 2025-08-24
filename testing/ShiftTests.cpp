@@ -101,7 +101,7 @@ void RunCase(const ShiftTestCase& testcase, TestCPU& cpu, std::function<Operand2
     cpu.SetCPSR(testcase.cpsr);
     Operand2Result result = shiftFunc(testcase.value, testcase.shift, testcase.isImmediate, cpu);
     EXPECT_EQ(result.value, testcase.expectedValue);
-    EXPECT_EQ(result.carry, testcase.expectedCarry);
+    EXPECT_EQ(result.carryOut, testcase.expectedCarry);
 }
 
 void RunLSLCase(const ShiftTestCase& testcase, TestCPU& cpu)
@@ -109,5 +109,5 @@ void RunLSLCase(const ShiftTestCase& testcase, TestCPU& cpu)
     cpu.SetCPSR(testcase.cpsr);
     Operand2Result result = LogicalLeft(testcase.value, testcase.shift, cpu);
     EXPECT_EQ(result.value, testcase.expectedValue);
-    EXPECT_EQ(result.carry, testcase.expectedCarry);
+    EXPECT_EQ(result.carryOut, testcase.expectedCarry);
 }

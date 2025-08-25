@@ -11,6 +11,17 @@ enum class CPUMode
     Thumb
 };
 
+enum class OperatingMode
+{
+    User,
+    System,
+    Supervisor,
+    Abort,
+    Undefined,
+    Interrupt,
+    FastInterrupt
+};
+
 // Emulates the ARM7TDMI
 class GBA_CPU 
 {
@@ -39,7 +50,7 @@ protected:
     uint32_t cpsr = 0;                    // Current Program Status Register
     uint32_t spsr = 0;                    // Saved Program Status Register
     CPUMode mode;                         // Thumb mode flag
-
+    OperatingMode opMode;                 // Operating mode flag
 
     uint32_t ReadProgramCounter(bool isPartOfInstruction); // Result is different if we are reading PC as a fetch or part of an instruction
 
@@ -52,7 +63,10 @@ protected:
         return (instruction >> 28) & 0xF;
     }
 
-    bool CurrentModeHasSPSR();
+    inline bool CurrentModeHasSPSR()
+    {
+        return opMode == OperatingMode::User || opMode == OperatingMode::System;
+    }
 
     // ============================================ CPSR ============================================
 
@@ -66,9 +80,10 @@ protected:
     
     // ==============================================================================================
 
+    // ===================================== DATA PROCESSING ========================================
+
     static constexpr int DATA_PROCESSING_OPCODE_COUNT = 16;
     static InstructionFunction dataProcessingFuncTable[DATA_PROCESSING_OPCODE_COUNT];
-
 
     // In order of opcodes 0-15
     void LogicalAND(uint32_t instruction);
@@ -89,6 +104,7 @@ protected:
     void MoveNot(uint32_t instruction);
     void HandleUndefinedBehavior(uint32_t instruction);
 
+    // ==============================================================================================
     
     InstructionFunction DecodePattern00(uint32_t instruction);
     InstructionFunction DecodePattern01(uint32_t instruction);

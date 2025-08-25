@@ -85,8 +85,3 @@ void GBA_CPU::UpdateCPSR_Logical(uint32_t result, bool shifterCarryOut)
     // Update cpsr
     cpsr = (cpsr & 0x1FFFFFFF) | flags; // Preserve V flag by masking
 }
-
-bool GBA_CPU::CurrentModeHasSPSR()
-{
-    return false;
-}

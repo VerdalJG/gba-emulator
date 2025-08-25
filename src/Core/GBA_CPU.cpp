@@ -40,11 +40,11 @@ void GBA_CPU::Reset()
 void GBA_CPU::Step()
 {
     // Fetch
-    uint32_t instruction = memorySystem.Read32(ReadProgramCounter(true));
-    uint8_t condition = GetConditionBits(instruction);
-
+    uint32_t instruction = memorySystem.Read32(ReadProgramCounter(false));
+    
     // Decode
     InstructionFunction operationToExecute;
+    uint8_t condition = GetConditionBits(instruction);
     // Thumb mode does not use condition bits
     if (mode == CPUMode::ARM) 
     {

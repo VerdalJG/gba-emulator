@@ -91,8 +91,6 @@ bool Bit25Set(uint32_t instruction);
 
 DataProcessingOpcode GetDataProcessingOpcode(uint32_t instruction);
 
-
-
 Operand2Result ShiftByRegister(uint16_t operand2, ShiftType shiftType, GBA_CPU& cpu);
 Operand2Result ShiftByImmediate(uint16_t operand2, ShiftType shiftType,  GBA_CPU& cpu);
 

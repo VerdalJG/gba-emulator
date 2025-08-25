@@ -1,7 +1,6 @@
 #include "Core/InstructionHelpers.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/CPU_Shifts.hpp"
-#include "Core/CPU_CPSR.hpp"
 #include <assert.h>
 
 DataProcessingDecodedInstruction DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu)

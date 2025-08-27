@@ -6,17 +6,17 @@
 DataProcessingDecodedInstruction DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu)
 {
     DataProcessingDecodedInstruction result;
-    auto pair = DataProcessing_ExtractRnRd(instruction);
+    auto pair = DataProcessing_ExtractRnRdIndexes(instruction);
 
-    result.rn = pair.first;
-    result.rd = pair.second;
+    result.rnIndex = pair.first;
+    result.rdIndex = pair.second;
     result.op2 = ExtractOperand2(instruction, cpu);
     result.sFlag = DataProcessing_ShouldSetFlags(instruction);
 
     return result;
 }
 
-std::pair<uint8_t, uint8_t> DataProcessing_ExtractRnRd(uint32_t instruction)
+std::pair<uint8_t, uint8_t> DataProcessing_ExtractRnRdIndexes(uint32_t instruction)
 {
     uint8_t rn = (instruction >> 16) & 0xF;
     uint8_t rd = (instruction >> 12) & 0xF;

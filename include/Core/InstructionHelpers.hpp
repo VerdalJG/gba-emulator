@@ -38,7 +38,7 @@ enum ShiftType
 
 struct DataProcessingDecodedInstruction
 {
-    uint8_t rn, rd;
+    uint8_t rnIndex, rdIndex;
     Operand2Result op2;
     bool sFlag; // Whether or not to set CPSR Flags
 };
@@ -77,7 +77,7 @@ enum InstructionPattern : uint8_t
 /// @brief Extracts the first operand register (Rn) and the destination register (Rd)
 /// @param instruction The current instruction being executed
 /// @return A pair containing Rn and Rd (in that order)
-std::pair<uint8_t, uint8_t> DataProcessing_ExtractRnRd(uint32_t instruction);
+std::pair<uint8_t, uint8_t> DataProcessing_ExtractRnRdIndexes(uint32_t instruction);
 
 /// @brief Extracts the second operand for data processing
 /// @param instruction The current instruction being executed

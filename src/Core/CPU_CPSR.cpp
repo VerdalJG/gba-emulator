@@ -77,6 +77,7 @@ void GBA_CPU::UpdateCPSR_Logical(uint32_t result, bool shifterCarryOut)
         flags |= (1 << 30);
     }
 
+    // Carry check: Use shifter carry out
     if (shifterCarryOut)
     {
         flags |= (1 << 29);
@@ -84,4 +85,16 @@ void GBA_CPU::UpdateCPSR_Logical(uint32_t result, bool shifterCarryOut)
 
     // Update cpsr
     cpsr = (cpsr & 0x1FFFFFFF) | flags; // Preserve V flag by masking
+}
+
+void GBA_CPU::HandleProgramCounterCpsrCase()
+{
+    if (CurrentModeHasSPSR())
+    {
+        cpsr = spsr;
+    }
+    else
+    {
+        // TODO: UNPREDICATBLE if executed in user mode / system mode as those do not have SPSR
+    }
 }

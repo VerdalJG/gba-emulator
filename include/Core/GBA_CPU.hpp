@@ -71,12 +71,15 @@ protected:
     // ============================================ CPSR ============================================
 
     // Wrapper function for handling carry/overflow flags (ADD/ADC)
-    void UpdateCPSR_Add(uint32_t result, uint32_t op1, uint32_t op2, bool carryIn);
+    void UpdateCPSR_Add(uint32_t result, uint32_t op1, uint32_t op2, bool carryIn = false);
     // Wrapper function for handling carry/overflow flags for subtraction (SUB/SBC)
-    void UpdateCPSR_Sub(uint32_t result, uint32_t op1, uint32_t op2, bool carryIn);
+    void UpdateCPSR_Sub(uint32_t result, uint32_t op1, uint32_t op2, bool carryIn = false);
 
     void UpdateCPSR_Arithmetic(uint32_t result, uint32_t op1, uint32_t op2, bool isSub, bool carryIn = false);
     void UpdateCPSR_Logical(uint32_t result, bool shifterCarryOut);
+
+    // CPSR update behaves differently when the destination Register is R15
+    void HandleProgramCounterCpsrCase();
     
     // ==============================================================================================
 

@@ -65,7 +65,7 @@ protected:
 
     inline bool CurrentModeHasSPSR()
     {
-        return opMode == OperatingMode::User || opMode == OperatingMode::System;
+        return opMode != OperatingMode::User && opMode != OperatingMode::System;
     }
 
     // ============================================ CPSR ============================================
@@ -88,10 +88,94 @@ protected:
     static constexpr int DATA_PROCESSING_OPCODE_COUNT = 16;
     static InstructionFunction dataProcessingFuncTable[DATA_PROCESSING_OPCODE_COUNT];
 
-    void ArithmeticOperation(uint32_t instruction, auto operation, bool isSub, bool useCarry = false);
-    void ArithmeticComparisonOperation(uint32_t instruction, auto operation, bool isSub);
-    void LogicalOperation(uint32_t instruction, auto operation);
-    void LogicalTestOperation(uint32_t instruction, auto operation);
+    template <typename Func>
+    void ArithmeticOperation(uint32_t instruction, Func operation, bool isSub, bool useCarry = false)
+    {
+        DataProcessingDecodedInstruction values = DataProcessing_Decode(instruction, *this);
+
+        uint32_t& rn = registers[values.rnIndex];
+        uint32_t& rd = registers[values.rdIndex];
+        
+        uint32_t op2Value = values.op2.value;
+        uint32_t carryIn = useCarry ? GetCpsrC() : 0;
+
+        rd = operation(rn, op2Value, carryIn);
+
+        // CPSR
+        if (!values.sFlag) return;
+
+        if (values.rdIndex == 15)
+        {
+            HandleProgramCounterCpsrCase();
+            return;
+        }
+
+        if (isSub)
+        {
+            UpdateCPSR_Sub(rd, rn, op2Value, carryIn ? 0 : 1);
+        }
+        else
+        {
+            UpdateCPSR_Add(rd, rn, op2Value, carryIn);
+        }
+    }
+
+    template <typename Func>
+    void ArithmeticComparisonOperation(uint32_t instruction, Func operation, bool isSub)
+    {
+        DataProcessingDecodedInstruction values = DataProcessing_Decode(instruction, *this);
+
+        uint32_t& rn = registers[values.rnIndex];
+        uint32_t op2Value = values.op2.value;
+
+        uint32_t result = operation(rn, op2Value);
+
+        if (isSub)
+        {
+            UpdateCPSR_Sub(result, rn, op2Value);
+        }
+        else
+        {
+            UpdateCPSR_Add(result, rn, op2Value);
+        }
+    }
+
+    template <typename Func>
+    void LogicalOperation(uint32_t instruction, Func operation)
+    {
+        DataProcessingDecodedInstruction values = DataProcessing_Decode(instruction, *this);
+
+        uint32_t& rn = registers[values.rnIndex];
+        uint32_t& rd = registers[values.rdIndex];
+        uint32_t op2Value = values.op2.value;
+        bool op2CarryOut = values.op2.carryOut;
+    
+        rd = operation(rn, op2Value);
+
+        if (!values.sFlag) return;
+
+        if (values.rdIndex == 15)
+        {
+            HandleProgramCounterCpsrCase();
+            return;
+        }
+
+        UpdateCPSR_Logical(rd, op2CarryOut);
+    }
+
+    template <typename Func>
+    void LogicalTestOperation(uint32_t instruction, Func operation)
+    {
+        DataProcessingDecodedInstruction values = DataProcessing_Decode(instruction, *this);
+
+        uint32_t& rn = registers[values.rnIndex];
+        uint32_t op2Value = values.op2.value;
+        bool op2CarryOut = values.op2.carryOut;
+
+        uint32_t result = operation(rn, op2Value);
+
+        UpdateCPSR_Logical(result, op2CarryOut);
+    }
 
     // In order of opcodes 0-15
     void LogicalAND(uint32_t instruction);

@@ -88,6 +88,11 @@ protected:
     static constexpr int DATA_PROCESSING_OPCODE_COUNT = 16;
     static InstructionFunction dataProcessingFuncTable[DATA_PROCESSING_OPCODE_COUNT];
 
+    void ArithmeticOperation(uint32_t instruction, auto operation, bool isSub, bool useCarry = false);
+    void ArithmeticComparisonOperation(uint32_t instruction, auto operation, bool isSub);
+    void LogicalOperation(uint32_t instruction, auto operation);
+    void LogicalTestOperation(uint32_t instruction, auto operation);
+
     // In order of opcodes 0-15
     void LogicalAND(uint32_t instruction);
     void LogicalExclusiveOR(uint32_t instruction);

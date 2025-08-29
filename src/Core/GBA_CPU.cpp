@@ -44,7 +44,7 @@ void GBA_CPU::Step()
     
     // Decode
     InstructionFunction operationToExecute;
-    uint8_t condition = GetConditionBits(instruction);
+    uint8_t condition = instruction >> 28;
     // Thumb mode does not use condition bits
     if (mode == CPUMode::ARM) 
     {

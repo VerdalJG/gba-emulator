@@ -8,46 +8,46 @@ bool GBA_CPU::InstructionConditionCheck(uint8_t conditionByte)
     switch (condition)
     {
         case InstructionCondition::EQ:
-        return GetCpsrZ();
+        return GetCPSR_Z();
 
         case InstructionCondition::NE:
-        return GetCpsrZ() == 0;
+        return GetCPSR_Z() == 0;
 
         case InstructionCondition::CS:
-        return GetCpsrC();
+        return GetCPSR_C();
 
         case InstructionCondition::CC:
-        return GetCpsrC() == 0;
+        return GetCPSR_C() == 0;
 
         case InstructionCondition::MI:
-        return GetCpsrN();
+        return GetCPSR_N();
 
         case InstructionCondition::PL:
-        return GetCpsrN() == 0;
+        return GetCPSR_N() == 0;
 
         case InstructionCondition::VS:
-        return GetCpsrV();
+        return GetCPSR_V();
 
         case InstructionCondition::VC:
-        return GetCpsrV() == 0;
+        return GetCPSR_V() == 0;
 
         case InstructionCondition::HI:
-        return GetCpsrC() && (GetCpsrZ() == 0);
+        return GetCPSR_C() && (GetCPSR_Z() == 0);
 
         case InstructionCondition::LS:
-        return (GetCpsrC() == 0) || GetCpsrZ();
+        return (GetCPSR_C() == 0) || GetCPSR_Z();
 
         case InstructionCondition::GE:
-        return GetCpsrN() == GetCpsrV();
+        return GetCPSR_N() == GetCPSR_V();
 
         case InstructionCondition::LT:
-        return GetCpsrN() != GetCpsrV();
+        return GetCPSR_N() != GetCPSR_V();
 
         case InstructionCondition::GT:
-        return GetCpsrZ() == 0 && GetCpsrN() == GetCpsrV();
+        return GetCPSR_Z() == 0 && GetCPSR_N() == GetCPSR_V();
 
         case InstructionCondition::LE:
-        return GetCpsrZ() || GetCpsrN() != GetCpsrV();
+        return GetCPSR_Z() || GetCPSR_N() != GetCPSR_V();
 
         case InstructionCondition::AL:
         return true;

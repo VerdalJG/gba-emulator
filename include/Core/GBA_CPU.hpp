@@ -36,11 +36,11 @@ public:
 
     uint32_t GetValueAtRegister(int registerIndex);
 
-    inline uint32_t GetCpsr() { return cpsr; }
-    inline bool GetCpsrN() { return (cpsr >> 31) & 1; }
-    inline bool GetCpsrZ() { return (cpsr >> 30) & 1; }
-    inline bool GetCpsrC() { return (cpsr >> 29) & 1; }
-    inline bool GetCpsrV() { return (cpsr >> 28) & 1; }
+    inline uint32_t GetCPSR() { return cpsr; }
+    inline bool GetCPSR_N() { return (cpsr >> 31) & 1; }
+    inline bool GetCPSR_Z() { return (cpsr >> 30) & 1; }
+    inline bool GetCPSR_C() { return (cpsr >> 29) & 1; }
+    inline bool GetCPSR_V() { return (cpsr >> 28) & 1; }
 
     inline uint32_t GetSPSR() { return spsr; }
     inline CPUMode GetCPUMode() { return mode; }
@@ -78,6 +78,8 @@ protected:
     void UpdateCPSR_Arithmetic(uint32_t result, uint32_t op1, uint32_t op2, bool isSub, bool carryIn = false);
     void UpdateCPSR_Logical(uint32_t result, bool shifterCarryOut);
 
+    void UpdateCPSR(uint8_t flags, uint8_t flagsToUpdate);
+
     // CPSR update behaves differently when the destination Register is R15
     void HandleProgramCounterCpsrCase();
     
@@ -88,21 +90,23 @@ protected:
     static constexpr int DATA_PROCESSING_OPCODE_COUNT = 16;
     static InstructionFunction dataProcessingFuncTable[DATA_PROCESSING_OPCODE_COUNT];
 
+    // Templating is better performance wise and 
+    // avoids some errors on specific compilers vs 'auto' as parameter
     template <typename Func>
     void ArithmeticOperation(uint32_t instruction, Func operation, bool isSub, bool useCarry = false)
     {
-        DataProcessingDecodedInstruction values = DataProcessing_Decode(instruction, *this);
+        DataProcessing_DecodedInstruction values = DataProcessing_Decode(instruction, *this);
 
         uint32_t& rn = registers[values.rnIndex];
         uint32_t& rd = registers[values.rdIndex];
         
         uint32_t op2Value = values.op2.value;
-        uint32_t carryIn = useCarry ? GetCpsrC() : 0;
+        uint32_t carryIn = useCarry ? GetCPSR_C() : 0;
 
         rd = operation(rn, op2Value, carryIn);
 
         // CPSR
-        if (!values.sFlag) return;
+        if (!values.setCpsrFlag) return;
 
         if (values.rdIndex == 15)
         {
@@ -123,7 +127,7 @@ protected:
     template <typename Func>
     void ArithmeticComparisonOperation(uint32_t instruction, Func operation, bool isSub)
     {
-        DataProcessingDecodedInstruction values = DataProcessing_Decode(instruction, *this);
+        DataProcessing_DecodedInstruction values = DataProcessing_Decode(instruction, *this);
 
         uint32_t& rn = registers[values.rnIndex];
         uint32_t op2Value = values.op2.value;
@@ -143,7 +147,7 @@ protected:
     template <typename Func>
     void LogicalOperation(uint32_t instruction, Func operation)
     {
-        DataProcessingDecodedInstruction values = DataProcessing_Decode(instruction, *this);
+        DataProcessing_DecodedInstruction values = DataProcessing_Decode(instruction, *this);
 
         uint32_t& rn = registers[values.rnIndex];
         uint32_t& rd = registers[values.rdIndex];
@@ -152,7 +156,7 @@ protected:
     
         rd = operation(rn, op2Value);
 
-        if (!values.sFlag) return;
+        if (!values.setCpsrFlag) return;
 
         if (values.rdIndex == 15)
         {
@@ -166,7 +170,7 @@ protected:
     template <typename Func>
     void LogicalTestOperation(uint32_t instruction, Func operation)
     {
-        DataProcessingDecodedInstruction values = DataProcessing_Decode(instruction, *this);
+        DataProcessing_DecodedInstruction values = DataProcessing_Decode(instruction, *this);
 
         uint32_t& rn = registers[values.rnIndex];
         uint32_t op2Value = values.op2.value;
@@ -195,6 +199,14 @@ protected:
     void BitClear(uint32_t instruction);
     void MoveNot(uint32_t instruction);
     void HandleUndefinedBehavior(uint32_t instruction);
+
+    // Misc
+    void Multiply(uint32_t instruction);
+    void MultiplyLong(uint32_t instruction);
+    void SingleDataSwap(uint32_t instruction);
+    void BranchAndExchange(uint32_t instruction);
+    void HalfwordDataTransferRegister(uint32_t instruction);
+    void HalfwordDataTransferImmediate(uint32_t instruction);
 
     // ==============================================================================================
     

@@ -3,30 +3,50 @@
 #include "Core/CPU_Shifts.hpp"
 #include <assert.h>
 
-DataProcessingDecodedInstruction DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu)
+DataProcessing_DecodedInstruction DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu)
 {
-    DataProcessingDecodedInstruction result;
-    auto pair = DataProcessing_ExtractRnRdIndexes(instruction);
+    DataProcessing_DecodedInstruction result;
 
-    result.rnIndex = pair.first;
-    result.rdIndex = pair.second;
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.rdIndex = (instruction >> 12) & 0xF;
     result.op2 = ExtractOperand2(instruction, cpu);
-    result.sFlag = DataProcessing_ShouldSetFlags(instruction);
+    result.setCpsrFlag = (instruction >> 20) & 1;
 
     return result;
 }
 
-std::pair<uint8_t, uint8_t> DataProcessing_ExtractRnRdIndexes(uint32_t instruction)
+MultiplyDecoded_Instruction Multiply_Decode(uint32_t instruction, GBA_CPU &cpu)
 {
-    uint8_t rn = (instruction >> 16) & 0xF;
-    uint8_t rd = (instruction >> 12) & 0xF;
-    return std::make_pair(rn, rd);
+    MultiplyDecoded_Instruction result;
+
+    result.rdIndex = (instruction >> 16) & 0xF;
+    result.rsIndex = (instruction >> 8) & 0xF;
+    result.rmIndex = instruction & 0xF;
+    result.accumulateFlag = (instruction >> 21) & 1;
+    result.setCpsrFlag = (instruction >> 20) & 1;
+
+    return result;
+}
+
+MultiplyLong_DecodedInstruction MultiplyLong_Decode(uint32_t instruction, GBA_CPU &cpu)
+{
+    MultiplyLong_DecodedInstruction result;
+
+    result.rdHiIndex = (instruction >> 16) & 0xF;
+    result.rdLoIndex = (instruction >> 12) & 0xF;
+    result.rnIndex = (instruction >> 8) & 0xF;
+    result.rmIndex = instruction & 0xF;
+    result.unsignedFlag = (instruction >> 22) & 1;
+    result.accumulateFlag = (instruction >> 21) & 1;
+    result.setCpsrFlag = (instruction >> 20) & 1;
+
+    return result;
 }
 
 Operand2Result ExtractOperand2(uint32_t instruction, GBA_CPU& cpu)
 {
     uint16_t operand2 = instruction & OPERAND2_MASK;
-    bool isImmediate = Bit25Set(instruction);
+    bool isImmediate = (instruction >> 25) & 1; // Immediate flag lies in bit 25
     if (isImmediate)
     {
         // Get the immediate value and rotation amount
@@ -49,11 +69,6 @@ Operand2Result ExtractOperand2(uint32_t instruction, GBA_CPU& cpu)
             return ShiftByImmediate(operand2, shiftType, cpu);
         }        
     }
-}
-
-bool DataProcessing_ShouldSetFlags(uint32_t instruction)
-{
-    return (instruction >> DATA_PROCESSING_SET_CPSR_FLAGS_SHIFT) & 1;
 }
 
 
@@ -114,9 +129,4 @@ Operand2Result ShiftByImmediate(uint16_t operand2, ShiftType shiftType, GBA_CPU 
 DataProcessingOpcode GetDataProcessingOpcode(uint32_t instruction)
 {
     return static_cast<DataProcessingOpcode>((instruction >> OPCODE_SHIFT) & OPCODE_MASK);
-}
-
-bool Bit25Set(uint32_t instruction)
-{
-    return (instruction >> 25) & 1;
 }

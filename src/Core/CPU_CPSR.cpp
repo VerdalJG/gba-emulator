@@ -59,8 +59,6 @@ void GBA_CPU::UpdateCPSR_Arithmetic(uint32_t result, uint32_t op1, uint32_t op2,
     cpsr = (cpsr & 0x0FFFFFFF) | flags;
 }
 
-
-
 void GBA_CPU::UpdateCPSR_Logical(uint32_t result, bool shifterCarryOut)
 {
     uint32_t flags = 0;
@@ -86,6 +84,11 @@ void GBA_CPU::UpdateCPSR_Logical(uint32_t result, bool shifterCarryOut)
     // Update cpsr
     cpsr = (cpsr & 0x1FFFFFFF) | flags; // Preserve V flag by masking
 }
+
+void GBA_CPU::UpdateCPSR(uint8_t flags, uint8_t flagsToUpdate)
+{
+}
+
 
 void GBA_CPU::HandleProgramCounterCpsrCase()
 {

@@ -36,14 +36,48 @@ enum ShiftType
     ROR
 };
 
-struct DataProcessingDecodedInstruction
+struct DataProcessing_DecodedInstruction
 {
     uint8_t rnIndex, rdIndex;
     Operand2Result op2;
-    bool sFlag; // Whether or not to set CPSR Flags
+    bool setCpsrFlag; // Whether or not to set CPSR Flags
 };
 
-DataProcessingDecodedInstruction DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu);
+struct MultiplyDecoded_Instruction
+{
+    uint8_t rdIndex, rnIndex, rsIndex, rmIndex;
+    bool accumulateFlag, setCpsrFlag;
+};
+
+struct MultiplyLong_DecodedInstruction
+{
+    uint8_t rdHiIndex, rdLoIndex, rnIndex, rmIndex;
+    bool unsignedFlag, accumulateFlag, setCpsrFlag;
+};
+
+struct SingleDataSwap_DecodedInstruction
+{
+    uint8_t rnIndex, rdIndex, rmIndex;
+    bool bFlag;
+};
+
+struct HalfwordDataTransferRegister_DecodedInstruction
+{
+    uint8_t rnIndex, rdIndex, rmIndex;
+    bool pFlag, unsignedFlag, wFlag, lFlag;
+};
+
+struct HalfwordDataTransferImmediate_DecodedInstruction
+{
+    uint8_t rnIndex, rdIndex, offset1, offset2;
+    bool pFlag, unsignedFlag, wFlag, lFlag;
+};
+
+
+DataProcessing_DecodedInstruction DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu);
+MultiplyDecoded_Instruction Multiply_Decode(uint32_t instruction, GBA_CPU& cpu);
+MultiplyLong_DecodedInstruction MultiplyLong_Decode(uint32_t instruction, GBA_CPU& cpu);
+
 
 
 enum class InstructionCategory 
@@ -74,24 +108,18 @@ enum InstructionPattern : uint8_t
     PATTERN_11, // Coprocessor or Software Interrupt
 };
 
-/// @brief Extracts the first operand register (Rn) and the destination register (Rd)
-/// @param instruction The current instruction being executed
-/// @return A pair containing Rn and Rd (in that order)
-std::pair<uint8_t, uint8_t> DataProcessing_ExtractRnRdIndexes(uint32_t instruction);
-
 /// @brief Extracts the second operand for data processing
 /// @param instruction The current instruction being executed
 /// @param isImmediateValue Immediate value flag (bit 25)
 /// @return Operand2 (bits 11-0)
 Operand2Result ExtractOperand2(uint32_t instruction, GBA_CPU& cpu);
 
-bool DataProcessing_ShouldSetFlags(uint32_t instruction);
-
-bool Bit25Set(uint32_t instruction);
-
 DataProcessingOpcode GetDataProcessingOpcode(uint32_t instruction);
 
 Operand2Result ShiftByRegister(uint16_t operand2, ShiftType shiftType, GBA_CPU& cpu);
 Operand2Result ShiftByImmediate(uint16_t operand2, ShiftType shiftType,  GBA_CPU& cpu);
 
-
+inline bool CheckBits(uint32_t instruction, uint32_t shift, uint32_t mask, uint32_t expected)
+{
+    return ((instruction >> shift) & mask) == expected;
+}

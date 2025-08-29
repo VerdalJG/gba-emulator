@@ -8,7 +8,7 @@ Operand2Result LogicalLeft(uint32_t value, uint32_t shift, GBA_CPU& cpu)
     if (shift == 0)
     {
         result.value = value;
-        result.carryOut = cpu.GetCpsrC(); // Use old cpsr C flag if shift is 0
+        result.carryOut = cpu.GetCPSR_C(); // Use old cpsr C flag if shift is 0
     }
     else if (shift < 32)
     {
@@ -32,7 +32,7 @@ Operand2Result LogicalRight(uint32_t value, uint32_t shift, bool isImmediate, GB
     if (shift == 0)
     {
         result.value = isImmediate ? 0 : value;
-        result.carryOut = isImmediate ? value >> 31 : cpu.GetCpsrC();
+        result.carryOut = isImmediate ? value >> 31 : cpu.GetCPSR_C();
     }
     else if (shift < 32)
     {
@@ -57,7 +57,7 @@ Operand2Result ArithmeticRight(uint32_t value, uint32_t shift, bool isImmediate,
         if (!isImmediate)
         {
             result.value = value;
-            result.carryOut = cpu.GetCpsrC();
+            result.carryOut = cpu.GetCPSR_C();
             return result;
         }
 
@@ -100,7 +100,7 @@ Operand2Result RotateRight(uint32_t value, uint32_t rotation, bool isImmediate, 
         else 
         {
             result.value = value;
-            result.carryOut = cpu.GetCpsrC();
+            result.carryOut = cpu.GetCPSR_C();
         }
 
     }
@@ -114,7 +114,7 @@ Operand2Result RotateRight(uint32_t value, uint32_t rotation, bool isImmediate, 
 Operand2Result RotateRightExtendCarry(uint32_t value, GBA_CPU &cpu)
 {
     Operand2Result result;
-    uint32_t cFlag = cpu.GetCpsrC();
+    uint32_t cFlag = cpu.GetCPSR_C();
 
     result.value = (cFlag << 31) | (value >> 1);
     result.carryOut = value & 1;

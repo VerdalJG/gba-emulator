@@ -15,9 +15,9 @@ DataProcessing_DecodedInstruction DataProcessing_Decode(uint32_t instruction, GB
     return result;
 }
 
-MultiplyDecoded_Instruction Multiply_Decode(uint32_t instruction, GBA_CPU &cpu)
+Multiply_DecodedInstruction Multiply_Decode(uint32_t instruction, GBA_CPU &cpu)
 {
-    MultiplyDecoded_Instruction result;
+    Multiply_DecodedInstruction result;
 
     result.rdIndex = (instruction >> 16) & 0xF;
     result.rsIndex = (instruction >> 8) & 0xF;
@@ -34,11 +34,23 @@ MultiplyLong_DecodedInstruction MultiplyLong_Decode(uint32_t instruction, GBA_CP
 
     result.rdHiIndex = (instruction >> 16) & 0xF;
     result.rdLoIndex = (instruction >> 12) & 0xF;
-    result.rnIndex = (instruction >> 8) & 0xF;
+    result.rsIndex = (instruction >> 8) & 0xF;
     result.rmIndex = instruction & 0xF;
-    result.unsignedFlag = (instruction >> 22) & 1;
+    result.signedFlag = (instruction >> 22) & 1;
     result.accumulateFlag = (instruction >> 21) & 1;
     result.setCpsrFlag = (instruction >> 20) & 1;
+
+    return result;
+}
+
+SingleDataSwap_DecodedInstruction SingleDataSwap_Decode(uint32_t instruction, GBA_CPU &cpu)
+{
+    SingleDataSwap_DecodedInstruction result;
+
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.rdIndex = (instruction >> 12) & 0xF;
+    result.rmIndex = instruction & 0xF;
+    result.bFlag = (instruction >> 24) & 1;
 
     return result;
 }
@@ -54,7 +66,7 @@ Operand2Result ExtractOperand2(uint32_t instruction, GBA_CPU& cpu)
         uint32_t immRot = ((operand2 >> 8) & 0xF) * 2;
 
         // Perform Rotation
-        return RotateRight(imm8, immRot, isImmediate, cpu);
+        return Operand2_RotateRight(imm8, immRot, isImmediate, cpu);
     }
     else // Shifted value
     {
@@ -92,7 +104,7 @@ Operand2Result ShiftByRegister(uint16_t operand2, ShiftType shiftType, GBA_CPU &
         return ArithmeticRight(rmValue, rsValue, false, cpu);
         
         case ShiftType::ROR:
-        return RotateRight(rmValue, rsValue, false, cpu);
+        return Operand2_RotateRight(rmValue, rsValue, false, cpu);
 
         default:
         assert(false && "Invalid ShiftType"); // Unreachable case
@@ -118,7 +130,7 @@ Operand2Result ShiftByImmediate(uint16_t operand2, ShiftType shiftType, GBA_CPU 
         return ArithmeticRight(rmValue, shiftImm, true, cpu);
         
         case ShiftType::ROR: // RRX handled inside ROR
-        return RotateRight(rmValue, shiftImm, true, cpu);
+        return Operand2_RotateRight(rmValue, shiftImm, true, cpu);
 
         default:
         assert(false && "Invalid ShiftType"); // Unreachable case

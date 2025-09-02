@@ -87,7 +87,7 @@ Operand2Result ArithmeticRight(uint32_t value, uint32_t shift, bool isImmediate,
     return result;
 }
 
-Operand2Result RotateRight(uint32_t value, uint32_t rotation, bool isImmediate, GBA_CPU& cpu)
+Operand2Result Operand2_RotateRight(uint32_t value, uint32_t rotation, bool isImmediate, GBA_CPU& cpu)
 {
     Operand2Result result;
 
@@ -110,6 +110,13 @@ Operand2Result RotateRight(uint32_t value, uint32_t rotation, bool isImmediate, 
     result.carryOut = (value >> (rotation - 1)) & 1;
     return result;
 }
+
+uint32_t RotateRight(uint32_t value, uint32_t rotation)
+{
+    rotation %= 32;
+    return (value >> rotation) | (value << (32 - rotation));
+}
+
 
 Operand2Result RotateRightExtendCarry(uint32_t value, GBA_CPU &cpu)
 {

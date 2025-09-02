@@ -5,11 +5,6 @@
 #include "Core/GBA_Memory.hpp"
 #include "Core/InstructionHelpers.hpp"
 
-enum class CPUMode
-{
-    ARM,
-    Thumb
-};
 
 enum class OperatingMode
 {
@@ -43,13 +38,12 @@ public:
     inline bool GetCPSR_V() { return (cpsr >> 28) & 1; }
 
     inline uint32_t GetSPSR() { return spsr; }
-    inline CPUMode GetCPUMode() { return mode; }
+    inline bool IsThumbMode() { return (cpsr >> 5) & 1; }
 
 protected:
     std::array<uint32_t, 16> registers{}; // R0 - R14 contain data, R15 contains address of next instruction (PC)
     uint32_t cpsr = 0;                    // Current Program Status Register
     uint32_t spsr = 0;                    // Saved Program Status Register
-    CPUMode mode;                         // Thumb mode flag
     OperatingMode opMode;                 // Operating mode flag
 
     uint32_t ReadProgramCounter(bool isPartOfInstruction); // Result is different if we are reading PC as a fetch or part of an instruction
@@ -82,6 +76,8 @@ protected:
 
     // CPSR update behaves differently when the destination Register is R15
     void HandleProgramCounterCpsrCase();
+
+    uint32_t CarryFrom(uint64_t result);
     
     // ==============================================================================================
 
@@ -203,6 +199,12 @@ protected:
     // Misc
     void Multiply(uint32_t instruction);
     void MultiplyLong(uint32_t instruction);
+
+    void SMULL(uint32_t& rdLo, uint32_t& rdHi, int64_t& product);
+    void SMLAL(uint32_t& rdLo, uint32_t& rdHi, int64_t& product);
+    void UMULL(uint32_t& rdLo, uint32_t& rdHi, uint64_t& product);
+    void UMLAL(uint32_t& rdLo, uint32_t& rdHi, uint64_t& product);
+
     void SingleDataSwap(uint32_t instruction);
     void BranchAndExchange(uint32_t instruction);
     void HalfwordDataTransferRegister(uint32_t instruction);

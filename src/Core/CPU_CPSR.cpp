@@ -101,3 +101,8 @@ void GBA_CPU::HandleProgramCounterCpsrCase()
         // TODO: UNPREDICATBLE if executed in user mode / system mode as those do not have SPSR
     }
 }
+
+uint32_t GBA_CPU::CarryFrom(uint64_t result)
+{
+    return static_cast<uint32_t>(result >> 32);
+}

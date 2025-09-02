@@ -43,7 +43,7 @@ struct DataProcessing_DecodedInstruction
     bool setCpsrFlag; // Whether or not to set CPSR Flags
 };
 
-struct MultiplyDecoded_Instruction
+struct Multiply_DecodedInstruction
 {
     uint8_t rdIndex, rnIndex, rsIndex, rmIndex;
     bool accumulateFlag, setCpsrFlag;
@@ -51,8 +51,8 @@ struct MultiplyDecoded_Instruction
 
 struct MultiplyLong_DecodedInstruction
 {
-    uint8_t rdHiIndex, rdLoIndex, rnIndex, rmIndex;
-    bool unsignedFlag, accumulateFlag, setCpsrFlag;
+    uint8_t rdHiIndex, rdLoIndex, rsIndex, rmIndex;
+    bool signedFlag, accumulateFlag, setCpsrFlag;
 };
 
 struct SingleDataSwap_DecodedInstruction
@@ -75,8 +75,9 @@ struct HalfwordDataTransferImmediate_DecodedInstruction
 
 
 DataProcessing_DecodedInstruction DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu);
-MultiplyDecoded_Instruction Multiply_Decode(uint32_t instruction, GBA_CPU& cpu);
+Multiply_DecodedInstruction Multiply_Decode(uint32_t instruction, GBA_CPU& cpu);
 MultiplyLong_DecodedInstruction MultiplyLong_Decode(uint32_t instruction, GBA_CPU& cpu);
+SingleDataSwap_DecodedInstruction SingleDataSwap_Decode(uint32_t instruction, GBA_CPU& cpu);
 
 
 

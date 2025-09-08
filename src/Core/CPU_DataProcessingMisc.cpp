@@ -3,7 +3,7 @@
 
 void GBA_CPU::Multiply(uint32_t instruction)
 {
-    Multiply_DecodedInstruction values = Multiply_Decode(instruction, *this);
+    Multiply_Decoded values = Multiply_Decode(instruction, *this);
 
     uint32_t& rm = registers[values.rmIndex];
     uint32_t& rs = registers[values.rsIndex];
@@ -37,7 +37,7 @@ void GBA_CPU::Multiply(uint32_t instruction)
 
 void GBA_CPU::MultiplyLong(uint32_t instruction)
 {
-    MultiplyLong_DecodedInstruction values = MultiplyLong_Decode(instruction, *this);
+    MultiplyLong_Decoded values = MultiplyLong_Decode(instruction, *this);
 
     uint32_t& rdHi = registers[values.rdHiIndex];
     uint32_t& rdLo = registers[values.rdLoIndex];
@@ -122,7 +122,7 @@ void GBA_CPU::UMLAL(uint32_t &rdLo, uint32_t &rdHi, uint64_t& product)
 // Swap (SWP) or SwapByte (SWPB)
 void GBA_CPU::SingleDataSwap(uint32_t instruction) 
 {
-    SingleDataSwap_DecodedInstruction values = SingleDataSwap_Decode(instruction, *this);
+    SingleDataSwap_Decoded values = SingleDataSwap_Decode(instruction, *this);
     
     uint32_t& rn = registers[values.rnIndex];
     uint32_t& rm = registers[values.rmIndex];
@@ -175,10 +175,86 @@ void GBA_CPU::BranchAndExchange(uint32_t instruction)
 
 void GBA_CPU::HalfwordDataTransferRegister(uint32_t instruction)
 {
+    HalfwordDataTransferRegister_Decoded values = HalfWordDataTransferRegister_Decode(instruction, *this);
+    uint32_t& rn = registers[values.rnIndex];
+    uint32_t& rd = registers[values.rdIndex];
+    uint32_t& rm = registers[values.rmIndex];
+
+    uint32_t effectiveAddress;
+
+    if (values.pFlag) // P = 1
+    {
+        effectiveAddress = values.uFlag ? (rn + rm) : (rn - rm);
+        if (values.wFlag)
+        {
+            // Pre-indexed with write-back: Rn = EA
+            rn = effectiveAddress;
+
+            if (values.lFlag && (values.rdIndex == values.rnIndex)) return; // UNPREDICTABLE
+        }
+    }
+    else // P = 0
+    {
+        if (values.wFlag) return; // UNPREDICTABLE
+
+        effectiveAddress = rn;
+        // Post-index update happens AFTER transfer
+    }
+
+    //transfer occurs here
+
+    // Only post-index case updates here
+    if (!values.pFlag) 
+    {
+        rn = values.uFlag ? (rn + rm) : (rn - rm);
+    }
+
+    if (L == 0)
+    {
+        // Load
+
+        if (P == 0)
+        {
+            if (W == 1) return; // UNPREDICTABLE
+
+            // Post-Indexed addressing
+            // address = Rn
+            // U == 1 -> Rn = Rn + Rm
+            // U == 0 -> Rn = Rn - Rm
+        }
+        else // P == 1
+        {
+            // Pre-Indexed addressing
+            // address = Rn + Rm
+            if (W == 0)
+            {
+                // Offset addressing - No writeback
+            } 
+            else
+            {
+                // Writeback
+                // Rn = address
+            }
+        }
+    }
+    else
+    {
+        // Store
+
+        if (S) return; // UNPREDICTABLE
+
+        if (!H) return; // SWAP or MULTIPLY, FIX DECODING
+
+        
+
+    }
+    
+
     // LDRH / STRH
+    // LDRSB / STRB
 }
 
 void GBA_CPU::HalfwordDataTransferImmediate(uint32_t instruction)
 {
-
+    HalfwordDataTransferImmediate_Decoded values = HalfWordDataTransferImmediate_Decode(instruction, *this);
 }

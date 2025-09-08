@@ -91,7 +91,7 @@ protected:
     template <typename Func>
     void ArithmeticOperation(uint32_t instruction, Func operation, bool isSub, bool useCarry = false)
     {
-        DataProcessing_DecodedInstruction values = DataProcessing_Decode(instruction, *this);
+        DataProcessing_Decoded values = DataProcessing_Decode(instruction, *this);
 
         uint32_t& rn = registers[values.rnIndex];
         uint32_t& rd = registers[values.rdIndex];
@@ -123,7 +123,7 @@ protected:
     template <typename Func>
     void ArithmeticComparisonOperation(uint32_t instruction, Func operation, bool isSub)
     {
-        DataProcessing_DecodedInstruction values = DataProcessing_Decode(instruction, *this);
+        DataProcessing_Decoded values = DataProcessing_Decode(instruction, *this);
 
         uint32_t& rn = registers[values.rnIndex];
         uint32_t op2Value = values.op2.value;
@@ -143,7 +143,7 @@ protected:
     template <typename Func>
     void LogicalOperation(uint32_t instruction, Func operation)
     {
-        DataProcessing_DecodedInstruction values = DataProcessing_Decode(instruction, *this);
+        DataProcessing_Decoded values = DataProcessing_Decode(instruction, *this);
 
         uint32_t& rn = registers[values.rnIndex];
         uint32_t& rd = registers[values.rdIndex];
@@ -166,7 +166,7 @@ protected:
     template <typename Func>
     void LogicalTestOperation(uint32_t instruction, Func operation)
     {
-        DataProcessing_DecodedInstruction values = DataProcessing_Decode(instruction, *this);
+        DataProcessing_Decoded values = DataProcessing_Decode(instruction, *this);
 
         uint32_t& rn = registers[values.rnIndex];
         uint32_t op2Value = values.op2.value;
@@ -209,6 +209,9 @@ protected:
     void BranchAndExchange(uint32_t instruction);
     void HalfwordDataTransferRegister(uint32_t instruction);
     void HalfwordDataTransferImmediate(uint32_t instruction);
+
+    void LoadUnsignedHalfword(uint32_t instruction);
+    
 
     // ==============================================================================================
     

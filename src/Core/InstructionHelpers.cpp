@@ -3,9 +3,9 @@
 #include "Core/CPU_Shifts.hpp"
 #include <assert.h>
 
-DataProcessing_DecodedInstruction DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu)
+DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu)
 {
-    DataProcessing_DecodedInstruction result;
+    DataProcessing_Decoded result;
 
     result.rnIndex = (instruction >> 16) & 0xF;
     result.rdIndex = (instruction >> 12) & 0xF;
@@ -15,9 +15,9 @@ DataProcessing_DecodedInstruction DataProcessing_Decode(uint32_t instruction, GB
     return result;
 }
 
-Multiply_DecodedInstruction Multiply_Decode(uint32_t instruction, GBA_CPU &cpu)
+Multiply_Decoded Multiply_Decode(uint32_t instruction, GBA_CPU &cpu)
 {
-    Multiply_DecodedInstruction result;
+    Multiply_Decoded result;
 
     result.rdIndex = (instruction >> 16) & 0xF;
     result.rsIndex = (instruction >> 8) & 0xF;
@@ -28,9 +28,9 @@ Multiply_DecodedInstruction Multiply_Decode(uint32_t instruction, GBA_CPU &cpu)
     return result;
 }
 
-MultiplyLong_DecodedInstruction MultiplyLong_Decode(uint32_t instruction, GBA_CPU &cpu)
+MultiplyLong_Decoded MultiplyLong_Decode(uint32_t instruction, GBA_CPU &cpu)
 {
-    MultiplyLong_DecodedInstruction result;
+    MultiplyLong_Decoded result;
 
     result.rdHiIndex = (instruction >> 16) & 0xF;
     result.rdLoIndex = (instruction >> 12) & 0xF;
@@ -43,9 +43,9 @@ MultiplyLong_DecodedInstruction MultiplyLong_Decode(uint32_t instruction, GBA_CP
     return result;
 }
 
-SingleDataSwap_DecodedInstruction SingleDataSwap_Decode(uint32_t instruction, GBA_CPU &cpu)
+SingleDataSwap_Decoded SingleDataSwap_Decode(uint32_t instruction, GBA_CPU &cpu)
 {
-    SingleDataSwap_DecodedInstruction result;
+    SingleDataSwap_Decoded result;
 
     result.rnIndex = (instruction >> 16) & 0xF;
     result.rdIndex = (instruction >> 12) & 0xF;
@@ -55,7 +55,44 @@ SingleDataSwap_DecodedInstruction SingleDataSwap_Decode(uint32_t instruction, GB
     return result;
 }
 
-Operand2Result ExtractOperand2(uint32_t instruction, GBA_CPU& cpu)
+HalfwordDataTransferRegister_Decoded HalfWordDataTransferRegister_Decode(uint32_t instruction, GBA_CPU &cpu)
+{
+    HalfwordDataTransferRegister_Decoded result;
+
+    result.pFlag = (instruction >> 24) & 1;
+    result.uFlag = (instruction >> 23) & 1;
+    result.wFlag = (instruction >> 21) & 1;
+    result.lFlag = (instruction >> 20) & 1;
+
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.rdIndex = (instruction >> 12) & 0xF;
+    result.rmIndex = instruction & 0xF;
+
+    result.sFlag = (instruction >> 6) & 1;
+    result.hFlag = (instruction >> 5) & 1;
+
+    return result;
+}
+HalfwordDataTransferImmediate_Decoded HalfWordDataTransferImmediate_Decode(uint32_t instruction, GBA_CPU &cpu)
+{
+    HalfwordDataTransferImmediate_Decoded result;
+
+    result.pFlag = (instruction >> 24) & 1;
+    result.uFlag = (instruction >> 23) & 1;
+    result.wFlag = (instruction >> 21) & 1;
+    result.lFlag = (instruction >> 20) & 1;
+
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.rdIndex = (instruction >> 12) & 0xF;
+    result.offsetHigh = (instruction >> 8) & 0xF;
+    result.offsetLow = instruction & 0xF;
+
+    result.sFlag = (instruction >> 6) & 1;
+    result.hFlag = (instruction >> 5) & 1;
+
+    return result;
+}
+Operand2Result ExtractOperand2(uint32_t instruction, GBA_CPU &cpu)
 {
     uint16_t operand2 = instruction & OPERAND2_MASK;
     bool isImmediate = (instruction >> 25) & 1; // Immediate flag lies in bit 25

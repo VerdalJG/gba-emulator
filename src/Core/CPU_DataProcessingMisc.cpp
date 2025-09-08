@@ -173,18 +173,30 @@ void GBA_CPU::BranchAndExchange(uint32_t instruction)
 
 }
 
-void GBA_CPU::HalfwordDataTransferRegister(uint32_t instruction)
+
+void GBA_CPU::HalfwordDataTransfer(uint32_t instruction)
 {
-    HalfwordDataTransferRegister_Decoded values = HalfWordDataTransferRegister_Decode(instruction, *this);
+    HalfwordDataTransfer_Decoded values = HalfwordDataTransfer_Decode(instruction, *this);
     uint32_t& rn = registers[values.rnIndex];
     uint32_t& rd = registers[values.rdIndex];
-    uint32_t& rm = registers[values.rmIndex];
+
+    bool isImmediate = values.iFlag;
+    bool isLoadInstruction = values.lFlag;
+    bool isSigned = values.sFlag;
+    bool isHalfword = values.hFlag;
+
+    if (!isSigned && !isHalfword) return; // This is another instruction - Mult or Single Data Swap
+
+    // POSSIBLE:
+    // LOADS: LDRH LDRSB LDRSH
+    // STORES: STRH
 
     uint32_t effectiveAddress;
+    uint32_t offset = isImmediate ? GetHDTOffset_Immediate(instruction) : GetHDTOffset_Register(instruction);
 
     if (values.pFlag) // P = 1
     {
-        effectiveAddress = values.uFlag ? (rn + rm) : (rn - rm);
+        effectiveAddress = values.uFlag ? rn + offset : rn - offset;
         if (values.wFlag)
         {
             // Pre-indexed with write-back: Rn = EA
@@ -201,60 +213,56 @@ void GBA_CPU::HalfwordDataTransferRegister(uint32_t instruction)
         // Post-index update happens AFTER transfer
     }
 
-    //transfer occurs here
+    // GBA SPECIFIC LOADING: IF INSTRUCTION IS MISALIGNED FOR HALFWORDS,
+    // IT ROTATES THE LOADED HALFWORD 8 BITS TO THE RIGHT
 
-    // Only post-index case updates here
-    if (!values.pFlag) 
+    if (isLoadInstruction)
     {
-        rn = values.uFlag ? (rn + rm) : (rn - rm);
-    }
-
-    if (L == 0)
-    {
-        // Load
-
-        if (P == 0)
+        if (!isHalfword)
         {
-            if (W == 1) return; // UNPREDICTABLE
-
-            // Post-Indexed addressing
-            // address = Rn
-            // U == 1 -> Rn = Rn + Rm
-            // U == 0 -> Rn = Rn - Rm
+            // LDRSB
+            uint8_t loadedByte = memorySystem.Read8(effectiveAddress);
+            rd = SignExtendTo32(loadedByte);
         }
-        else // P == 1
+        else if (!isSigned)
         {
-            // Pre-Indexed addressing
-            // address = Rn + Rm
-            if (W == 0)
+            // LDRH
+            bool misaligned = effectiveAddress & 1;
+            uint16_t loadedHalfword = memorySystem.Read16(effectiveAddress);
+            if (misaligned)
             {
-                // Offset addressing - No writeback
-            } 
-            else
-            {
-                // Writeback
-                // Rn = address
+                loadedHalfword = RotateRight(loadedHalfword, 8);
             }
+            rd = ZeroExtendTo32(loadedHalfword);
+        }
+        else
+        {
+            // LDRSH
+            bool misaligned = effectiveAddress & 1;
+            uint16_t loadedHalfword = memorySystem.Read16(effectiveAddress);
+            if (misaligned)
+            {
+                loadedHalfword = RotateRight(loadedHalfword, 8);
+            }
+            rd = SignExtendTo32(loadedHalfword);
         }
     }
     else
     {
-        // Store
+        if (isSigned) return; // UNPREDICTABLE
 
-        if (S) return; // UNPREDICTABLE
+        // STRH
 
-        if (!H) return; // SWAP or MULTIPLY, FIX DECODING
-
-        
-
+        // GBA SPECIFIC: NORMALLY YOU WOULD ABORT THE INSTRUCTION IF IT IS NOT ALIGNED
+        // INSTEAD, THE GBA JUST PROCEEDS AND DOES THE STORE INSTRUCTION WITH THE UNALIGNED ADDRESS
+        uint16_t valueToStore = static_cast<uint16_t>(rd);
+        memorySystem.Write8(effectiveAddress, valueToStore & 0xFF); // Lowest 8 bits
+        memorySystem.Write8(effectiveAddress + 1, valueToStore >> 8); // Shift higher bits
     }
-    
 
-    // LDRH / STRH
-    // LDRSB / STRB
-}
-
-void GBA_CPU::HalfwordDataTransferImmediate(uint32_t instruction)
-{
-    HalfwordDataTransferImmediate_Decoded values = HalfWordDataTransferImmediate_Decode(instruction, *this);
+    // Only post-index case updates here
+    if (!values.pFlag) 
+    {
+        rn = values.uFlag ? (rn + offset) : (rn - offset);
+    }
 }

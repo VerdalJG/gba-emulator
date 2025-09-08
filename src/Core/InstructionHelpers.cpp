@@ -55,9 +55,9 @@ SingleDataSwap_Decoded SingleDataSwap_Decode(uint32_t instruction, GBA_CPU &cpu)
     return result;
 }
 
-HalfwordDataTransferRegister_Decoded HalfWordDataTransferRegister_Decode(uint32_t instruction, GBA_CPU &cpu)
+HalfwordDataTransfer_Decoded HalfwordDataTransfer_Decode(uint32_t instruction, GBA_CPU &cpu)
 {
-    HalfwordDataTransferRegister_Decoded result;
+    HalfwordDataTransfer_Decoded result;
 
     result.pFlag = (instruction >> 24) & 1;
     result.uFlag = (instruction >> 23) & 1;
@@ -66,32 +66,13 @@ HalfwordDataTransferRegister_Decoded HalfWordDataTransferRegister_Decode(uint32_
 
     result.rnIndex = (instruction >> 16) & 0xF;
     result.rdIndex = (instruction >> 12) & 0xF;
-    result.rmIndex = instruction & 0xF;
 
     result.sFlag = (instruction >> 6) & 1;
     result.hFlag = (instruction >> 5) & 1;
 
     return result;
 }
-HalfwordDataTransferImmediate_Decoded HalfWordDataTransferImmediate_Decode(uint32_t instruction, GBA_CPU &cpu)
-{
-    HalfwordDataTransferImmediate_Decoded result;
 
-    result.pFlag = (instruction >> 24) & 1;
-    result.uFlag = (instruction >> 23) & 1;
-    result.wFlag = (instruction >> 21) & 1;
-    result.lFlag = (instruction >> 20) & 1;
-
-    result.rnIndex = (instruction >> 16) & 0xF;
-    result.rdIndex = (instruction >> 12) & 0xF;
-    result.offsetHigh = (instruction >> 8) & 0xF;
-    result.offsetLow = instruction & 0xF;
-
-    result.sFlag = (instruction >> 6) & 1;
-    result.hFlag = (instruction >> 5) & 1;
-
-    return result;
-}
 Operand2Result ExtractOperand2(uint32_t instruction, GBA_CPU &cpu)
 {
     uint16_t operand2 = instruction & OPERAND2_MASK;
@@ -173,6 +154,26 @@ Operand2Result ShiftByImmediate(uint16_t operand2, ShiftType shiftType, GBA_CPU 
         assert(false && "Invalid ShiftType"); // Unreachable case
         return {}; // return a default-constructed Operand2Result
     }
+}
+
+uint32_t ZeroExtendTo32(uint8_t value)
+{
+    return static_cast<uint32_t>(value);
+}
+
+uint32_t ZeroExtendTo32(uint16_t value)
+{
+    return static_cast<uint32_t>(value);
+}
+
+int32_t SignExtendTo32(uint8_t value)
+{
+    return static_cast<int32_t>(static_cast<int8_t>(value));
+}
+
+int32_t SignExtendTo32(uint16_t value)
+{
+    return static_cast<int32_t>(static_cast<int16_t>(value));
 }
 
 DataProcessingOpcode GetDataProcessingOpcode(uint32_t instruction)

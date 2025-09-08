@@ -207,10 +207,17 @@ protected:
 
     void SingleDataSwap(uint32_t instruction);
     void BranchAndExchange(uint32_t instruction);
-    void HalfwordDataTransferRegister(uint32_t instruction);
-    void HalfwordDataTransferImmediate(uint32_t instruction);
-
-    void LoadUnsignedHalfword(uint32_t instruction);
+    void HalfwordDataTransfer(uint32_t instruction);
+    // HDT is HalfwordDataTransfer
+    inline uint32_t GetHDTOffset_Immediate(uint32_t instruction)
+    {
+        return ((instruction >> 4) & 0xF0) | (instruction & 0xF);
+    }
+    // HDT is HalfwordDataTransfer
+    inline uint32_t GetHDTOffset_Register(uint32_t instruction)
+    {
+        return registers[(instruction & 0xF)];
+    }
     
 
     // ==============================================================================================

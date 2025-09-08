@@ -38,17 +38,7 @@ GBA_CPU::InstructionFunction GBA_CPU::DecodePattern00(uint32_t instruction)
             return &SingleDataSwap;
         }
  
-        bool bit22 = (instruction >> 22) & 1;
-        bool hdtLowerBits = ((instruction >> 8) & 0xF) == 0x0;
-        if (!bit22 && hdtLowerBits)
-        {
-            return &HalfwordDataTransferRegister;
-        }
-
-        if (bit22)
-        {
-            return &HalfwordDataTransferImmediate;
-        }
+        return &HalfwordDataTransfer;
     }
 
     // Can only be BX and Data Processing with Shifted Register at this point

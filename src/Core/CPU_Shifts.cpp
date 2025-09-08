@@ -113,7 +113,7 @@ Operand2Result Operand2_RotateRight(uint32_t value, uint32_t rotation, bool isIm
 
 uint32_t RotateRight(uint32_t value, uint32_t rotation)
 {
-    rotation %= 32;
+    rotation %= 32; // Max rotation is 32 anyways
     return (value >> rotation) | (value << (32 - rotation));
 }
 

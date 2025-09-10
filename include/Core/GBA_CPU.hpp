@@ -8,13 +8,13 @@
 
 enum class OperatingMode
 {
-    User,
-    System,
-    Supervisor,
-    Abort,
-    Undefined,
-    Interrupt,
-    FastInterrupt
+    User = 0b10000,
+    FIQ = 0b10001, // Fast Interrupt
+    IRQ = 0b10010, // Interrupt
+    Supervisor = 0b10011,
+    Abort = 0b10111,
+    Undefined = 0b11011,
+    System = 0b11111
 };
 
 // Emulates the ARM7TDMI
@@ -39,18 +39,19 @@ public:
 
     inline uint32_t GetSPSR() { return spsr; }
     inline bool IsThumbMode() { return (cpsr >> 5) & 1; }
+    inline OperatingMode GetCurrentOperatingMode() { return static_cast<OperatingMode>(cpsr & 0x1F); }
 
 protected:
     std::array<uint32_t, 16> registers{}; // R0 - R14 contain data, R15 contains address of next instruction (PC)
     uint32_t cpsr = 0;                    // Current Program Status Register
     uint32_t spsr = 0;                    // Saved Program Status Register
+    uint32_t linkRegister_undefined = 0;
+    uint32_t spsr_undefined = 0;
     OperatingMode opMode;                 // Operating mode flag
 
     uint32_t ReadProgramCounter(bool isPartOfInstruction); // Result is different if we are reading PC as a fetch or part of an instruction
 
     InstructionFunction DecodeARMInstruction(uint32_t instruction);
-
-
     bool InstructionConditionCheck(uint8_t conditionByte);
     inline uint8_t GetConditionBits(uint32_t instruction) // Only ARM mode uses condition bits
     {
@@ -218,7 +219,13 @@ protected:
     {
         return registers[(instruction & 0xF)];
     }
-    
+    uint32_t CalculateAddressMode2(SingleDataTransfer_Decoded decodedValues);
+
+    // ==============================================================================================
+    // ======================================== PATTERN 01 ==========================================
+
+    void UndefinedInstruction(uint32_t instruction);
+    void SingleDataTransfer(uint32_t instruction);
 
     // ==============================================================================================
     

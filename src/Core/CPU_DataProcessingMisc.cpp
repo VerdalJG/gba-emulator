@@ -3,7 +3,7 @@
 
 void GBA_CPU::Multiply(uint32_t instruction)
 {
-    Multiply_Decoded values = Multiply_Decode(instruction, *this);
+    Multiply_Decoded values = Multiply_Decode(instruction);
 
     uint32_t& rm = registers[values.rmIndex];
     uint32_t& rs = registers[values.rsIndex];
@@ -37,7 +37,7 @@ void GBA_CPU::Multiply(uint32_t instruction)
 
 void GBA_CPU::MultiplyLong(uint32_t instruction)
 {
-    MultiplyLong_Decoded values = MultiplyLong_Decode(instruction, *this);
+    MultiplyLong_Decoded values = MultiplyLong_Decode(instruction);
 
     uint32_t& rdHi = registers[values.rdHiIndex];
     uint32_t& rdLo = registers[values.rdLoIndex];
@@ -122,7 +122,7 @@ void GBA_CPU::UMLAL(uint32_t &rdLo, uint32_t &rdHi, uint64_t& product)
 // Swap (SWP) or SwapByte (SWPB)
 void GBA_CPU::SingleDataSwap(uint32_t instruction) 
 {
-    SingleDataSwap_Decoded values = SingleDataSwap_Decode(instruction, *this);
+    SingleDataSwap_Decoded values = SingleDataSwap_Decode(instruction);
     
     uint32_t& rn = registers[values.rnIndex];
     uint32_t& rm = registers[values.rmIndex];
@@ -173,96 +173,3 @@ void GBA_CPU::BranchAndExchange(uint32_t instruction)
 
 }
 
-
-void GBA_CPU::HalfwordDataTransfer(uint32_t instruction)
-{
-    HalfwordDataTransfer_Decoded values = HalfwordDataTransfer_Decode(instruction, *this);
-    uint32_t& rn = registers[values.rnIndex];
-    uint32_t& rd = registers[values.rdIndex];
-
-    bool isImmediate = values.iFlag;
-    bool isLoadInstruction = values.lFlag;
-    bool isSigned = values.sFlag;
-    bool isHalfword = values.hFlag;
-
-    if (!isSigned && !isHalfword) return; // This is another instruction - Mult or Single Data Swap
-
-    // POSSIBLE:
-    // LOADS: LDRH LDRSB LDRSH
-    // STORES: STRH
-
-    uint32_t effectiveAddress;
-    uint32_t offset = isImmediate ? GetHDTOffset_Immediate(instruction) : GetHDTOffset_Register(instruction);
-
-    if (values.pFlag) // P = 1
-    {
-        effectiveAddress = values.uFlag ? rn + offset : rn - offset;
-        if (values.wFlag)
-        {
-            // Pre-indexed with write-back: Rn = EA
-            rn = effectiveAddress;
-
-            if (values.lFlag && (values.rdIndex == values.rnIndex)) return; // UNPREDICTABLE
-        }
-    }
-    else // P = 0
-    {
-        if (values.wFlag) return; // UNPREDICTABLE
-
-        effectiveAddress = rn;
-        // Post-index update happens AFTER transfer
-    }
-
-    // GBA SPECIFIC LOADING: IF INSTRUCTION IS MISALIGNED FOR HALFWORDS,
-    // IT ROTATES THE LOADED HALFWORD 8 BITS TO THE RIGHT
-
-    if (isLoadInstruction)
-    {
-        if (!isHalfword)
-        {
-            // LDRSB
-            uint8_t loadedByte = memorySystem.Read8(effectiveAddress);
-            rd = SignExtendTo32(loadedByte);
-        }
-        else if (!isSigned)
-        {
-            // LDRH
-            bool misaligned = effectiveAddress & 1;
-            uint16_t loadedHalfword = memorySystem.Read16(effectiveAddress);
-            if (misaligned)
-            {
-                loadedHalfword = RotateRight(loadedHalfword, 8);
-            }
-            rd = ZeroExtendTo32(loadedHalfword);
-        }
-        else
-        {
-            // LDRSH
-            bool misaligned = effectiveAddress & 1;
-            uint16_t loadedHalfword = memorySystem.Read16(effectiveAddress);
-            if (misaligned)
-            {
-                loadedHalfword = RotateRight(loadedHalfword, 8);
-            }
-            rd = SignExtendTo32(loadedHalfword);
-        }
-    }
-    else
-    {
-        if (isSigned) return; // UNPREDICTABLE
-
-        // STRH
-
-        // GBA SPECIFIC: NORMALLY YOU WOULD ABORT THE INSTRUCTION IF IT IS NOT ALIGNED
-        // INSTEAD, THE GBA JUST PROCEEDS AND DOES THE STORE INSTRUCTION WITH THE UNALIGNED ADDRESS
-        uint16_t valueToStore = static_cast<uint16_t>(rd);
-        memorySystem.Write8(effectiveAddress, valueToStore & 0xFF); // Lowest 8 bits
-        memorySystem.Write8(effectiveAddress + 1, valueToStore >> 8); // Shift higher bits
-    }
-
-    // Only post-index case updates here
-    if (!values.pFlag) 
-    {
-        rn = values.uFlag ? (rn + offset) : (rn - offset);
-    }
-}

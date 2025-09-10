@@ -68,11 +68,20 @@ struct HalfwordDataTransfer_Decoded
     bool sFlag, hFlag;
 };
 
+struct SingleDataTransfer_Decoded
+{
+    uint8_t rnIndex, rdIndex;
+    bool pFlag, uFlag, iFlag, wFlag;
+    bool lFlag, bFlag;
+    uint16_t offsetBits;
+};
+
+
 
 DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu);
-Multiply_Decoded Multiply_Decode(uint32_t instruction, GBA_CPU& cpu);
-MultiplyLong_Decoded MultiplyLong_Decode(uint32_t instruction, GBA_CPU& cpu);
-SingleDataSwap_Decoded SingleDataSwap_Decode(uint32_t instruction, GBA_CPU& cpu);
+Multiply_Decoded Multiply_Decode(uint32_t instruction);
+MultiplyLong_Decoded MultiplyLong_Decode(uint32_t instruction);
+SingleDataSwap_Decoded SingleDataSwap_Decode(uint32_t instruction);
 /* Flag Definitions for HalfwordDataTransfer:
 
 BIT 24 - Pre/Post indexing (P)
@@ -101,7 +110,9 @@ S - Signed (S == 1) vs unsigned (S == 0) halfword access
 BIT 5
 H - Halfword (H == 1) vs byte (H == 0) access
 */
-HalfwordDataTransfer_Decoded HalfwordDataTransfer_Decode(uint32_t instruction, GBA_CPU& cpu);
+HalfwordDataTransfer_Decoded HalfwordDataTransfer_Decode(uint32_t instruction);
+// NOTE: I FLAG == 0 MEANS IMMEDIATE OFFSET
+SingleDataTransfer_Decoded SingleDataTransfer_Decode(uint32_t instruction);
 
 
 

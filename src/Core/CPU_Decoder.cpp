@@ -55,7 +55,14 @@ GBA_CPU::InstructionFunction GBA_CPU::DecodePattern00(uint32_t instruction)
 
 GBA_CPU::InstructionFunction GBA_CPU::DecodePattern01(uint32_t instruction)
 {
-    return InstructionFunction();
+    if ((instruction >> 4) & 1)
+    {
+        return &UndefinedInstruction;
+    }
+    else 
+    {
+        return &SingleDataTransfer;
+    }
 }
 
 GBA_CPU::InstructionFunction GBA_CPU::DecodePattern10(uint32_t instruction)
@@ -68,6 +75,4 @@ GBA_CPU::InstructionFunction GBA_CPU::DecodePattern11(uint32_t instruction)
     return InstructionFunction();
 }
 
-void GBA_CPU::HandleUndefinedBehavior(uint32_t instruction)
-{
-}
+

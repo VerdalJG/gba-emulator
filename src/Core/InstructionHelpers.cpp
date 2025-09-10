@@ -2,6 +2,7 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/CPU_Shifts.hpp"
 #include <assert.h>
+#include "InstructionHelpers.hpp"
 
 DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu)
 {
@@ -15,7 +16,7 @@ DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu)
     return result;
 }
 
-Multiply_Decoded Multiply_Decode(uint32_t instruction, GBA_CPU &cpu)
+Multiply_Decoded Multiply_Decode(uint32_t instruction)
 {
     Multiply_Decoded result;
 
@@ -28,7 +29,7 @@ Multiply_Decoded Multiply_Decode(uint32_t instruction, GBA_CPU &cpu)
     return result;
 }
 
-MultiplyLong_Decoded MultiplyLong_Decode(uint32_t instruction, GBA_CPU &cpu)
+MultiplyLong_Decoded MultiplyLong_Decode(uint32_t instruction)
 {
     MultiplyLong_Decoded result;
 
@@ -43,7 +44,7 @@ MultiplyLong_Decoded MultiplyLong_Decode(uint32_t instruction, GBA_CPU &cpu)
     return result;
 }
 
-SingleDataSwap_Decoded SingleDataSwap_Decode(uint32_t instruction, GBA_CPU &cpu)
+SingleDataSwap_Decoded SingleDataSwap_Decode(uint32_t instruction)
 {
     SingleDataSwap_Decoded result;
 
@@ -55,7 +56,7 @@ SingleDataSwap_Decoded SingleDataSwap_Decode(uint32_t instruction, GBA_CPU &cpu)
     return result;
 }
 
-HalfwordDataTransfer_Decoded HalfwordDataTransfer_Decode(uint32_t instruction, GBA_CPU &cpu)
+HalfwordDataTransfer_Decoded HalfwordDataTransfer_Decode(uint32_t instruction)
 {
     HalfwordDataTransfer_Decoded result;
 
@@ -72,6 +73,25 @@ HalfwordDataTransfer_Decoded HalfwordDataTransfer_Decode(uint32_t instruction, G
 
     return result;
 }
+
+SingleDataTransfer_Decoded SingleDataTransfer_Decode(uint32_t instruction, const GBA_CPU& cpu)
+{
+    SingleDataTransfer_Decoded result;
+
+    result.iFlag = (instruction >> 25) & 1;
+    result.pFlag = (instruction >> 24) & 1;
+    result.uFlag = (instruction >> 23) & 1;
+    result.bFlag = (instruction >> 22) & 1;
+    result.wFlag = (instruction >> 21) & 1;
+    result.lFlag = (instruction >> 20) & 1;
+
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.rdIndex = (instruction >> 12) & 0xF;
+    result.offsetBits = instruction & 0xFFF;
+
+    return result;
+}
+
 
 Operand2Result ExtractOperand2(uint32_t instruction, GBA_CPU &cpu)
 {

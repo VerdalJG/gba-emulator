@@ -55,7 +55,7 @@ TEST_F(ShiftTests, LSRCases)
 
     for (auto& tc : lsrCases) 
     {
-        RunCase(tc, cpu, &LogicalRight);
+        RunCase(tc, cpu, &Op2_LogicalRight);
     }
 }
 
@@ -75,7 +75,7 @@ TEST_F(ShiftTests, ASRCases)
 
     for (auto& tc : asrCases) 
     {
-        RunCase(tc, cpu, &ArithmeticRight);
+        RunCase(tc, cpu, &Op2_ArithmeticRight);
     }
 }
 

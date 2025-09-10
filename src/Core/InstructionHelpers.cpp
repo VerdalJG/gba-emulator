@@ -2,7 +2,6 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/CPU_Shifts.hpp"
 #include <assert.h>
-#include "InstructionHelpers.hpp"
 
 DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu)
 {
@@ -104,7 +103,7 @@ Operand2Result ExtractOperand2(uint32_t instruction, GBA_CPU &cpu)
         uint32_t immRot = ((operand2 >> 8) & 0xF) * 2;
 
         // Perform Rotation
-        return Operand2_RotateRight(imm8, immRot, isImmediate, cpu);
+        return Op2_RotateRight(imm8, immRot, isImmediate, cpu);
     }
     else // Shifted value
     {
@@ -136,13 +135,13 @@ Operand2Result ShiftByRegister(uint16_t operand2, ShiftType shiftType, GBA_CPU &
         return LogicalLeft(rmValue, rsValue, cpu);
 
         case ShiftType::LSR:
-        return LogicalRight(rmValue, rsValue, false, cpu);
+        return Op2_LogicalRight(rmValue, rsValue, false, cpu);
 
         case ShiftType::ASR:
-        return ArithmeticRight(rmValue, rsValue, false, cpu);
+        return Op2_ArithmeticRight(rmValue, rsValue, false, cpu);
         
         case ShiftType::ROR:
-        return Operand2_RotateRight(rmValue, rsValue, false, cpu);
+        return Op2_RotateRight(rmValue, rsValue, false, cpu);
 
         default:
         assert(false && "Invalid ShiftType"); // Unreachable case
@@ -162,13 +161,13 @@ Operand2Result ShiftByImmediate(uint16_t operand2, ShiftType shiftType, GBA_CPU 
         return LogicalLeft(rmValue, shiftImm, cpu);
 
         case ShiftType::LSR:
-        return LogicalRight(rmValue, shiftImm, true, cpu);
+        return Op2_LogicalRight(rmValue, shiftImm, true, cpu);
 
         case ShiftType::ASR:
-        return ArithmeticRight(rmValue, shiftImm, true, cpu);
+        return Op2_ArithmeticRight(rmValue, shiftImm, true, cpu);
         
         case ShiftType::ROR: // RRX handled inside ROR
-        return Operand2_RotateRight(rmValue, shiftImm, true, cpu);
+        return Op2_RotateRight(rmValue, shiftImm, true, cpu);
 
         default:
         assert(false && "Invalid ShiftType"); // Unreachable case

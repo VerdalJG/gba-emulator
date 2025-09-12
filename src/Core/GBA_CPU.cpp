@@ -86,7 +86,7 @@ uint32_t GBA_CPU::GetValueAtRegister(int registerIndex)
     }
 }
 
-uint32_t GBA_CPU::ReadProgramCounter(bool isPartOfInstruction)
+uint32_t GBA_CPU:: ReadProgramCounter(bool isPartOfInstruction)
 {
     // Pipeline offset: if we are reading the PC as part of the behavior of an instruction, 
     // we must simulate the offset that occurs because the actual PC is 2 instructions ahead.

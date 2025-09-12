@@ -166,3 +166,5 @@ uint32_t ZeroExtendTo32(uint16_t value);
 
 int32_t SignExtendTo32(uint8_t value);
 int32_t SignExtendTo32(uint16_t value);
+
+uint32_t CalculateScaledRegister(uint32_t rm, ShiftType shift, uint32_t shiftImm);

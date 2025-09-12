@@ -18,10 +18,10 @@ uint32_t ArithmeticRight(uint32_t value, uint32_t shiftImm);
 
 // ROR
 Operand2Result Op2_RotateRight(uint32_t value, uint32_t rotation, bool isImmediate, GBA_CPU& cpu);
-uint32_t RotateRight(uint32_t value, uint32_t rotation);
+uint32_t RotateRight(uint32_t value, uint32_t rotation, GBA_CPU& cpu);
 
 //RRX
-Operand2Result RotateRightExtendCarry(uint32_t value, GBA_CPU& cpu);
+Operand2Result Op2_RotateRightExtendCarry(uint32_t value, GBA_CPU& cpu);
+uint32_t RotateRightExtendCarry(uint32_t value, GBA_CPU& cpu);
 
-uint32_t CalculateScaledRegister(uint32_t rm, ShiftType shift, uint32_t shiftImm);
 

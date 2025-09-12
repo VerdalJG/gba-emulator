@@ -199,3 +199,21 @@ DataProcessingOpcode GetDataProcessingOpcode(uint32_t instruction)
 {
     return static_cast<DataProcessingOpcode>((instruction >> OPCODE_SHIFT) & OPCODE_MASK);
 }
+
+uint32_t CalculateScaledRegister(uint32_t rm, ShiftType shift, uint32_t shiftImm)
+{
+    switch(shift)
+    {
+        case ShiftType::LSL:
+        return LogicalLeft(rm, shiftImm);
+
+        case ShiftType::LSR:
+        return LogicalRight(rm, shiftImm);
+
+        case ShiftType::ASR:
+        return ArithmeticRight(rm, shiftImm);
+
+        case ShiftType::ROR:
+        return RotateRight(rm, shiftImm);
+    }
+}

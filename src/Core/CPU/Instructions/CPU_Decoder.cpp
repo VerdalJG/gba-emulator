@@ -1,16 +1,16 @@
-#include "Core/InstructionHelpers.hpp"
-#include "Core/GBA_CPU.hpp"
-#include "Core/CPU_Shifts.hpp"
+#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/CPU/Instructions/CPU_Shifts.hpp"
+#include "Core/CPU/Instructions/InstructionHelpers.hpp"
+#include "Core/CPU/Instructions/CPU_DataProcessing.hpp"
 
-GBA_CPU::InstructionFunction GBA_CPU::DecodePattern00(uint32_t instruction)
+InstructionFunction DecodePattern00(uint32_t instruction, GBA_CPU& cpu)
 {
     bool bit25 = (instruction >> 25) & 1;
 
-    // Data processing with 32-bit immediate value
+    // Data processing
     if (bit25)
     {
-        DataProcessingOpcode opcode = GetDataProcessingOpcode(instruction);
-        return dataProcessingFuncTable[static_cast<int>(opcode)];
+        return &DataProcessing;
     }
 
     bool bit4 = (instruction >> 4) & 1;
@@ -48,12 +48,11 @@ GBA_CPU::InstructionFunction GBA_CPU::DecodePattern00(uint32_t instruction)
         return &BranchAndExchange;
     }
 
-    // Data processing with shift (immediate or register)
-    DataProcessingOpcode opcode = GetDataProcessingOpcode(instruction);
-    return dataProcessingFuncTable[static_cast<int>(opcode)];
+    // Fallback to data processing
+    return &DataProcessing;
 }
 
-GBA_CPU::InstructionFunction GBA_CPU::DecodePattern01(uint32_t instruction)
+InstructionFunction DecodePattern01(uint32_t instruction, GBA_CPU& cpu)
 {
     if ((instruction >> 4) & 1)
     {
@@ -65,12 +64,12 @@ GBA_CPU::InstructionFunction GBA_CPU::DecodePattern01(uint32_t instruction)
     }
 }
 
-GBA_CPU::InstructionFunction GBA_CPU::DecodePattern10(uint32_t instruction)
+InstructionFunction DecodePattern10(uint32_t instruction, GBA_CPU& cpu)
 {
     return InstructionFunction();
 }
 
-GBA_CPU::InstructionFunction GBA_CPU::DecodePattern11(uint32_t instruction)
+InstructionFunction DecodePattern11(uint32_t instruction, GBA_CPU& cpu)
 {
     return InstructionFunction();
 }

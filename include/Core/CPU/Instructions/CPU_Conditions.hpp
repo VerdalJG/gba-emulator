@@ -1,9 +1,12 @@
 #pragma once
+#include <cstdint>
+
+class GBA_CPU;
 
 // These are in order, from 0-14, Condition #15 is undefined behavior
-enum class InstructionCondition
+enum class Condition
 {
-  //Suffix          Description                     Condition
+    //Suffix        Description                     Condition
     EQ,             // Equal                        - Z set
     NE,             // Not Equal                    - Z clear
     CS,             // Unsigned higher, or same     - C set
@@ -18,6 +21,14 @@ enum class InstructionCondition
     LT,             // Less than                    - N <> V (N not equal to V)
     GT,             // Greater than                 - Z clear, N = V
     LE,             // Less than, or equal          - Z set, N <> V
-    AL              // Always                       - No condition
+    AL,             // Always                       - No condition
+    UD              // Undefined                    - Undefined
 };
+
+inline Condition GetConditionType(uint32_t instruction)
+{
+    return static_cast<Condition>(instruction >> 28);
+}
+
+bool ConditionPassed(Condition condition, GBA_CPU &cpu);
 

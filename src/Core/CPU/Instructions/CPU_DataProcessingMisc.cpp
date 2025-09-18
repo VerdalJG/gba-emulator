@@ -1,48 +1,52 @@
-#include "Core/GBA_CPU.hpp"
-#include "Core/CPU_Shifts.hpp"
+#include "Core/CPU/Instructions/CPU_DataProcessingMisc.hpp"
+#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/CPU/CPU_Memory.hpp"
+#include "Core/CPU/CPU_CPSR.hpp"
+#include "Core/CPU/Instructions/CPU_Shifts.hpp"
 
-void GBA_CPU::Multiply(uint32_t instruction)
+void Multiply(uint32_t instruction, GBA_CPU& cpu)
 {
     Multiply_Decoded values = Multiply_Decode(instruction);
 
-    uint32_t& rm = registers[values.rmIndex];
-    uint32_t& rs = registers[values.rsIndex];
-    uint32_t& rn = registers[values.rnIndex];
-    uint32_t& rd = registers[values.rdIndex];
+    uint32_t rm = cpu.GetValueAtRegister(values.rmIndex);
+    uint32_t rs = cpu.GetValueAtRegister(values.rsIndex);
+    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
+    uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
     
     // Check for Unpredictable conditions
     bool usingPC = values.rmIndex == 15 || values.rsIndex == 15 || values.rdIndex == 15 || values.rnIndex == 15;
-    bool allDistinct = values.rdIndex != values.rmIndex;
+    bool rdrmDistinct = values.rdIndex != values.rmIndex;
 
-    if (usingPC || !allDistinct) return; // UNPREDICTABLE
+    if (usingPC || !rdrmDistinct) return; // UNPREDICTABLE
 
     // MUL and MLA
-    rd = values.accumulateFlag ? (rm * rs + rn) : (rm * rs);
+    uint32_t result = values.accumulateFlag ? (rm * rs + rn) : (rm * rs);
+    cpu.SetValueAtRegister(values.rdIndex, result);
 
-    uint32_t cpsrFlags = 0;
+    // CPSR update
+    if (!values.setCPSRFlag) return;
 
-    // N flag
-    cpsrFlags |= (rd & 0x80000000);
+    uint32_t N = CPSR_IsNegative(result);
+    uint32_t Z = CPSR_IsZero(result);
 
-    // Z flag
-    cpsrFlags |= ((rd == 0) << 30);
+    // Combine flags
+    uint32_t flags = N | Z;
 
     // Update cpsr
-    cpsr = (cpsr & 0x3FFFFFFF) | cpsrFlags; // Preserve C and V flag by masking
+    cpu.UpdateCPSR(flags, 0xC0000000);
     
     // C flag is technically unpredictable after a MULS in versions below ARM5
     // MUL truncates to lower 32 bits, so the result is the same for signed and unsigned numbers
-
 }
 
-void GBA_CPU::MultiplyLong(uint32_t instruction)
+void MultiplyLong(uint32_t instruction, GBA_CPU& cpu)
 {
     MultiplyLong_Decoded values = MultiplyLong_Decode(instruction);
 
-    uint32_t& rdHi = registers[values.rdHiIndex];
-    uint32_t& rdLo = registers[values.rdLoIndex];
-    uint32_t& rm = registers[values.rmIndex];
-    uint32_t& rs = registers[values.rsIndex];
+    uint32_t rdHi = cpu.GetValueAtRegister(values.rdHiIndex);
+    uint32_t rdLo = cpu.GetValueAtRegister(values.rdLoIndex);
+    uint32_t rm = cpu.GetValueAtRegister(values.rmIndex);
+    uint32_t rs = cpu.GetValueAtRegister(values.rsIndex);
 
     // Check for Unpredictable conditions
     bool usingPC = values.rmIndex == 15 || values.rdHiIndex == 15 || values.rdLoIndex == 15 || values.rsIndex == 15;
@@ -50,7 +54,7 @@ void GBA_CPU::MultiplyLong(uint32_t instruction)
                         values.rmIndex != values.rdLoIndex &&
                         values.rdHiIndex != values.rdLoIndex;
 
-    if (usingPC || !allDistinct) return; // UNPREDICTABLE - Cannot use R15 or registers must be distinct
+    if (usingPC || !allDistinct) return; // UNPREDICTABLE - Cannot use R15 nor use the same registers for any
 
     if (values.signedFlag)
     {
@@ -79,40 +83,41 @@ void GBA_CPU::MultiplyLong(uint32_t instruction)
         }
     }
 
-    if (!values.setCpsrFlag) return;
+    cpu.SetValueAtRegister(values.rdHiIndex, rdHi);
+    cpu.SetValueAtRegister(values.rdLoIndex, rdLo);
+
+    if (!values.setCPSRFlag) return;
     
-    uint32_t cpsrFlags = 0;
+    uint32_t N = CPSR_IsNegative(rdHi);
+    uint32_t Z = CPSR_IsZero(rdHi) && CPSR_IsZero(rdLo);
 
-    // N flag
-    cpsrFlags |= (rdHi & 0x80000000);
-
-    // Z flag
-    cpsrFlags |= ((rdHi == 0 && rdLo == 0) << 30);
+    // Combine flags
+    uint32_t flags = N | Z;
 
     // Update cpsr
-    cpsr = (cpsr & 0x3FFFFFFF) | cpsrFlags; // Preserve C and V flag by masking
+    cpu.UpdateCPSR(flags, 0xC0000000);  // Preserve C and V flags
 }
 
-void GBA_CPU::SMULL(uint32_t &rdLo, uint32_t &rdHi, int64_t& product)
+void SMULL(uint32_t &rdLo, uint32_t &rdHi, int64_t& product)
 {
     rdLo = static_cast<uint32_t>(product);
     rdHi = static_cast<uint32_t>(product >> 32);
 }
 
-void GBA_CPU::SMLAL(uint32_t &rdLo, uint32_t &rdHi, int64_t& product)
+void SMLAL(uint32_t &rdLo, uint32_t &rdHi, int64_t& product)
 {
     uint64_t lowSum = (product & 0xFFFFFFFF) + static_cast<uint64_t>(rdLo);
     rdLo = static_cast<uint32_t>(lowSum);
     rdHi += static_cast<uint32_t>(product >> 32) + CarryFrom(lowSum);
 }
 
-void GBA_CPU::UMULL(uint32_t &rdLo, uint32_t &rdHi, uint64_t& product)
+void UMULL(uint32_t &rdLo, uint32_t &rdHi, uint64_t& product)
 {
     rdLo = static_cast<uint32_t>(product);
     rdHi = static_cast<uint32_t>(product >> 32);
 }
 
-void GBA_CPU::UMLAL(uint32_t &rdLo, uint32_t &rdHi, uint64_t& product)
+void UMLAL(uint32_t &rdLo, uint32_t &rdHi, uint64_t& product)
 {
     uint64_t lowSum = (product & 0xFFFFFFFF) + static_cast<uint64_t>(rdLo);
     rdLo = static_cast<uint32_t>(lowSum);
@@ -120,13 +125,15 @@ void GBA_CPU::UMLAL(uint32_t &rdLo, uint32_t &rdHi, uint64_t& product)
 }
 
 // Swap (SWP) or SwapByte (SWPB)
-void GBA_CPU::SingleDataSwap(uint32_t instruction) 
+void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu) 
 {
     SingleDataSwap_Decoded values = SingleDataSwap_Decode(instruction);
     
-    uint32_t& rn = registers[values.rnIndex];
-    uint32_t& rm = registers[values.rmIndex];
-    uint32_t& rd = registers[values.rdIndex];
+    GBA_Memory& memory = cpu.GetMemorySystem();
+
+    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
+    uint32_t rm = cpu.GetValueAtRegister(values.rmIndex);
+    uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
 
     // Check for UNPREDICTABLE conditions
     bool usingPC = values.rnIndex == 15 || values.rmIndex == 15 || values.rdIndex == 15;
@@ -136,40 +143,35 @@ void GBA_CPU::SingleDataSwap(uint32_t instruction)
 
     if (usingPC || !allDistinct) return; // UNPREDICTABLE
 
+    uint32_t temp;
 
     if (values.bFlag) // SWPB
     {
-        uint32_t temp = memorySystem.Read8(rn);
- 
+        temp = memory.Read8(rn);
         uint8_t byteToWrite = rm & 0xFF;
-        memorySystem.Write8(rn, byteToWrite);
-        rd = temp;
+        memory.Write8(rn, byteToWrite);
     }
     else // SWP
     {
-        uint32_t rotatedBytes = (rn & 3);
-        uint32_t rotatedBits = rotatedBytes * 8;
-
-        uint32_t temp = RotateRight(memorySystem.Read32(rn), rotatedBits); // Normally rotate right is only used for unaligned addresses
-        memorySystem.Write32(rn, rm);
-        rd = temp; 
+        uint32_t rotatedBytes = (rn & 0b11);
+        uint32_t rotatedBits = rotatedBytes * 8; // Rotate by byte size
+        temp = RotateRight(memory.Read32(rn), rotatedBits); // Normally rotate right is only used for unaligned addresses
+        memory.Write32(rn, rm); 
     }
+    cpu.SetValueAtRegister(values.rdIndex, temp); 
 }
 
 // NOTE: Should only change thumb mode flag via this function, changing it directly is UNPREDICTABLE
-void GBA_CPU::BranchAndExchange(uint32_t instruction)
+void BranchAndExchange(uint32_t instruction, GBA_CPU& cpu)
 {
     uint32_t rmIndex = instruction & 0xF;
-    uint32_t rm = registers[rmIndex];
+    uint32_t rm = cpu.GetValueAtRegister(rmIndex);
     
     // Check for UNPREDICTABLE: branch to half-word misaligned in ARM state
     if ((rm & 3) == 0b10) return;
 
     // Switch to arm/thumb if needed
-    cpsr &= ~(1 << 5);// Flush bit 5 on cpsr (thumb mode flag)
-    cpsr |= ((rm & 1) << 5); // ARM = 0, Thumb = 1
-
-    registers[15] = rm & (0xFFFFFFFE); // Branch to the address held 
-
+    cpu.UpdateCPSR((rm & 1) << 5, 0x10); // Update bit 5, ARM = 0, Thumb = 1
+    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, rm & 0xFFFFFFFE); // Branch to the address held
 }
 

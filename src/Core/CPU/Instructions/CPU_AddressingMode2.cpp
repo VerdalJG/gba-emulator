@@ -1,5 +1,5 @@
-#include "Core/GBA_CPU.hpp"
-#include "Core/CPU_Shifts.hpp"
+#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/CPU/Instructions/CPU_Shifts.hpp"
 
 uint32_t GBA_CPU::CalculateAddressMode2(SingleDataTransfer_Decoded decodedValues)
 {
@@ -25,7 +25,7 @@ uint32_t GBA_CPU::CalculateAddressMode2(SingleDataTransfer_Decoded decodedValues
 
         if (isScaledRegister)
         {
-            ShiftType shiftType = static_cast<ShiftType>(decodedValues.offsetBits >> 5) & 3;
+            ShiftType shiftType = static_cast<ShiftType>((decodedValues.offsetBits >> 5) & 3);
             uint32_t shiftImm = (decodedValues.offsetBits >> 7) & 0x1F;
             uint32_t offset = CalculateScaledRegister(rm, shiftType, shiftImm);
             address = addOffset ? rn + offset : rn - offset;

@@ -1,16 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <utility>
-
-constexpr uint32_t COND_BITS = 0xF0000000; // Bits 31-28
-constexpr uint32_t OPCODE_BITS = 0x1E00000; // Bits 24-21
-
-constexpr int DATA_PROCESSING_SET_CPSR_FLAGS_SHIFT = 20;
-
-constexpr uint32_t OPERAND2_MASK = 0xFFF;
-
-constexpr uint32_t OPCODE_MASK = 0xF;
-constexpr int OPCODE_SHIFT = 21;
+#include "Core/CPU/Instructions/CPU_Conditions.hpp"
 
 constexpr uint32_t INSTRUCTION_TYPE_MASK = 0b11;
 constexpr int INSTRUCTION_TYPE_SHIFT = 26;
@@ -22,47 +13,47 @@ constexpr int CONDITION_SHIFT = 28;
 
 class GBA_CPU;
 
-struct Operand2Result 
+using InstructionFunction = void (*)(uint32_t, GBA_CPU&); // Instruction Function Pointer alias
+
+struct ShifterOperand 
 {
     uint32_t value;
     uint32_t carryOut : 1; // Store only 1 bit of information
 };
 
-enum ShiftType
-{
-    LSL,
-    LSR,
-    ASR,
-    ROR
-};
-
 struct DataProcessing_Decoded
 {
+    Condition condition;
     uint8_t rnIndex, rdIndex;
-    Operand2Result op2;
-    bool setCpsrFlag; // Whether or not to set CPSR Flags
+    uint16_t shifterOperandBits;
+    DataProcessingOpcode opcode;
+    bool setCPSRFlag, immediateFlag;
 };
 
 struct Multiply_Decoded
 {
+    Condition condition;
     uint8_t rdIndex, rnIndex, rsIndex, rmIndex;
-    bool accumulateFlag, setCpsrFlag;
+    bool accumulateFlag, setCPSRFlag;
 };
 
 struct MultiplyLong_Decoded
 {
+    Condition condition;
     uint8_t rdHiIndex, rdLoIndex, rsIndex, rmIndex;
-    bool signedFlag, accumulateFlag, setCpsrFlag;
+    bool signedFlag, accumulateFlag, setCPSRFlag;
 };
 
 struct SingleDataSwap_Decoded
 {
+    Condition condition;
     uint8_t rnIndex, rdIndex, rmIndex;
     bool bFlag;
 };
 
 struct HalfwordDataTransfer_Decoded
 {
+    Condition condition;
     uint8_t rnIndex, rdIndex;
     bool pFlag, uFlag, iFlag, wFlag, lFlag;
     bool sFlag, hFlag;
@@ -70,6 +61,7 @@ struct HalfwordDataTransfer_Decoded
 
 struct SingleDataTransfer_Decoded
 {
+    Condition condition;
     uint8_t rnIndex, rdIndex;
     bool pFlag, uFlag, iFlag, wFlag;
     bool lFlag, bFlag;
@@ -78,7 +70,7 @@ struct SingleDataTransfer_Decoded
 
 
 
-DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction, GBA_CPU& cpu);
+DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction);
 Multiply_Decoded Multiply_Decode(uint32_t instruction);
 MultiplyLong_Decoded MultiplyLong_Decode(uint32_t instruction);
 SingleDataSwap_Decoded SingleDataSwap_Decode(uint32_t instruction);
@@ -115,8 +107,6 @@ HalfwordDataTransfer_Decoded HalfwordDataTransfer_Decode(uint32_t instruction);
 SingleDataTransfer_Decoded SingleDataTransfer_Decode(uint32_t instruction);
 
 
-
-
 enum class InstructionCategory 
 {
     DataProcessing,
@@ -145,16 +135,8 @@ enum InstructionPattern : uint8_t
     PATTERN_11, // Coprocessor or Software Interrupt
 };
 
-/// @brief Extracts the second operand for data processing
-/// @param instruction The current instruction being executed
-/// @param isImmediateValue Immediate value flag (bit 25)
-/// @return Operand2 (bits 11-0)
-Operand2Result ExtractOperand2(uint32_t instruction, GBA_CPU& cpu);
 
 DataProcessingOpcode GetDataProcessingOpcode(uint32_t instruction);
-
-Operand2Result ShiftByRegister(uint16_t operand2, ShiftType shiftType, GBA_CPU& cpu);
-Operand2Result ShiftByImmediate(uint16_t operand2, ShiftType shiftType,  GBA_CPU& cpu);
 
 inline bool CheckBits(uint32_t instruction, uint32_t shift, uint32_t mask, uint32_t expected)
 {
@@ -168,3 +150,8 @@ int32_t SignExtendTo32(uint8_t value);
 int32_t SignExtendTo32(uint16_t value);
 
 uint32_t CalculateScaledRegister(uint32_t rm, ShiftType shift, uint32_t shiftImm);
+
+inline uint32_t CarryFrom(uint64_t result)
+{
+    return static_cast<uint32_t>(result >> 32);
+}

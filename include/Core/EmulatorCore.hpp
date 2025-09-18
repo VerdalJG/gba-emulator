@@ -1,8 +1,8 @@
 #pragma once
 //#include <SDL3/SDL3.h>
 //#include "Timer.hpp"
-#include "GBA_CPU.hpp"
-#include "GBA_Memory.hpp"
+#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/CPU/CPU_Memory.hpp"
 #include <string>
 #include <vector>
 

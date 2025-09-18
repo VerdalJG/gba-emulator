@@ -19,7 +19,7 @@ struct ShiftTestCase {
 };
 
 void RunLSLCase(const ShiftTestCase& testcase, TestCPU& cpu);
-void RunCase(const ShiftTestCase& testcase, TestCPU& cpu, std::function<Operand2Result(uint32_t, uint32_t, bool, GBA_CPU&)> shiftFunc);
+void RunCase(const ShiftTestCase& testcase, TestCPU& cpu, std::function<ShifterOperand(uint32_t, uint32_t, bool, GBA_CPU&)> shiftFunc);
 
 TEST_F(ShiftTests, LSLCases)
 {
@@ -96,10 +96,10 @@ TEST_F(ShiftTests, RORCases)
 }
 
 
-void RunCase(const ShiftTestCase& testcase, TestCPU& cpu, std::function<Operand2Result(uint32_t, uint32_t, bool, GBA_CPU&)> shiftFunc)
+void RunCase(const ShiftTestCase& testcase, TestCPU& cpu, std::function<ShifterOperand(uint32_t, uint32_t, bool, GBA_CPU&)> shiftFunc)
 {
     cpu.SetCPSR(testcase.cpsr);
-    Operand2Result result = shiftFunc(testcase.value, testcase.shift, testcase.isImmediate, cpu);
+    ShifterOperand result = shiftFunc(testcase.value, testcase.shift, testcase.isImmediate, cpu);
     EXPECT_EQ(result.value, testcase.expectedValue);
     EXPECT_EQ(result.carryOut, testcase.expectedCarry);
 }
@@ -107,7 +107,7 @@ void RunCase(const ShiftTestCase& testcase, TestCPU& cpu, std::function<Operand2
 void RunLSLCase(const ShiftTestCase& testcase, TestCPU& cpu)
 {
     cpu.SetCPSR(testcase.cpsr);
-    Operand2Result result = LogicalLeft(testcase.value, testcase.shift, cpu);
+    ShifterOperand result = LogicalLeft(testcase.value, testcase.shift, cpu);
     EXPECT_EQ(result.value, testcase.expectedValue);
     EXPECT_EQ(result.carryOut, testcase.expectedCarry);
 }

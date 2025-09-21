@@ -1,5 +1,4 @@
 #include "Core/CPU/Instructions/CPU_DataProcessing.hpp"
-#include "Core/CPU/Instructions/InstructionHelpers.hpp"
 #include "Core/CPU/Instructions/CPU_AddressingMode1.hpp"
 
 void DataProcessing(uint32_t instruction, GBA_CPU &cpu)

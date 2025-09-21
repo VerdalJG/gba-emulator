@@ -19,7 +19,7 @@ struct ShiftTestCase {
 };
 
 void RunLSLCase(const ShiftTestCase& testcase, TestCPU& cpu);
-void RunCase(const ShiftTestCase& testcase, TestCPU& cpu, std::function<ShifterOperand(uint32_t, uint32_t, bool, GBA_CPU&)> shiftFunc);
+void RunCase(const ShiftTestCase& testcase, TestCPU& cpu, std::function<ShifterOperand(uint32_t, uint32_t, GBA_CPU&)> shiftFunc);
 
 TEST_F(ShiftTests, LSLCases)
 {

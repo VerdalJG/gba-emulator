@@ -78,11 +78,6 @@ protected:
     InstructionFunction DecodeInstruction(uint32_t instruction);
     void HandleUndefinedBehavior(uint32_t instruction);
 
-
-
-
-    // ==============================================================================================
-
 private:
     GBA_Memory& memorySystem;
 };

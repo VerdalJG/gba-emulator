@@ -100,7 +100,7 @@ void LogicalTestOperation(DataProcessing_Decoded values, ShifterOperand op2, Fun
     UpdateCPSR_Logical(result, op2.carryOut, cpu);
 }
 
-constexpr std::array<DataProcessingInstruction, 16> dataProcessingFuncTable[DATA_PROCESSING_OPCODE_COUNT] {
+constexpr std::array<DataProcessingInstruction, 16> dataProcessingFuncTable {
     &LogicalAND,
     &LogicalExclusiveOR,
     &Subtract,

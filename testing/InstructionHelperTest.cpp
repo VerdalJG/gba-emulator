@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Core/InstructionHelpers.hpp"
+//#include "Core/InstructionHelpers.hpp"
 
 // TEST(InstructionHelperTest, ProcessResultCPSRFlagsShouldSetZeroFlagCorrectly) {
 //   uint32_t op1 = 5;

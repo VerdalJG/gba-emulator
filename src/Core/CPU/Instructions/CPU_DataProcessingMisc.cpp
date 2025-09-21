@@ -98,12 +98,14 @@ void MultiplyLong(uint32_t instruction, GBA_CPU& cpu)
     cpu.UpdateCPSR(flags, 0xC0000000);  // Preserve C and V flags
 }
 
+// Signed multiply long
 void SMULL(uint32_t &rdLo, uint32_t &rdHi, int64_t& product)
 {
     rdLo = static_cast<uint32_t>(product);
     rdHi = static_cast<uint32_t>(product >> 32);
 }
 
+// Signed multiply accumulate long
 void SMLAL(uint32_t &rdLo, uint32_t &rdHi, int64_t& product)
 {
     uint64_t lowSum = (product & 0xFFFFFFFF) + static_cast<uint64_t>(rdLo);
@@ -111,12 +113,14 @@ void SMLAL(uint32_t &rdLo, uint32_t &rdHi, int64_t& product)
     rdHi += static_cast<uint32_t>(product >> 32) + CarryFrom(lowSum);
 }
 
+// Unsigned multiply long
 void UMULL(uint32_t &rdLo, uint32_t &rdHi, uint64_t& product)
 {
     rdLo = static_cast<uint32_t>(product);
     rdHi = static_cast<uint32_t>(product >> 32);
 }
 
+// Unsigned multiply accumulate long
 void UMLAL(uint32_t &rdLo, uint32_t &rdHi, uint64_t& product)
 {
     uint64_t lowSum = (product & 0xFFFFFFFF) + static_cast<uint64_t>(rdLo);

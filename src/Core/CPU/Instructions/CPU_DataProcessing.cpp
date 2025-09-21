@@ -1,27 +1,17 @@
 #include "Core/CPU/Instructions/CPU_DataProcessing.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 #include "Core/CPU/Instructions/CPU_AddressingMode1.hpp"
-#include "Core/CPU/GBA_CPU.hpp"
 
 void DataProcessing(uint32_t instruction, GBA_CPU &cpu)
 {
     DataProcessing_Decoded values = DataProcessing_Decode(instruction);
-    DataProcessingInstruction alu = dataProcessingFuncTable[static_cast<int>(values.opcode)];
-    ShifterOperand op2;
-
-    if (values.immediateFlag)
-    {
-        op2 = CalculateOp2_Immediate(values.shifterOperandBits, cpu);
-    }
-    else
-    {
-        op2 = CalculateOp2_Register(values.shifterOperandBits, cpu);
-    }
+    int functionId = static_cast<int>(values.opcode);
+    DataProcessingInstruction alu = dataProcessingFuncTable[functionId];
+    ShifterOperand op2 = CalculateOp2_AddressingMode1(values.shifterOperandBits, values.immediateFlag, cpu);
 
     // Execute operation
     alu(values, op2, cpu);
 }
-
 
 bool IsSubtractionOpcode(DataProcessingOpcode opcode)
 {

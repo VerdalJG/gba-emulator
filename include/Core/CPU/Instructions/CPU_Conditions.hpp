@@ -25,10 +25,6 @@ enum class Condition
     UD              // Undefined                    - Undefined
 };
 
-inline Condition GetConditionType(uint32_t instruction)
-{
-    return static_cast<Condition>(instruction >> 28);
-}
-
+Condition GetConditionType(uint32_t instruction);
 bool ConditionPassed(Condition condition, GBA_CPU &cpu);
 

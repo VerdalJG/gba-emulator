@@ -6,7 +6,7 @@ Condition GetConditionType(uint32_t instruction)
     return static_cast<Condition>(instruction >> 28);
 }
 
-bool InstructionConditionCheck(Condition condition, GBA_CPU &cpu)
+bool ConditionPassed(Condition condition, GBA_CPU &cpu)
 {
     switch (condition)
     {

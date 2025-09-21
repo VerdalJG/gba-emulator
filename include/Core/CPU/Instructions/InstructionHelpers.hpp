@@ -13,6 +13,14 @@ constexpr int CONDITION_SHIFT = 28;
 
 class GBA_CPU;
 
+enum class DataProcessingOpcode
+{
+    AND, EOR, SUB, RSB,
+    ADD, ADC, SBC, RSC,
+    TST, TEQ, CMP, CMN,
+    ORR, MOV, BIC, MVN
+};
+
 using InstructionFunction = void (*)(uint32_t, GBA_CPU&); // Instruction Function Pointer alias
 
 struct ShifterOperand 
@@ -55,6 +63,7 @@ struct HalfwordDataTransfer_Decoded
 {
     Condition condition;
     uint8_t rnIndex, rdIndex;
+    uint16_t offsetBits;
     bool pFlag, uFlag, iFlag, wFlag, lFlag;
     bool sFlag, hFlag;
 };
@@ -63,7 +72,8 @@ struct SingleDataTransfer_Decoded
 {
     Condition condition;
     uint8_t rnIndex, rdIndex;
-    bool pFlag, uFlag, iFlag, wFlag;
+    bool iFlag; // 0 means immediate offset weirdly enough
+    bool pFlag, uFlag, wFlag;
     bool lFlag, bFlag;
     uint16_t offsetBits;
 };
@@ -119,13 +129,7 @@ enum class InstructionCategory
     Undefined
 };
 
-enum class DataProcessingOpcode
-{
-    AND, EOR, SUB, RSB,
-    ADD, ADC, SBC, RSC,
-    TST, TEQ, CMP, CMN,
-    ORR, MOV, BIC, MVN
-};
+
 
 enum InstructionPattern : uint8_t 
 {
@@ -148,8 +152,6 @@ uint32_t ZeroExtendTo32(uint16_t value);
 
 int32_t SignExtendTo32(uint8_t value);
 int32_t SignExtendTo32(uint16_t value);
-
-uint32_t CalculateScaledRegister(uint32_t rm, ShiftType shift, uint32_t shiftImm);
 
 inline uint32_t CarryFrom(uint64_t result)
 {

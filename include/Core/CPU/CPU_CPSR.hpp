@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 
 class GBA_CPU;

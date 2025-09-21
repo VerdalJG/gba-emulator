@@ -1,9 +1,23 @@
-#include "Core/CPU/GBA_CPU.hpp"
 #include "Core/CPU/Instructions/CPU_AddressingMode1.hpp"
+#include "Core/CPU/GBA_CPU.hpp"
 #include "Core/CPU/Instructions/CPU_Shifts.hpp"
 #include <assert.h>
 
-ShifterOperand CalculateOp2_Immediate(uint16_t shifterOperandBits, GBA_CPU& cpu)
+ShifterOperand CalculateOp2_AddressingMode1(uint16_t shifterOperandBits, bool isImmediate, GBA_CPU &cpu)
+{
+    if (isImmediate)
+    {
+        return CalculateOp2_Immediate(shifterOperandBits, cpu);
+    }
+    else
+    {
+        return CalculateOp2_Register(shifterOperandBits, cpu);
+    }
+}
+
+
+
+ShifterOperand CalculateOp2_Immediate(uint16_t shifterOperandBits, GBA_CPU &cpu)
 {
     ShifterOperand result;
     uint32_t immediate_8 = shifterOperandBits & 0xFF;

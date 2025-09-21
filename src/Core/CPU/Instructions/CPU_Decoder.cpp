@@ -2,6 +2,9 @@
 #include "Core/CPU/Instructions/CPU_Shifts.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 #include "Core/CPU/Instructions/CPU_DataProcessing.hpp"
+#include "Core/CPU/Instructions/CPU_DataProcessingMisc.hpp"
+#include "Core/CPU/Instructions/CPU_LoadStore.hpp"
+#include "Core/CPU/Instructions/CPU_Exceptions.hpp"
 
 InstructionFunction DecodePattern00(uint32_t instruction, GBA_CPU& cpu)
 {

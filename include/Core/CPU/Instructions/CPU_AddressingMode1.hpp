@@ -1,7 +1,9 @@
 #pragma once
-#include "InstructionHelpers.hpp"
+#include "Core/CPU/Instructions/CPU_Shifts.hpp" 
 
 class GBA_CPU;
+
+ShifterOperand CalculateOp2_AddressingMode1(uint16_t shifterOperandBits, bool isImmediate, GBA_CPU& cpu);
 
 ShifterOperand CalculateOp2_Immediate(uint16_t shifterOperandBits, GBA_CPU& cpu);
 ShifterOperand CalculateOp2_Register(uint16_t shifterOperandBits, GBA_CPU& cpu);

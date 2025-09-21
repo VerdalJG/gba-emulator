@@ -61,7 +61,7 @@ void GBA_CPU::RequestInterrupt()
 
 void GBA_CPU::RestoreCPSRFromSPSR()
 {
-    switch (opMode)
+    switch (GetCurrentOperatingMode())
     {
         case OperatingMode::FIQ: cpsr = spsr_fiq; break;
         case OperatingMode::IRQ: cpsr = spsr_irq; break;
@@ -73,6 +73,22 @@ void GBA_CPU::RestoreCPSRFromSPSR()
             return;
     }
 }
+
+void GBA_CPU::SaveCPSRIntoSPSR(OperatingMode opMode)
+{
+    switch (opMode)
+    {
+        case OperatingMode::FIQ: spsr_fiq = cpsr; break;
+        case OperatingMode::IRQ: spsr_irq = cpsr; break;
+        case OperatingMode::Supervisor: spsr_supervisor = cpsr; break;
+        case OperatingMode::Abort: spsr_abort = cpsr; break;
+        case OperatingMode::Undefined: spsr_undefined = cpsr; break;
+        default:
+            assert(false && "No SPSR in User/System mode");
+            return;
+    }
+}
+
 
 InstructionFunction GBA_CPU::DecodeInstruction(uint32_t instruction)
 {
@@ -97,25 +113,7 @@ InstructionFunction GBA_CPU::DecodeInstruction(uint32_t instruction)
     }
 }
 
-void GBA_CPU::UndefinedInstruction(uint32_t instruction)
-{
-    // Program counter was 2 steps ahead, simulating pipeline offset
-    uint32_t faultAddress = registers[15] - 8; 
 
-    // Save address one step ahead of where we were at
-    linkRegister_undefined = faultAddress + 4;
-
-    // Save CPSR 
-    spsr_undefined = cpsr;
-    
-    // Update CPSR for undefined mode
-    cpsr &= ~0xCF; // 0b10111111 - Only preserving F bit (bit 6), also setting to ARM mode - Bit 5 == 0;
-    cpsr |= 1 << 7; // Set I bit == 1;
-    cpsr |= static_cast<uint32_t>(OperatingMode::Undefined);
-
-    // Branch to Vector - BIOS region for Undefined instruction
-    registers[15] = 0x04;
-}
 
 void GBA_CPU::HandleUndefinedBehavior(uint32_t instruction)
 {

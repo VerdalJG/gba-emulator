@@ -45,8 +45,13 @@ public:
     inline void UpdateCPSR(uint32_t bits, uint32_t bitsToUpdate = 0xFFFFFFFF) { cpsr = (cpsr & ~bitsToUpdate) | bits; }
 
     // SPSR functions
-    inline bool CurrentModeHasSPSR() { return opMode != OperatingMode::User && opMode != OperatingMode::System; }
+    inline bool CurrentModeHasSPSR() 
+    { 
+        return GetCurrentOperatingMode() != OperatingMode::User && GetCurrentOperatingMode() != OperatingMode::System; 
+    }
+    
     void RestoreCPSRFromSPSR();
+    void SaveCPSRIntoSPSR(OperatingMode opMode);
 
     inline GBA_Memory& GetMemorySystem() { return memorySystem; }
 
@@ -65,8 +70,6 @@ protected:
         
     uint32_t linkRegister_undefined = 0;
 
-    OperatingMode opMode;                 // Operating mode flag
-
     inline void AdvanceProgramCounter()
     {
         registers[15] += (IsThumbMode()) ? 2u : 4u;
@@ -75,28 +78,8 @@ protected:
     InstructionFunction DecodeInstruction(uint32_t instruction);
     void HandleUndefinedBehavior(uint32_t instruction);
 
-    // ===================================== DATA PROCESSING ========================================
 
-    // Misc
 
-    void HalfwordDataTransfer(uint32_t instruction);
-    // HDT is HalfwordDataTransfer
-    inline uint32_t GetHDTOffset_Immediate(uint32_t instruction)
-    {
-        return ((instruction >> 4) & 0xF0) | (instruction & 0xF);
-    }
-    // HDT is HalfwordDataTransfer
-    inline uint32_t GetHDTOffset_Register(uint32_t instruction)
-    {
-        return registers[(instruction & 0xF)];
-    }
-    uint32_t CalculateAddressMode2(SingleDataTransfer_Decoded decodedValues);
-
-    // ==============================================================================================
-    // ======================================== PATTERN 01 ==========================================
-
-    void UndefinedInstruction(uint32_t instruction);
-    void SingleDataTransfer(uint32_t instruction);
 
     // ==============================================================================================
 
@@ -109,9 +92,14 @@ private:
 
 /* TODO NEXT:
 
-2. Fix Condition checking and where you check it
-3. Fix Data Proc Misc (remove binding to GBA CPU)
-4. Revise all instructions vs GBATEK
-5. Finish addressing mode 2
+- Refactor Halfword data transfer
+- Finish Single data transfer and Addressing mode 2
+- Revise these vs GBATEK
+- Move onto decoding the last 2 patterns
+
+- Setup proper Step() function
+- Setup real pipeline for instructions
+- Move decode instruction to CPU_Decoder
+- Thumb instruction set (surely fast)
 
 */

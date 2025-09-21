@@ -1,47 +1,31 @@
-#include "Core/GBA_CPU.hpp"
-#include "Core/CPU_Shifts.hpp"
+#include "Core/CPU/Instructions/CPU_LoadStore.hpp"
+#include "Core/CPU/Instructions/CPU_AddressingMode2.hpp"
+#include "Core/CPU/Instructions/CPU_AddressingMode3.hpp"
+#include "Core/CPU/Instructions/CPU_Shifts.hpp"
+#include "Core/CPU/Instructions/InstructionHelpers.hpp"
 
-void GBA_CPU::HalfwordDataTransfer(uint32_t instruction)
+#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/CPU/CPU_Memory.hpp"
+
+
+// Loads: LDRH LDRSB LDRSH
+// Stores: STRH
+void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
 {
     HalfwordDataTransfer_Decoded values = HalfwordDataTransfer_Decode(instruction);
-    uint32_t& rn = registers[values.rnIndex];
-    uint32_t& rd = registers[values.rdIndex];
 
-    bool isImmediate = values.iFlag;
+    if (!values.sFlag && !values.hFlag) return; // This is another instruction - Mult or Single Data Swap
+
+    GBA_Memory& memory = cpu.GetMemorySystem();
+    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
+    uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
+
+    uint32_t effectiveAddress = CalculateAddress_AddressingMode3(values, cpu);
+
     bool isLoad = values.lFlag;
-    bool isSigned = values.sFlag;
     bool isHalfword = values.hFlag;
-    bool preIndexed = values.pFlag;
-    bool shouldWriteback = values.wFlag;
-
-    if (!isSigned && !isHalfword) return; // This is another instruction - Mult or Single Data Swap
-
-    // POSSIBLE:
-    // LOADS: LDRH LDRSB LDRSH
-    // STORES: STRH
-
-    uint32_t effectiveAddress;
-    uint32_t offset = isImmediate ? GetHDTOffset_Immediate(instruction) : GetHDTOffset_Register(instruction);
-
-    if (preIndexed) // P = 1
-    {
-        effectiveAddress = values.uFlag ? rn + offset : rn - offset;
-        if (shouldWriteback)
-        {
-            // Pre-indexed with write-back: Rn = EA
-            rn = effectiveAddress;
-
-            if (isLoad && (values.rdIndex == values.rnIndex)) return; // UNPREDICTABLE
-        }
-    }
-    else // P = 0
-    {
-        if (shouldWriteback) return; // UNPREDICTABLE
-
-        effectiveAddress = rn;
-        // Post-index update happens AFTER transfer
-    }
-
+    bool isSigned = values.sFlag;
+    
     // GBA SPECIFIC LOADING: IF INSTRUCTION IS MISALIGNED FOR HALFWORDS,
     // IT ROTATES THE LOADED HALFWORD 8 BITS TO THE RIGHT
 
@@ -50,58 +34,58 @@ void GBA_CPU::HalfwordDataTransfer(uint32_t instruction)
         if (!isHalfword)
         {
             // LDRSB
-            uint8_t loadedByte = memorySystem.Read8(effectiveAddress);
-            rd = SignExtendTo32(loadedByte);
+            uint8_t loadedByte = memory.Read8(effectiveAddress);
+            uint32_t valueToLoad = SignExtendTo32(loadedByte);
+            cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
         }
         else
         {
-            bool misaligned = effectiveAddress & 1;
-            uint16_t loadedHalfword = memorySystem.Read16(effectiveAddress);
+            // Account for misaligned halfword
+            bool misaligned = effectiveAddress & 1; // First bit must be 0 to be divisible by 2 (halfword)
+            uint16_t loadedHalfword = memory.Read16(effectiveAddress);
             if (misaligned)
             {
                 loadedHalfword = RotateRight(loadedHalfword, 8);
             }
             
             // LDRSH vs LDRH
-            rd = isSigned ? SignExtendTo32(loadedHalfword) : ZeroExtendTo32(loadedHalfword);
+            uint32_t valueToLoad = isSigned ? SignExtendTo32(loadedHalfword) : ZeroExtendTo32(loadedHalfword);
+            cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
         }
     }
-    else
+    else // STRH
     {
         if (isSigned) return; // UNPREDICTABLE
-
-        // STRH
 
         // GBA SPECIFIC: NORMALLY YOU WOULD ABORT THE INSTRUCTION IF IT IS NOT ALIGNED
         // INSTEAD, THE GBA JUST PROCEEDS AND DOES THE STORE INSTRUCTION WITH THE UNALIGNED ADDRESS
         uint16_t valueToStore = static_cast<uint16_t>(rd);
-        memorySystem.Write8(effectiveAddress, valueToStore & 0xFF); // Lowest 8 bits
-        memorySystem.Write8(effectiveAddress + 1, valueToStore >> 8); // Shift higher bits
+        memory.Write8(effectiveAddress, valueToStore & 0xFF); // Lowest 8 bits
+        memory.Write8(effectiveAddress + 1, valueToStore >> 8); // Shift higher bits
     }
 
     // Only post-index case updates here
-    if (!preIndexed)
+    if (!values.pFlag)
     {
-        rn = values.uFlag ? (rn + offset) : (rn - offset);
+        uint32_t offset = values.iFlag ? GetHDTOffset_Immediate(values.offsetBits) : GetHDTOffset_Register(values.offsetBits, cpu);
+        uint32_t postIndexedAddress = values.uFlag ? (rn + offset) : (rn - offset);
+        cpu.SetValueAtRegister(values.rnIndex, postIndexedAddress);
     } 
 }
 
-void GBA_CPU::SingleDataTransfer(uint32_t instruction)
+void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
 {
     SingleDataTransfer_Decoded values = SingleDataTransfer_Decode(instruction);
 
-    uint32_t& rn = registers[values.rnIndex];
-    uint32_t& rd = registers[values.rdIndex];
+    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
+    uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
 
-    bool isImmediate = !values.iFlag; // 0 means immediate offset weirdly
-    bool isLoadInstruction = values.lFlag;
-    bool isByte = values.bFlag;
+    bool isImmediate = !values.iFlag; 
     bool isLoad = values.lFlag;
+    bool isByte = values.bFlag;
     bool preIndexed = values.pFlag;
     bool shouldWriteback = values.wFlag;
     
-    uint32_t effectiveAddress;
-    uint32_t offset = isImmediate ? GetHDTOffset_Immediate(instruction) : GetHDTOffset_Register(instruction);
-
-
+    uint32_t effectiveAddress = CalculateAddress_AddressingMode2(values, cpu);
+    
 }

@@ -7,7 +7,6 @@
 #include "Core/CPU/GBA_CPU.hpp"
 #include "Core/CPU/CPU_Memory.hpp"
 
-
 // Loads: LDRH LDRSB LDRSH
 // Stores: STRH
 void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
@@ -17,9 +16,6 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
     if (!values.sFlag && !values.hFlag) return; // This is another instruction - Mult or Single Data Swap
 
     GBA_Memory& memory = cpu.GetMemorySystem();
-    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
-    uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
-
     uint32_t effectiveAddress = CalculateAddress_AddressingMode3(values, cpu);
 
     bool isLoad = values.lFlag;
@@ -57,6 +53,7 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
     {
         if (isSigned) return; // UNPREDICTABLE
 
+        uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
         // GBA SPECIFIC: NORMALLY YOU WOULD ABORT THE INSTRUCTION IF IT IS NOT ALIGNED
         // INSTEAD, THE GBA JUST PROCEEDS AND DOES THE STORE INSTRUCTION WITH THE UNALIGNED ADDRESS
         uint16_t valueToStore = static_cast<uint16_t>(rd);
@@ -67,6 +64,7 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
     // Only post-index case updates here
     if (!values.pFlag)
     {
+        uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
         uint32_t offset = values.iFlag ? GetHDTOffset_Immediate(values.offsetBits) : GetHDTOffset_Register(values.offsetBits, cpu);
         uint32_t postIndexedAddress = values.uFlag ? (rn + offset) : (rn - offset);
         cpu.SetValueAtRegister(values.rnIndex, postIndexedAddress);
@@ -86,6 +84,66 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
     bool preIndexed = values.pFlag;
     bool shouldWriteback = values.wFlag;
     
+    GBA_Memory& memory = cpu.GetMemorySystem();
     uint32_t effectiveAddress = CalculateAddress_AddressingMode2(values, cpu);
     
+    if (isLoad)
+    {
+        uint32_t valueToLoad;
+        if (isByte)
+        {
+            // LDRB
+            uint8_t loadedByte = memory.Read8(effectiveAddress);
+            valueToLoad = ZeroExtendTo32(loadedByte);
+        }
+        else
+        {
+            // LDR
+            // First and second bit must be 0 to be divisible by 4 (word)
+            bool misaligned = effectiveAddress & 3; 
+            valueToLoad = memory.Read32(effectiveAddress);
+            if (misaligned)
+            {
+                // Rotate by how many bytes it is misaligned by
+                valueToLoad = RotateRight(valueToLoad, 8 * (effectiveAddress & 3)); 
+            }
+        }
+        
+        // Special case if rdIndex == PC
+        if (values.rdIndex == GBA_CPU::PC_INDEX)
+        {
+            valueToLoad &= ~3; // Align if PC
+        }
+
+        cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
+    }
+    else
+    {
+        uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
+        if (values.rdIndex == GBA_CPU::PC_INDEX)
+        {
+            rd += 4; // +8 is already factored in when doing GetValueAtRegister
+        }
+
+        if (isByte)
+        {
+            // STRB
+            uint8_t byte = rd & 0xFF;
+            memory.Write8(effectiveAddress, byte);
+        }
+        else
+        {
+            // STR
+            memory.Write32(effectiveAddress, rd);
+        }
+    }
+
+    // Post-indexed update
+    if (!values.pFlag)
+    {
+        uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
+        uint32_t offset = CalculateOffset_AddressingMode2(values.offsetBits, values.iFlag, cpu);
+        uint32_t postIndexedAddress = values.uFlag ? (rn + offset) : (rn - offset);
+        cpu.SetValueAtRegister(values.rnIndex, postIndexedAddress);
+    } 
 }

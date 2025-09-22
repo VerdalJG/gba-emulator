@@ -4,16 +4,14 @@
 
 uint32_t CalculateAddress_AddressingMode3(HalfwordDataTransfer_Decoded values, GBA_CPU &cpu)
 {
-    uint32_t resultAddress;
-
-    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
-
     bool preIndexed = values.pFlag;
     bool writeback = values.wFlag;
     bool isLoad = values.lFlag;
     bool isImmediate = values.iFlag;
 
+    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
     uint32_t offset = isImmediate ? GetHDTOffset_Immediate(values.offsetBits) : GetHDTOffset_Register(values.offsetBits, cpu);
+    uint32_t resultAddress;
 
     if (preIndexed) // P = 1
     {

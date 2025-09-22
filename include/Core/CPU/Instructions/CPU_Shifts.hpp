@@ -15,13 +15,13 @@ enum ShiftType
 ShiftType GetShiftType_AddressingMode1(uint16_t shifterOperandBits);
 
 // LSL
-uint32_t LogicalLeft(uint32_t value, uint32_t shiftAmount);
+uint32_t LogicalShiftLeft(uint32_t value, uint32_t shiftAmount);
 
 // LSR
-uint32_t LogicalRight(uint32_t value, uint32_t shiftImm);
+uint32_t LogicalShiftRight(uint32_t value, uint32_t shiftImm);
 
 // ASR
-uint32_t ArithmeticRight(uint32_t value, uint32_t shiftImm);
+uint32_t ArithmeticShiftRight(uint32_t value, uint32_t shiftImm);
 
 // ROR
 uint32_t RotateRight(uint32_t value, uint32_t rotation);

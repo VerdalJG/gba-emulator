@@ -4,151 +4,86 @@
 
 uint32_t CalculateAddress_AddressingMode2(SingleDataTransfer_Decoded values, GBA_CPU& cpu)
 {
-    bool isRegister = values.iFlag;
+    bool preIndexed = values.pFlag;
+    bool writeback = values.wFlag;
+    bool isLoad = values.lFlag;
 
-    if (isRegister)
-    {   
-        // Differentiate between shifted register and normal register offset
-        bool isScaledRegister = (values.offsetBits >> 4); 
-
-        if (isScaledRegister)
-        {
-            return AddressingMode2_ScaledRegisterOffset(values, cpu);
-        }
-        else
-        {
-            return AddressingMode2_RegisterOffset(values, cpu);
-        }
-    }
-    else // Immediate
-    {
-        return AddressingMode2_ImmediateOffset(values, cpu);
-    }
-}
-
-uint32_t AddressingMode2_ImmediateOffset(SingleDataTransfer_Decoded values, GBA_CPU &cpu)
-{
-    // Calculate address
     uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
-    bool usingPC = values.rnIndex == 15;
+    uint32_t offset = CalculateOffset_AddressingMode2(values.offsetBits, values.iFlag, cpu);
+    uint32_t resultAddress;
+    uint32_t rmIndex = values.iFlag ? values.offsetBits & 0xF : 0;
 
-    uint32_t offset12 = values.offsetBits;
-    uint32_t resultAddress = values.uFlag ? rn + offset12 : rn - offset12;
+    bool rnUsingPC = values.rnIndex == GBA_CPU::PC_INDEX;
+    bool rmUsingPC = rmIndex == GBA_CPU::PC_INDEX;
 
-    if (values.pFlag && values.wFlag) // Pre-indexed immediate offset
+    if (preIndexed)
     {
-        if (usingPC) 
-        {
-            assert(false && "UNPREDICTABLE");
-            return 0xFFFFFFFF; // For compiler
-        }
-
-        cpu.SetValueAtRegister(values.rnIndex, resultAddress);
-        return resultAddress;
-    }
-    else if (values.pFlag) // Immediate offset
-    {
-        return resultAddress;
-    }
-    else // Post-indexed immediate offset
-    {
-        if (usingPC) 
-        {
-            assert(false && "UNPREDICTABLE");
-            return 0xFFFFFFFF; // For compiler
-        }
-
-        return resultAddress; // Update happens after operation
-    }
-}
-
-uint32_t AddressingMode2_RegisterOffset(SingleDataTransfer_Decoded values, GBA_CPU &cpu)
-{
-    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
-    uint32_t rmIndex =  values.offsetBits & 0xF;
-    uint32_t rm = cpu.GetValueAtRegister(rmIndex);
-
-    bool rnUsingPC = values.rnIndex == 15;
-    bool rmUsingPC = rmIndex == 15;
-
-    uint32_t resultAddress = values.uFlag ? (rn + rm) : (rn - rm);
-    if (values.pFlag && values.wFlag) // Register offset pre-indexed
-    {
-        if (rnUsingPC || rmUsingPC || values.rnIndex == rmIndex) 
-        {
-            assert(false && "UNPREDICTABLE");
-            return 0xFFFFFFFF; // For compiler
-        }
-        
-        cpu.SetValueAtRegister(values.rnIndex, resultAddress);
-        return resultAddress;
-    }
-    else if (values.pFlag) // Register offset
-    {
-        if (rmUsingPC) 
-        {
-            assert(false && "UNPREDICTABLE");
-            return 0xFFFFFFFF; // For compiler
-        }
-        return resultAddress; 
-    }
-    else // Register offset post-indexed
-    {
-        if (rnUsingPC || rmUsingPC || values.rnIndex == rmIndex) 
-        {
-            assert(false && "UNPREDICTABLE");
-            return 0xFFFFFFFF; // For compiler
-        }
-
-        return resultAddress; // Update happens after operation
-    }
-}
-
-uint32_t AddressingMode2_ScaledRegisterOffset(SingleDataTransfer_Decoded values, GBA_CPU &cpu)
-{
-    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
-    uint32_t rmIndex =  values.offsetBits & 0xF;
-    uint32_t rm = cpu.GetValueAtRegister(rmIndex);
-
-    ShiftType shiftType = static_cast<ShiftType>((values.offsetBits >> 5) & 3);
-    uint32_t shiftImm = (values.offsetBits >> 7) & 0x1F;
-    uint32_t offset = CalculateScaledRegister(rm, shiftType, shiftImm, cpu);
-    uint32_t resultAddress = values.uFlag ? rn + offset : rn - offset;
-
-    bool rnUsingPC = values.rnIndex == 15;
-    bool rmUsingPC = rmIndex == 15;
-    
-    if (values.pFlag && values.wFlag) // Scaled register pre-indexed
-    {
-        if (rnUsingPC || rmUsingPC || values.rnIndex == rmIndex) 
-        {
-            assert(false && "UNPREDICTABLE");
-            return 0xFFFFFFFF; // For compiler
-        }
-
-        cpu.SetValueAtRegister(values.rnIndex, resultAddress);
-        return resultAddress;
-    }
-    else if (values.pFlag) // Scaled register offset
-    {
+        resultAddress = values.uFlag ? rn + offset : rn - offset;
         if (rmUsingPC)
         {
             assert(false && "UNPREDICTABLE");
             return 0xFFFFFFFF; // For compiler
         }
-        
-        return resultAddress;
+
+        if (writeback)
+        {
+            if (rnUsingPC || (values.iFlag && values.rnIndex == rmIndex)) 
+            {
+                assert(false && "UNPREDICTABLE");
+                return 0xFFFFFFFF; // For compiler
+            }
+
+            cpu.SetValueAtRegister(values.rnIndex, resultAddress);
+        }
     }
-    else // Scaled register post-indexed
+    else 
     {
-        if (rnUsingPC || rmUsingPC || values.rnIndex == rmIndex) 
+        resultAddress = rn;
+        if (rnUsingPC || rmUsingPC || (values.iFlag && values.rnIndex == rmIndex)) 
         {
             assert(false && "UNPREDICTABLE");
             return 0xFFFFFFFF; // For compiler
         }
-
-        return resultAddress;
+        // Post-indexed update of rn happens in after the transfer in a different function
     }
+    return resultAddress;
+}
+
+uint32_t CalculateOffset_AddressingMode2(uint32_t offsetBits, bool isRegister, GBA_CPU &cpu)
+{
+    if (isRegister)
+    {   
+        // Differentiate between scaled register and normal register offset
+        bool isScaledRegister = (offsetBits >> 4); 
+
+        if (isScaledRegister)
+        {
+            return CalculateOffset_ScaledRegister(offsetBits, cpu);
+        }
+        else
+        {
+            return CalculateOffset_Register(offsetBits, cpu);
+        }
+    }
+    else // Immediate
+    {
+        return offsetBits;
+    }
+}
+
+uint32_t CalculateOffset_Register(uint32_t offsetBits, GBA_CPU& cpu)
+{
+    uint32_t rmIndex = offsetBits & 0xF;
+    return cpu.GetValueAtRegister(rmIndex);
+}
+
+uint32_t CalculateOffset_ScaledRegister(uint32_t offsetBits, GBA_CPU& cpu)
+{
+    uint32_t rmIndex = offsetBits & 0xF;
+    uint32_t rm = cpu.GetValueAtRegister(rmIndex);
+    ShiftType shiftType = static_cast<ShiftType>((offsetBits >> 5) & 3);
+    uint32_t shiftImm = (offsetBits >> 7) & 0x1F;
+    return CalculateScaledRegister(rm, shiftType, shiftImm, cpu);
 }
 
 uint32_t CalculateScaledRegister(uint32_t rm, ShiftType shift, uint32_t shiftImm, GBA_CPU& cpu)
@@ -156,18 +91,18 @@ uint32_t CalculateScaledRegister(uint32_t rm, ShiftType shift, uint32_t shiftImm
     switch (shift)
     {
         case ShiftType::LSL:
-        return LogicalLeft(rm, shiftImm);
+        return LogicalShiftLeft(rm, shiftImm);
 
         case ShiftType::LSR:
-        return LogicalRight(rm, shiftImm);
+        return LogicalShiftRight(rm, shiftImm);
 
         case ShiftType::ASR:
-        return ArithmeticRight(rm, shiftImm);
+        return ArithmeticShiftRight(rm, shiftImm);
 
         case ShiftType::ROR:
         if (shiftImm == 0)
         {
-            return RotateRightExtendCarry(rm, cpu);
+            return RotateRightExtendCarry(rm, cpu); // RRX
         }
         return RotateRight(rm, shiftImm);
 

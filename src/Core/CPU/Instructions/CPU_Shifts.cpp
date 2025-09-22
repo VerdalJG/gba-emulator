@@ -6,13 +6,13 @@ ShiftType GetShiftType_AddressingMode1(uint16_t shifterOperandBits)
     return static_cast<ShiftType>((shifterOperandBits >> 5) & 3);
 }
 
-uint32_t LogicalLeft(uint32_t value, uint32_t shiftAmount)
+uint32_t LogicalShiftLeft(uint32_t value, uint32_t shiftAmount)
 {
     // Cover for shift >= 32 causing undefined behavior in C++
     return (shiftAmount < 32) ? (value << shiftAmount) : 0;
 }
 
-uint32_t LogicalRight(uint32_t value, uint32_t shiftImm)
+uint32_t LogicalShiftRight(uint32_t value, uint32_t shiftImm)
 {
     if (shiftImm == 0) // LSR #32
     {
@@ -22,7 +22,7 @@ uint32_t LogicalRight(uint32_t value, uint32_t shiftImm)
     return shiftImm < 32 ? value >> shiftImm : 0;
 }
 
-uint32_t ArithmeticRight(uint32_t value, uint32_t shiftImm)
+uint32_t ArithmeticShiftRight(uint32_t value, uint32_t shiftImm)
 {
     bool isNegative = (value & 0x80000000);
     if (shiftImm == 0) // ASR #32
@@ -64,5 +64,5 @@ uint32_t RotateRight(uint32_t value, uint32_t rotation)
 uint32_t RotateRightExtendCarry(uint32_t value, GBA_CPU& cpu)
 {
     uint32_t cFlag = cpu.GetCPSR_C();
-    return LogicalLeft(cFlag, 31) | LogicalRight(value, 1);
+    return LogicalShiftLeft(cFlag, 31) | LogicalShiftRight(value, 1);
 }

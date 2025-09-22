@@ -114,7 +114,7 @@ ShifterOperand ShiftOp2_LSL_Immediate(uint32_t rm, uint32_t shiftImm, GBA_CPU &c
     }
     else // ShiftImm between 1-31
     {
-        result.value = LogicalLeft(rm, shiftImm);
+        result.value = LogicalShiftLeft(rm, shiftImm);
         result.carryOut = rm >> (32 - shiftImm);
     }
 
@@ -132,7 +132,7 @@ ShifterOperand ShiftOp2_LSL_Register(uint32_t rm, uint32_t rs, GBA_CPU &cpu)
     }
     else if (rs < 32)
     {
-        result.value = LogicalLeft(rm, rs);
+        result.value = LogicalShiftLeft(rm, rs);
         result.carryOut = rm >> (32 - rs);
     }
     else if (rs == 32)
@@ -160,7 +160,7 @@ ShifterOperand ShiftOp2_LSR_Immediate(uint32_t rm, uint32_t shiftImm, GBA_CPU &c
     }
     else // shiftImm > 0
     {
-        result.value = LogicalRight(rm, shiftImm);
+        result.value = LogicalShiftRight(rm, shiftImm);
         result.carryOut = rm >> (shiftImm - 1);
     }
 
@@ -178,7 +178,7 @@ ShifterOperand ShiftOp2_LSR_Register(uint32_t rm, uint32_t rs, GBA_CPU &cpu)
     }
     else if (rs < 32)
     {
-        result.value = LogicalRight(rm, rs);
+        result.value = LogicalShiftRight(rm, rs);
         result.carryOut = rm >> (rs - 1);
     }
     else if (rs == 32)
@@ -216,7 +216,7 @@ ShifterOperand ShiftOp2_ASR_Immediate(uint32_t rm, uint32_t shiftImm, GBA_CPU &c
     }
     else // shiftImm > 0
     {
-        result.value = ArithmeticRight(rm, shiftImm);
+        result.value = ArithmeticShiftRight(rm, shiftImm);
         result.carryOut = rm >> (shiftImm - 1);
     }
 
@@ -234,7 +234,7 @@ ShifterOperand ShiftOp2_ASR_Register(uint32_t rm, uint32_t rs, GBA_CPU &cpu)
     }
     else if (rs < 32)
     {
-        result.value = ArithmeticRight(rm, rs);
+        result.value = ArithmeticShiftRight(rm, rs);
         result.carryOut = rm >> (rs - 1);
     }
     else if (rs >= 32)

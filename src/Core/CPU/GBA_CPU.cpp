@@ -24,7 +24,7 @@ void GBA_CPU::Reset()
 void GBA_CPU::Step()
 {
     // Fetch
-    uint32_t instruction = memorySystem.Read32(registers[15]);
+    uint32_t instruction = memorySystem.Read32(visibleRegisters[15]);
     
     // Decode
     InstructionFunction operationToExecute;

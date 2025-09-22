@@ -13,11 +13,11 @@ void UndefinedInstruction(uint32_t instruction, GBA_CPU& cpu)
     cpu.SaveCPSRIntoSPSR(OperatingMode::Undefined);
     
     // Update CPSR for undefined mode
-    uint32_t iBit = 1 << 7;
+    uint32_t iBit = 1 << 7; // Disable IRQ interrupts
     uint32_t undefinedMode = static_cast<uint32_t>(OperatingMode::Undefined);
     uint32_t updatedCPSR = iBit | undefinedMode;
     uint32_t bitsToUpdate = 0xCF; // 0b10111111 - Only preserving F bit (bit 6), also setting to ARM mode - Bit 5 == 0;
-    cpu.UpdateCPSR(updatedCPSR ,0xCF);
+    cpu.UpdateCPSR(updatedCPSR, bitsToUpdate);
 
 
     // Branch to Vector - BIOS region (0x04) for Undefined instruction

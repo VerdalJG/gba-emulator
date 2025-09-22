@@ -12,7 +12,7 @@ public:
 
     uint32_t SetRegisterValue(int index, uint32_t value)
     {
-        registers[index] = value;
+        visibleRegisters[index] = value;
     }
 
     void SetCPSR(uint32_t flags)

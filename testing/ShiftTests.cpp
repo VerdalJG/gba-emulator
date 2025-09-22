@@ -44,13 +44,13 @@ TEST_F(ShiftTests, LSRCases)
 {
     std::vector<ShiftTestCase> lsrCases = 
     {
-        {0x80000000,   1, 0x40000000, 0, 0},       // LSR #1
-        {0x12345678,   0, 0x00000000, 0, 0},       // LSR #32
-        {0xFF00FF00,   8, 0x00FF00FF, 0, 0},       // LSR #8
-        {0xAAAAAAAA,   0, 0xAAAAAAAA, 1, 0x20000000}, // reg shift=0 → carry from CPSR
-        {0x00000001,   1, 0x00000000, 1, 0},       // reg shift=1
-        {0xF0000000,  32, 0x00000000, 1, 0},       // reg shift=32
-        {0xAAAAAAAA,  40, 0x00000000, 0, 0}        // reg shift>32
+        {0x80000000,   1, 0x40000000, 0, 0},            // LSR #1
+        {0x12345678,   0, 0x00000000, 0, 0},            // LSR #32
+        {0xFF00FF00,   8, 0x00FF00FF, 0, 0},            // LSR #8
+        {0xAAAAAAAA,   0, 0xAAAAAAAA, 1, 0x20000000},   // reg shift = 0 → carry from CPSR
+        {0x00000001,   1, 0x00000000, 1, 0},            // reg shift=1
+        {0xF0000000,  32, 0x00000000, 1, 0},            // reg shift=32
+        {0xAAAAAAAA,  40, 0x00000000, 0, 0}             // reg shift>32
     };
 
     for (auto& tc : lsrCases) 

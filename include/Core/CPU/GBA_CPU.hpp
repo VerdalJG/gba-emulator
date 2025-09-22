@@ -6,17 +6,15 @@
 
 class GBA_Memory;
 
-#define PROGRAM_COUNTER 15
-
 enum class OperatingMode
 {
-    User = 0b10000,
-    FIQ = 0b10001, // Fast Interrupt
-    IRQ = 0b10010, // Interrupt
-    Supervisor = 0b10011,
-    Abort = 0b10111,
-    Undefined = 0b11011,
-    System = 0b11111
+    User        = 0b10000,
+    FIQ         = 0b10001, // Fast Interrupt
+    IRQ         = 0b10010, // Interrupt
+    Supervisor  = 0b10011,
+    Abort       = 0b10111,
+    Undefined   = 0b11011,
+    System      = 0b11111
 };
 
 // Emulates the ARM7TDMI, ARMv4t core
@@ -31,8 +29,8 @@ public:
     void RequestInterrupt(); // Triggered by emulator core
 
     // Register functions
-    inline uint32_t GetValueAtRegister(int registerIndex) { return registers[registerIndex]; }
-    inline void SetValueAtRegister(int registerIndex, uint32_t value) { registers[registerIndex] = value; }
+    inline uint32_t GetValueAtRegister(int registerIndex) { return visibleRegisters[registerIndex]; }
+    inline void SetValueAtRegister(int registerIndex, uint32_t value) { visibleRegisters[registerIndex] = value; }
 
     // CPSR functions
     inline uint32_t GetCPSR() { return cpsr; }
@@ -58,7 +56,7 @@ public:
     static const int PC_INDEX = 15;
 
 protected:
-    std::array<uint32_t, 16> registers{}; // R0 - R14 contain data, R15 contains address of next instruction (PC)
+    std::array<uint32_t, 16> visibleRegisters{}; // R0 - R14 contain data, R15 contains address of next instruction (PC)
     uint32_t cpsr = 0;                    // Current Program Status Register
 
     // Saved Program Status Registers
@@ -72,7 +70,7 @@ protected:
 
     inline void AdvanceProgramCounter()
     {
-        registers[15] += (IsThumbMode()) ? 2u : 4u;
+        visibleRegisters[15] += (IsThumbMode()) ? 2u : 4u;
     }   
 
     InstructionFunction DecodeInstruction(uint32_t instruction);
@@ -81,6 +79,19 @@ protected:
 private:
     GBA_Memory& memorySystem;
 };
+
+constexpr int BankIndex(OperatingMode mode) 
+{
+    switch (mode) 
+    {
+        case OperatingMode::FIQ:        return 0;
+        case OperatingMode::IRQ:        return 1;
+        case OperatingMode::Supervisor: return 2;
+        case OperatingMode::Abort:      return 3;
+        case OperatingMode::Undefined:  return 4;
+        default:                        return -1; // User/System -> no bank
+    }
+}
 
 //https://problemkaputt.de/gbatek-arm-cpu-reference.htm - ARM CPU Reference
 //https://developer.arm.com/documentation/ddi0210/c/Introduction/Instruction-set-summary/ARM-instruction-summary?lang=en

@@ -13,6 +13,7 @@ void UndefinedInstruction(uint32_t instruction, GBA_CPU& cpu)
     cpu.SaveCPSRIntoSPSR(OperatingMode::Undefined);
     
     // Update CPSR for undefined mode
+    
     uint32_t iBit = 1 << 7; // Disable IRQ interrupts
     uint32_t undefinedMode = static_cast<uint32_t>(OperatingMode::Undefined);
     uint32_t updatedCPSR = iBit | undefinedMode;

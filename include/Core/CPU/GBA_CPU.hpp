@@ -2,20 +2,10 @@
 
 #include <cstdint>
 #include <array>
+#include "Core/CPU/CPU_Modes.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 
 class GBA_Memory;
-
-enum class OperatingMode
-{
-    User        = 0b10000,
-    FIQ         = 0b10001, // Fast Interrupt
-    IRQ         = 0b10010, // Interrupt
-    Supervisor  = 0b10011,
-    Abort       = 0b10111,
-    Undefined   = 0b11011,
-    System      = 0b11111
-};
 
 // Emulates the ARM7TDMI, ARMv4t core
 class GBA_CPU 
@@ -56,17 +46,14 @@ public:
     static const int PC_INDEX = 15;
 
 protected:
-    std::array<uint32_t, 16> visibleRegisters{}; // R0 - R14 contain data, R15 contains address of next instruction (PC)
-    uint32_t cpsr = 0;                    // Current Program Status Register
+    std::array<uint32_t, 16> visibleRegisters{};    // R0 - R14 contain data, R15 contains address of next instruction (PC)
+    uint32_t cpsr = 0;                              // Current Program Status Register
 
-    // Saved Program Status Registers
-    uint32_t spsr_fiq = 0;                    
-    uint32_t spsr_irq = 0;                   
-    uint32_t spsr_supervisor = 0;                    
-    uint32_t spsr_abort = 0;
-    uint32_t spsr_undefined = 0;  
-        
-    uint32_t linkRegister_undefined = 0;
+    std::array<uint32_t, 5> fiqR8_R12{};
+    std::array<uint32_t, 5> sharedR8_R12{};
+    std::array<uint32_t, 5> bankedR13s{};   // Stack pointers for FIQ, IRQ, Supervisor, Abort, Undefined
+    std::array<uint32_t, 5> bankedR14s{};   // Link registers for FIQ, IRQ, Supervisor, Abort, Undefined
+    std::array<uint32_t, 5> spsr{};         // SPSR for each banked mode
 
     inline void AdvanceProgramCounter()
     {
@@ -80,18 +67,7 @@ private:
     GBA_Memory& memorySystem;
 };
 
-constexpr int BankIndex(OperatingMode mode) 
-{
-    switch (mode) 
-    {
-        case OperatingMode::FIQ:        return 0;
-        case OperatingMode::IRQ:        return 1;
-        case OperatingMode::Supervisor: return 2;
-        case OperatingMode::Abort:      return 3;
-        case OperatingMode::Undefined:  return 4;
-        default:                        return -1; // User/System -> no bank
-    }
-}
+
 
 //https://problemkaputt.de/gbatek-arm-cpu-reference.htm - ARM CPU Reference
 //https://developer.arm.com/documentation/ddi0210/c/Introduction/Instruction-set-summary/ARM-instruction-summary?lang=en

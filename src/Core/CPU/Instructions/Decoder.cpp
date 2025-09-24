@@ -1,10 +1,11 @@
 #include "Core/CPU/GBA_CPU.hpp"
-#include "Core/CPU/Instructions/CPU_Shifts.hpp"
+#include "Core/CPU/Instructions/Shifts.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
-#include "Core/CPU/Instructions/CPU_DataProcessing.hpp"
-#include "Core/CPU/Instructions/CPU_DataProcessingMisc.hpp"
-#include "Core/CPU/Instructions/CPU_LoadStore.hpp"
-#include "Core/CPU/Instructions/CPU_Exceptions.hpp"
+#include "Core/CPU/Instructions/DataProcessing.hpp"
+#include "Core/CPU/Instructions/DataProcessingMisc.hpp"
+#include "Core/CPU/Instructions/LoadStore.hpp"
+#include "Core/CPU/Instructions/Exceptions.hpp"
+#include "Core/CPU/Instructions/Branches.hpp"
 
 InstructionFunction DecodePattern00(uint32_t instruction, GBA_CPU& cpu)
 {
@@ -69,12 +70,35 @@ InstructionFunction DecodePattern01(uint32_t instruction, GBA_CPU& cpu)
 
 InstructionFunction DecodePattern10(uint32_t instruction, GBA_CPU& cpu)
 {
-    return InstructionFunction();
+    if ((instruction >> 25) & 1)
+    {
+        return &Branch;
+    }
+    else
+    {
+        return &BlockDataTransfer;
+    }
 }
 
 InstructionFunction DecodePattern11(uint32_t instruction, GBA_CPU& cpu)
 {
-    return InstructionFunction();
+    if ((instruction >> 25) & 1)
+    {
+        if ((instruction >> 24) & 1)
+        {
+            &SoftwareInterrupt;
+        }
+    }
+
+    /*
+        Normally anything else would be a coprocessor function:
+        Coprocessor register transfer
+        Coprocessor data operation
+        Coprocessor data transfer
+    */ 
+   
+    // Because GBA only implements SWI, no coprocessor operations
+    return &UndefinedInstruction; 
 }
 
 

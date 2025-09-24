@@ -1,4 +1,4 @@
-#include "Core/CPU/Instructions/CPU_Shifts.hpp"
+#include "Core/CPU/Instructions/Shifts.hpp"
 #include "Core/CPU/GBA_CPU.hpp"
 
 ShiftType GetShiftType_AddressingMode1(uint16_t shifterOperandBits)

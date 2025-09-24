@@ -1,6 +1,6 @@
-#include "Core/CPU/Instructions/CPU_AddressingMode1.hpp"
+#include "Core/CPU/Instructions/AddressingMode1.hpp"
 #include "Core/CPU/GBA_CPU.hpp"
-#include "Core/CPU/Instructions/CPU_Shifts.hpp"
+#include "Core/CPU/Instructions/Shifts.hpp"
 #include <assert.h>
 
 ShifterOperand CalculateOp2_AddressingMode1(uint16_t shifterOperandBits, bool isImmediate, GBA_CPU &cpu)

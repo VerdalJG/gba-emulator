@@ -1,8 +1,8 @@
-#include "Core/CPU/Instructions/CPU_DataProcessingMisc.hpp"
+#include "Core/CPU/Instructions/DataProcessingMisc.hpp"
 #include "Core/CPU/GBA_CPU.hpp"
 #include "Core/CPU/CPU_Memory.hpp"
 #include "Core/CPU/CPU_CPSR.hpp"
-#include "Core/CPU/Instructions/CPU_Shifts.hpp"
+#include "Core/CPU/Instructions/Shifts.hpp"
 
 void Multiply(uint32_t instruction, GBA_CPU& cpu)
 {
@@ -165,17 +165,5 @@ void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu)
     cpu.SetValueAtRegister(values.rdIndex, temp); 
 }
 
-// NOTE: Should only change thumb mode flag via this function, changing it directly is UNPREDICTABLE
-void BranchAndExchange(uint32_t instruction, GBA_CPU& cpu)
-{
-    uint32_t rmIndex = instruction & 0xF;
-    uint32_t rm = cpu.GetValueAtRegister(rmIndex);
-    
-    // Check for UNPREDICTABLE: branch to half-word misaligned in ARM state
-    if ((rm & 3) == 0b10) return;
 
-    // Switch to arm/thumb if needed
-    cpu.UpdateCPSR((rm & 1) << 5, 0x10); // Update bit 5, ARM = 0, Thumb = 1
-    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, rm & 0xFFFFFFFE); // Branch to the address held
-}
 

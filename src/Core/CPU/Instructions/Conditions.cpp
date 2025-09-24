@@ -1,5 +1,5 @@
 #include "Core/CPU/GBA_CPU.hpp"
-#include "Core/CPU/Instructions/CPU_Conditions.hpp"
+#include "Core/CPU/Instructions/Conditions.hpp"
 
 Condition GetConditionType(uint32_t instruction)
 {

@@ -12,4 +12,3 @@ void UMULL(uint32_t& rdLo, uint32_t& rdHi, uint64_t& product);
 void UMLAL(uint32_t& rdLo, uint32_t& rdHi, uint64_t& product);
 
 void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu);
-void BranchAndExchange(uint32_t instruction, GBA_CPU& cpu);

@@ -38,11 +38,14 @@ public:
         return GetCurrentOperatingMode() != OperatingMode::User && GetCurrentOperatingMode() != OperatingMode::System; 
     }
     
-    void RestoreCPSRFromSPSR();
-    void SaveCPSRIntoSPSR(OperatingMode opMode);
+    void RestoreCPSRFromSPSR(int oldExceptionModeIndex);
+    void SaveCPSRIntoSPSR(int exceptionModeIndex);
+    void UpdateVisibleRegistersForMode(OperatingMode newMode);
 
     inline GBA_Memory& GetMemorySystem() { return memorySystem; }
 
+    static const int SP_INDEX = 13;
+    static const int LR_INDEX = 14;
     static const int PC_INDEX = 15;
 
 protected:
@@ -51,14 +54,15 @@ protected:
 
     std::array<uint32_t, 5> fiqR8_R12{};
     std::array<uint32_t, 5> sharedR8_R12{};
-    std::array<uint32_t, 5> bankedR13s{};   // Stack pointers for FIQ, IRQ, Supervisor, Abort, Undefined
-    std::array<uint32_t, 5> bankedR14s{};   // Link registers for FIQ, IRQ, Supervisor, Abort, Undefined
+    std::array<uint32_t, 6> bankedR13s{};   // Stack pointers for FIQ, IRQ, Supervisor, Abort, Undefined
+    std::array<uint32_t, 6> bankedR14s{};   // Link registers for FIQ, IRQ, Supervisor, Abort, Undefined
     std::array<uint32_t, 5> spsr{};         // SPSR for each banked mode
 
     inline void AdvanceProgramCounter()
     {
         visibleRegisters[15] += (IsThumbMode()) ? 2u : 4u;
     }   
+
 
     InstructionFunction DecodeInstruction(uint32_t instruction);
     void HandleUndefinedBehavior(uint32_t instruction);
@@ -74,14 +78,15 @@ private:
 
 /* TODO NEXT:
 
-- Refactor Halfword data transfer
-- Finish Single data transfer and Addressing mode 2
-- Revise these vs GBATEK
+- Refactor Halfword data transfer - done
+- Finish Single data transfer and Addressing mode 2 - done
+- Revise these vs GBATEK - done
 - Move onto decoding the last 2 patterns
 
 - Setup proper Step() function
 - Setup real pipeline for instructions
 - Move decode instruction to CPU_Decoder
+- Potentially move specific instruction structs to their specific hpp's to not clutter InstructionHelpers.hpp/cpp
 - Thumb instruction set (surely fast)
 
 */

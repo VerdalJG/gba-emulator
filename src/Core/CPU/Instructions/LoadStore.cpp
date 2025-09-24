@@ -1,7 +1,7 @@
-#include "Core/CPU/Instructions/CPU_LoadStore.hpp"
-#include "Core/CPU/Instructions/CPU_AddressingMode2.hpp"
-#include "Core/CPU/Instructions/CPU_AddressingMode3.hpp"
-#include "Core/CPU/Instructions/CPU_Shifts.hpp"
+#include "Core/CPU/Instructions/LoadStore.hpp"
+#include "Core/CPU/Instructions/AddressingMode2.hpp"
+#include "Core/CPU/Instructions/AddressingMode3.hpp"
+#include "Core/CPU/Instructions/Shifts.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 
 #include "Core/CPU/GBA_CPU.hpp"
@@ -145,5 +145,10 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         uint32_t offset = CalculateOffset_AddressingMode2(values.offsetBits, values.iFlag, cpu);
         uint32_t postIndexedAddress = values.uFlag ? (rn + offset) : (rn - offset);
         cpu.SetValueAtRegister(values.rnIndex, postIndexedAddress);
-    } 
+    }
+}
+
+void BlockDataTransfer(uint32_t instruction, GBA_CPU& cpu)
+{
+
 }

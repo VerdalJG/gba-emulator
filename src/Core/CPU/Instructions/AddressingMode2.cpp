@@ -1,4 +1,4 @@
-#include "Core/CPU/Instructions/CPU_AddressingMode2.hpp"
+#include "Core/CPU/Instructions/AddressingMode2.hpp"
 #include "Core/CPU/GBA_CPU.hpp"
 #include <assert.h>
 

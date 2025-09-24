@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <utility>
-#include "Core/CPU/Instructions/CPU_Conditions.hpp"
+#include "Core/CPU/Instructions/Conditions.hpp"
 
 constexpr uint32_t INSTRUCTION_TYPE_MASK = 0b11;
 constexpr int INSTRUCTION_TYPE_SHIFT = 26;
@@ -78,6 +78,47 @@ struct SingleDataTransfer_Decoded
     uint16_t offsetBits;
 };
 
+struct BlockDataTransfer_Decoded
+{
+    Condition condition;
+    uint8_t rnIndex;
+
+    /* Has two meanings: 
+
+    P == 0 indicates that the word addressed by Rn is INCLUDED in the range of memory 
+    locations accessed, at the top (U == 0) or at the bottom (U == 1) of that range.
+
+    P == 1 indicates that the word addressed by Rn is EXCLUDED from the range of memory
+    locations accessed and lies one word beyond the top of the range (U == 0) or one 
+    word below the bottom of the range (U == 1)
+    
+    */  
+    bool pFlag; 
+    /* Indicates that transfer is made upwards (U == 1) 
+    or downwards (U == 0) from the base register
+    */
+    bool uFlag; 
+    /* Writeback, increment (U == 1) or decrement (U == 0) by 
+    (4 * number of registers) in the register list */
+    bool wFlag;
+
+    /*
+        For Load Multiples (LDMs) that load the PC, the S bit indicates that the CPSR
+        is loaded from the current mode SPSR - Therefore LDM with S bit set is 
+        UNPREDICTABLE in user/system mode (no SPSR to load)
+
+        For LDMs that do not load the PC, the S bit indicates that when the processor is 
+        in a privileged mode (), the USER mode banked registers are transferred instead
+        of the registers of the current mode
+    */
+    bool sFlag;
+
+    // Load (L == 1) or Store (L == 0)
+    bool lFlag;
+    // Bit 0 is R0, bit 15 is R15
+    uint16_t registerList;
+};
+
 
 
 DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction);
@@ -116,6 +157,7 @@ HalfwordDataTransfer_Decoded HalfwordDataTransfer_Decode(uint32_t instruction);
 // NOTE: I FLAG == 0 MEANS IMMEDIATE OFFSET
 SingleDataTransfer_Decoded SingleDataTransfer_Decode(uint32_t instruction);
 
+BlockDataTransfer_Decoded BlockDataTransfer_Decode(uint32_t instruction);
 
 enum class InstructionCategory 
 {

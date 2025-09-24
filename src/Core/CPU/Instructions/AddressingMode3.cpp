@@ -1,4 +1,4 @@
-#include "Core/CPU/Instructions/CPU_AddressingMode3.hpp"
+#include "Core/CPU/Instructions/AddressingMode3.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 #include <assert.h>
 

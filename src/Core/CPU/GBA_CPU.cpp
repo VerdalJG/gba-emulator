@@ -1,5 +1,5 @@
 #include "Core/CPU/GBA_CPU.hpp"
-#include "Core/CPU/Instructions/CPU_Decoder.hpp"
+#include "Core/CPU/Instructions/Decoder.hpp"
 #include "Core/CPU/CPU_Memory.hpp"
 #include <assert.h>
 
@@ -59,36 +59,15 @@ void GBA_CPU::RequestInterrupt()
 
 }
 
-void GBA_CPU::RestoreCPSRFromSPSR()
+void GBA_CPU::RestoreCPSRFromSPSR(int oldExceptionModeIndex)
 {
-    switch (GetCurrentOperatingMode())
-    {
-        case OperatingMode::FIQ: cpsr = spsr_fiq; break;
-        case OperatingMode::IRQ: cpsr = spsr_irq; break;
-        case OperatingMode::Supervisor: cpsr = spsr_supervisor; break;
-        case OperatingMode::Abort: cpsr = spsr_abort; break;
-        case OperatingMode::Undefined: cpsr = spsr_undefined; break;
-        default:
-            assert(false && "No SPSR in User/System mode");
-            return;
-    }
+    cpsr = spsr[oldExceptionModeIndex];
 }
 
-void GBA_CPU::SaveCPSRIntoSPSR(OperatingMode opMode)
+void GBA_CPU::SaveCPSRIntoSPSR(int exceptionModeIndex)
 {
-    switch (opMode)
-    {
-        case OperatingMode::FIQ: spsr_fiq = cpsr; break;
-        case OperatingMode::IRQ: spsr_irq = cpsr; break;
-        case OperatingMode::Supervisor: spsr_supervisor = cpsr; break;
-        case OperatingMode::Abort: spsr_abort = cpsr; break;
-        case OperatingMode::Undefined: spsr_undefined = cpsr; break;
-        default:
-            assert(false && "No SPSR in User/System mode");
-            return;
-    }
+    spsr[exceptionModeIndex] = cpsr;
 }
-
 
 InstructionFunction GBA_CPU::DecodeInstruction(uint32_t instruction)
 {

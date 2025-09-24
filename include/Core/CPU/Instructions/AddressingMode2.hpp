@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "Core/CPU/Instructions/CPU_Shifts.hpp"
+#include "Core/CPU/Instructions/Shifts.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 
 class GBA_CPU;

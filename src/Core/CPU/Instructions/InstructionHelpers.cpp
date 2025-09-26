@@ -8,13 +8,14 @@ DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction)
     DataProcessing_Decoded result;
 
     result.condition = GetConditionType(instruction);
+    result.immediateFlag = (instruction >> 25) & 1;
+    result.opcode = GetDataProcessingOpcode(instruction);
+    result.setCPSRFlag = (instruction >> 20) & 1;
+
     result.rnIndex = (instruction >> 16) & 0xF;
     result.rdIndex = (instruction >> 12) & 0xF;
-    result.shifterOperandBits = instruction & 0xFFF;
-    result.setCPSRFlag = (instruction >> 20) & 1;
-    result.opcode = GetDataProcessingOpcode(instruction);
-    result.immediateFlag = (instruction >> 25) & 1;
 
+    result.shifterOperandBits = instruction & 0xFFF;
     return result;
 }
 
@@ -23,11 +24,13 @@ Multiply_Decoded Multiply_Decode(uint32_t instruction)
     Multiply_Decoded result;
 
     result.condition = GetConditionType(instruction);
+    result.accumulateFlag = (instruction >> 21) & 1;
+    result.setCPSRFlag = (instruction >> 20) & 1;
+
     result.rdIndex = (instruction >> 16) & 0xF;
     result.rsIndex = (instruction >> 8) & 0xF;
     result.rmIndex = instruction & 0xF;
-    result.accumulateFlag = (instruction >> 21) & 1;
-    result.setCPSRFlag = (instruction >> 20) & 1;
+
 
     return result;
 }
@@ -37,13 +40,15 @@ MultiplyLong_Decoded MultiplyLong_Decode(uint32_t instruction)
     MultiplyLong_Decoded result;
 
     result.condition = GetConditionType(instruction);
+    result.signedFlag = (instruction >> 22) & 1;
+    result.accumulateFlag = (instruction >> 21) & 1;
+    result.setCPSRFlag = (instruction >> 20) & 1;
+
     result.rdHiIndex = (instruction >> 16) & 0xF;
     result.rdLoIndex = (instruction >> 12) & 0xF;
     result.rsIndex = (instruction >> 8) & 0xF;
     result.rmIndex = instruction & 0xF;
-    result.signedFlag = (instruction >> 22) & 1;
-    result.accumulateFlag = (instruction >> 21) & 1;
-    result.setCPSRFlag = (instruction >> 20) & 1;
+
 
     return result;
 }
@@ -53,10 +58,10 @@ SingleDataSwap_Decoded SingleDataSwap_Decode(uint32_t instruction)
     SingleDataSwap_Decoded result;
 
     result.condition = GetConditionType(instruction);
+    result.bFlag = (instruction >> 24) & 1;
     result.rnIndex = (instruction >> 16) & 0xF;
     result.rdIndex = (instruction >> 12) & 0xF;
     result.rmIndex = instruction & 0xF;
-    result.bFlag = (instruction >> 24) & 1;
 
     return result;
 }
@@ -73,11 +78,11 @@ HalfwordDataTransfer_Decoded HalfwordDataTransfer_Decode(uint32_t instruction)
 
     result.rnIndex = (instruction >> 16) & 0xF;
     result.rdIndex = (instruction >> 12) & 0xF;
-    result.offsetBits = instruction & 0xF0F;
 
     result.sFlag = (instruction >> 6) & 1;
     result.hFlag = (instruction >> 5) & 1;
 
+    result.offsetBits = instruction & 0xF0F;
     return result;
 }
 
@@ -96,10 +101,25 @@ SingleDataTransfer_Decoded SingleDataTransfer_Decode(uint32_t instruction)
     result.rnIndex = (instruction >> 16) & 0xF;
     result.rdIndex = (instruction >> 12) & 0xF;
     result.offsetBits = instruction & 0xFFF;
-
     return result;
 }
 
+BlockDataTransfer_Decoded BlockDataTransfer_Decode(uint32_t instruction)
+{
+    BlockDataTransfer_Decoded result;
+
+    result.condition = GetConditionType(instruction);
+
+    result.pFlag = (instruction >> 24) & 1;
+    result.uFlag = (instruction >> 23) & 1;
+    result.sFlag = (instruction >> 22) & 1;
+    result.wFlag = (instruction >> 21) & 1;
+    result.lFlag = (instruction >> 20) & 1;
+
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.registerList = instruction & 0xFFFF;
+    return result;
+}
 
 uint32_t ZeroExtendTo32(uint8_t value)
 {
@@ -124,5 +144,17 @@ int32_t SignExtendTo32(uint16_t value)
 DataProcessingOpcode GetDataProcessingOpcode(uint32_t instruction)
 {
     return static_cast<DataProcessingOpcode>((instruction >> 21) & 0xF);
+}
+
+uint32_t NumberOfSetBitsIn(uint32_t value)
+{
+    uint32_t result = 0;
+    while (value != 0)
+    {
+        value &= (value - 1);
+        result++;
+    }
+
+    return result;
 }
 

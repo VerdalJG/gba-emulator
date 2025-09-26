@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "Testing/TestCPU.hpp"
-#include "Core/CPU/Instructions/CPU_Shifts.hpp"
-#include "Core/CPU/Instructions/CPU_AddressingMode1.hpp"
+#include "Core/CPU/Instructions/Shifts.hpp"
+#include "Core/CPU/Instructions/AddressingMode1.hpp"
 
 class ShiftTests : public::testing::Test
 {

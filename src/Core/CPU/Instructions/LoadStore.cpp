@@ -1,6 +1,7 @@
 #include "Core/CPU/Instructions/LoadStore.hpp"
 #include "Core/CPU/Instructions/AddressingMode2.hpp"
 #include "Core/CPU/Instructions/AddressingMode3.hpp"
+#include "Core/CPU/Instructions/AddressingMode4.hpp"
 #include "Core/CPU/Instructions/Shifts.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 
@@ -150,5 +151,63 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
 
 void BlockDataTransfer(uint32_t instruction, GBA_CPU& cpu)
 {
+    BlockDataTransfer_Decoded values = BlockDataTransfer_Decode(instruction);
 
+    AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
+
+    bool isLoad = values.lFlag;
+    
+    if (isLoad)
+    {
+        if (values.sFlag)
+        {
+            bool pcInRegisterList = values.registerList & 0x8000;
+            if (pcInRegisterList)
+            {
+                LDMRestoreCPSR(values, cpu);
+            }
+            else
+            {
+                LDMUserRegisters(values, cpu);
+            }
+        }
+        else
+        {   
+            LDM(values, cpu);
+        }
+    }
+    else
+    {
+        if (values.sFlag)
+        {
+            STMUserRegisters(values, cpu);
+        }
+        else 
+        {
+            STM(values, cpu);
+        }
+    }
+    
+    
+    bool baseRegisterInList = (values.registerList >> values.rnIndex) & 1;
+    
+    
+    bool writeback = values.wFlag;
+    
+
+    for (int index = 0; index < 16; ++index)
+    {
+        if (!(values.registerList >> index) & 1) continue;
+
+        if (isLoad) //LDM
+        {
+
+        }
+        else // STM
+        {
+
+        }
+
+
+    }
 }

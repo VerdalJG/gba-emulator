@@ -53,7 +53,7 @@ protected:
     uint32_t cpsr = 0;                              // Current Program Status Register
 
     std::array<uint32_t, 5> fiqR8_R12{};
-    std::array<uint32_t, 5> sharedR8_R12{};
+    std::array<uint32_t, 5> sharedR8_R12{}; // User registers, shared with some other modes
     std::array<uint32_t, 6> bankedR13s{};   // Stack pointers for FIQ, IRQ, Supervisor, Abort, Undefined
     std::array<uint32_t, 6> bankedR14s{};   // Link registers for FIQ, IRQ, Supervisor, Abort, Undefined
     std::array<uint32_t, 5> spsr{};         // SPSR for each banked mode

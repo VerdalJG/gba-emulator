@@ -98,20 +98,21 @@ struct BlockDataTransfer_Decoded
     or downwards (U == 0) from the base register
     */
     bool uFlag; 
-    /* Writeback, increment (U == 1) or decrement (U == 0) by 
-    (4 * number of registers) in the register list */
-    bool wFlag;
 
-    /*
+    /*  Special Cases:
         For Load Multiples (LDMs) that load the PC, the S bit indicates that the CPSR
         is loaded from the current mode SPSR - Therefore LDM with S bit set is 
         UNPREDICTABLE in user/system mode (no SPSR to load)
 
         For LDMs that do not load the PC, the S bit indicates that when the processor is 
-        in a privileged mode (), the USER mode banked registers are transferred instead
-        of the registers of the current mode
+        in a privileged mode (any mode other than USER), the USER mode banked registers 
+        are transferred instead of the registers of the current mode
     */
     bool sFlag;
+
+    /* Writeback, increment (U == 1) or decrement (U == 0) by 
+    (4 * number of registers) in the register list */
+    bool wFlag;
 
     // Load (L == 1) or Store (L == 0)
     bool lFlag;
@@ -199,3 +200,5 @@ inline uint32_t CarryFrom(uint64_t result)
 {
     return static_cast<uint32_t>(result >> 32);
 }
+
+uint32_t NumberOfSetBitsIn(uint32_t value);

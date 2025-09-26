@@ -23,7 +23,8 @@ void HandleProgramCounterCPSRCase(GBA_CPU& cpu)
 {
     if (cpu.CurrentModeHasSPSR())
     {
-        cpu.RestoreCPSRFromSPSR();
+        int exceptionModeIndex = BankIndex(cpu.GetCurrentOperatingMode());
+        cpu.RestoreCPSRFromSPSR(exceptionModeIndex);
     }
     else
     {

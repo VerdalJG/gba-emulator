@@ -2,7 +2,6 @@
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 
 #include "Core/CPU/GBA_CPU.hpp"
-#include "AddressingMode4.hpp"
 
 AddressingMode4 CalculateAddressingMode4(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
 {

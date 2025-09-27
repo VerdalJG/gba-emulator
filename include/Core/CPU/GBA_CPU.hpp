@@ -22,6 +22,9 @@ public:
     inline uint32_t GetValueAtRegister(int registerIndex) { return visibleRegisters[registerIndex]; }
     inline void SetValueAtRegister(int registerIndex, uint32_t value) { visibleRegisters[registerIndex] = value; }
 
+    inline uint32_t GetValueAtUserRegister(int registerIndex) { return sharedR8_R12[8 - registerIndex]; }
+    inline void SetValueAtUserRegister(int registerIndex, uint32_t value) { sharedR8_R12[8 - registerIndex] = value; }
+
     // CPSR functions
     inline uint32_t GetCPSR() { return cpsr; }
     inline bool GetCPSR_N() { return (cpsr >> 31) & 1; }

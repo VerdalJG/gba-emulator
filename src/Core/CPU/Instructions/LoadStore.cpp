@@ -8,6 +8,10 @@
 #include "Core/CPU/GBA_CPU.hpp"
 #include "Core/CPU/CPU_Memory.hpp"
 
+#include <assert.h>
+#include <bit>
+
+
 // Loads: LDRH LDRSB LDRSH
 // Stores: STRH
 void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
@@ -113,7 +117,7 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         // Special case if rdIndex == PC
         if (values.rdIndex == GBA_CPU::PC_INDEX)
         {
-            valueToLoad &= ~3; // Align if PC
+            valueToLoad &= cpu.IsThumbMode() ? ~1u : ~3u; // Align if PC 
         }
 
         cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
@@ -153,9 +157,12 @@ void BlockDataTransfer(uint32_t instruction, GBA_CPU& cpu)
 {
     BlockDataTransfer_Decoded values = BlockDataTransfer_Decode(instruction);
 
-    AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
-
     bool isLoad = values.lFlag;
+
+    if (values.registerList == 0)
+    {
+        return isLoad ? LDMEmptyRegisterList(values, cpu) : STMEmptyRegisterList(values, cpu);
+    }
     
     if (isLoad)
     {
@@ -164,6 +171,7 @@ void BlockDataTransfer(uint32_t instruction, GBA_CPU& cpu)
             bool pcInRegisterList = values.registerList & 0x8000;
             if (pcInRegisterList)
             {
+                if (!cpu.CurrentModeHasSPSR()) return; // UNPREDICTABLE due to not having SPSR
                 LDMRestoreCPSR(values, cpu);
             }
             else
@@ -187,27 +195,222 @@ void BlockDataTransfer(uint32_t instruction, GBA_CPU& cpu)
             STM(values, cpu);
         }
     }
-    
-    
+}
+
+void LDM(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
+{
     bool baseRegisterInList = (values.registerList >> values.rnIndex) & 1;
-    
-    
-    bool writeback = values.wFlag;
-    
+    AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
+    uint32_t address = addressing4.startAddress;
 
-    for (int index = 0; index < 16; ++index)
+    GBA_Memory& memory = cpu.GetMemorySystem();
+    
+    for (int i = 0; i < 16; ++i)
     {
-        if (!(values.registerList >> index) & 1) continue;
+        if (!((values.registerList >> i) & 1)) continue;
+        if (i == values.rnIndex) continue;
 
-        if (isLoad) //LDM
+        uint32_t loaded = memory.Read32(address);
+
+        if (i == GBA_CPU::PC_INDEX)
         {
-
+            cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, loaded & 0xFFFFFFFC); // Ignore bits [1:0]
         }
-        else // STM
+        else
         {
-
+            cpu.SetValueAtRegister(i, loaded);
         }
 
-
+        address += 4;
     }
+
+    assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
+
+    if (baseRegisterInList && values.wFlag)
+    {
+        // Normally UNPREDICTABLE, but ARM7TDMI has this special case
+        cpu.SetValueAtRegister(values.rnIndex, addressing4.writebackValue);
+    }
+}
+
+void LDMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
+{
+    bool baseRegisterInList = (values.registerList >> values.rnIndex) & 1;
+    AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
+    uint32_t address = addressing4.startAddress;
+
+    GBA_Memory& memory = cpu.GetMemorySystem();
+    
+    for (int i = 0; i < 8; ++i)
+    {
+        if (!((values.registerList >> i) & 1)) continue;
+        if (i == values.rnIndex) continue;
+
+        uint32_t loaded = memory.Read32(address);
+
+        cpu.SetValueAtRegister(i, loaded);
+
+        address += 4;
+    }
+
+    for (int i = 8; i < 13; ++i)
+    {
+        if (!((values.registerList >> i) & 1)) continue;
+        if (i == values.rnIndex) continue;
+
+        uint32_t loaded = memory.Read32(address);
+
+        if (cpu.GetCurrentOperatingMode() == OperatingMode::FIQ)
+        {
+            cpu.SetValueAtUserRegister(i, loaded);
+        }
+        else
+        {
+            cpu.SetValueAtRegister(i, loaded);
+        }
+
+        address += 4;
+    }
+
+    assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
+
+    if (baseRegisterInList && values.wFlag)
+    {
+        // Normally UNPREDICTABLE, but ARM7TDMI has this special case
+        cpu.SetValueAtRegister(values.rnIndex, addressing4.writebackValue);
+    }
+}
+
+void LDMRestoreCPSR(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
+{
+    bool baseRegisterInList = (values.registerList >> values.rnIndex) & 1;
+    AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
+    uint32_t address = addressing4.startAddress;
+
+    GBA_Memory& memory = cpu.GetMemorySystem();
+
+    for (int i = 0; i < 15; ++i)
+    {
+        if (!((values.registerList >> i) & 1)) continue;
+        if (i == values.rnIndex) continue;
+
+        uint32_t loaded = memory.Read32(address);
+        cpu.SetValueAtRegister(i, loaded);
+
+        address += 4;
+    }
+
+    int bank = BankIndex(cpu.GetCurrentOperatingMode());
+    cpu.RestoreCPSRFromSPSR(bank);
+
+    uint32_t loaded = memory.Read32(address);
+    uint32_t pcValue = cpu.IsThumbMode() ? loaded & 0xFFFFFFFE : loaded & 0xFFFFFFFC;
+
+    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, pcValue); // Ignore bits [1:0]
+
+    assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
+
+    if (baseRegisterInList && values.wFlag)
+    {
+        // Normally UNPREDICTABLE, but ARM7TDMI has this special case
+        cpu.SetValueAtRegister(values.rnIndex, addressing4.writebackValue);
+    }
+}
+
+void LDMEmptyRegisterList(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
+{
+    AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
+    uint32_t address = addressing4.startAddress;
+    GBA_Memory& memory = cpu.GetMemorySystem();
+
+    uint32_t loaded = memory.Read32(address);
+    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, loaded);
+
+    assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
+}
+
+void STM(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
+{
+    bool lowestSetBitIsRn = std::countr_zero(values.registerList & (~values.registerList + 1u)) == values.rnIndex;
+    AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu); 
+    uint32_t address = addressing4.startAddress;
+
+    GBA_Memory& memory = cpu.GetMemorySystem();
+
+    for (int i = 0; i < 15; ++i)
+    {
+        if (!((values.registerList >> i) & 1)) continue;
+
+        uint32_t toStore = cpu.GetValueAtRegister(i);
+        memory.Write32(address, toStore);
+
+        address += 4;
+    }
+
+    assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
+
+    if (!lowestSetBitIsRn && values.wFlag)
+    {
+        // Normally UNPREDICTABLE, but ARM7TDMI has this special case
+        cpu.SetValueAtRegister(values.rnIndex, addressing4.writebackValue);
+    }
+}
+
+void STMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
+{
+    AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
+    uint32_t address = addressing4.startAddress;
+
+    GBA_Memory& memory = cpu.GetMemorySystem();
+    
+    for (int i = 0; i < 8; ++i)
+    {
+        if (!((values.registerList >> i) & 1)) continue;
+
+        uint32_t toStore = cpu.GetValueAtRegister(i);
+        memory.Write32(address, toStore);
+
+        address += 4;
+    }
+
+    for (int i = 8; i < 13; ++i)
+    {
+        if (!((values.registerList >> i) & 1)) continue;
+
+        uint32_t toStore;
+        
+        if (cpu.GetCurrentOperatingMode() == OperatingMode::FIQ)
+        {
+            toStore = cpu.GetValueAtUserRegister(i);
+        }
+        else
+        {
+            toStore = cpu.GetValueAtRegister(i);
+        }
+
+        memory.Write32(address, toStore);
+
+        address += 4;
+    }
+
+    assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
+
+    if (values.wFlag)
+    {
+        // Normally UNPREDICTABLE, but ARM7TDMI has this special case
+        cpu.SetValueAtRegister(values.rnIndex, addressing4.writebackValue);
+    }
+
+}
+
+void STMEmptyRegisterList(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
+{
+    AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
+    uint32_t address = addressing4.startAddress;
+    GBA_Memory& memory = cpu.GetMemorySystem();
+
+    uint32_t toStore = memory.Read32(address);
+    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, toStore);
+
+    assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
 }

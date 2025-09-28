@@ -20,7 +20,11 @@ public:
 
     // Register functions
     inline uint32_t GetValueAtRegister(int registerIndex) { return visibleRegisters[registerIndex]; }
-    inline void SetValueAtRegister(int registerIndex, uint32_t value) { visibleRegisters[registerIndex] = value; }
+    inline void SetValueAtRegister(int registerIndex, uint32_t value) 
+    { 
+        visibleRegisters[registerIndex] = value; 
+        if (registerIndex == PC_INDEX) FlushPipeline();
+    }
 
     inline uint32_t GetValueAtUserRegister(int registerIndex) { return sharedR8_R12[8 - registerIndex]; }
     inline void SetValueAtUserRegister(int registerIndex, uint32_t value) { sharedR8_R12[8 - registerIndex] = value; }
@@ -61,12 +65,15 @@ protected:
     std::array<uint32_t, 6> bankedR14s{};   // Link registers for FIQ, IRQ, Supervisor, Abort, Undefined
     std::array<uint32_t, 5> spsr{};         // SPSR for each banked mode
 
-    inline void AdvanceProgramCounter()
-    {
-        visibleRegisters[15] += (IsThumbMode()) ? 2u : 4u;
-    }   
+    std::array<Instruction, 3> instructionPipeline{}; // [0] = fetch, [1] = decode, [2] = execute
 
+    void Fetch();
+    void Decode();
+    void Execute();
 
+    void AdvanceInstructionPipeline();
+    void AdvanceProgramCounter(); 
+    void FlushPipeline();
     InstructionFunction DecodeInstruction(uint32_t instruction);
     void HandleUndefinedBehavior(uint32_t instruction);
 
@@ -84,10 +91,10 @@ private:
 - Refactor Halfword data transfer - done
 - Finish Single data transfer and Addressing mode 2 - done
 - Revise these vs GBATEK - done
-- Move onto decoding the last 2 patterns
+- Move onto decoding the last 2 patterns - done
 
-- Setup proper Step() function
-- Setup real pipeline for instructions
+- Setup proper Step() function - done
+- Setup real pipeline for instructions - done
 - Move decode instruction to CPU_Decoder
 - Potentially move specific instruction structs to their specific hpp's to not clutter InstructionHelpers.hpp/cpp
 - Thumb instruction set (surely fast)

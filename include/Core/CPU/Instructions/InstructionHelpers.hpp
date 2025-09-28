@@ -3,14 +3,6 @@
 #include <utility>
 #include "Core/CPU/Instructions/Conditions.hpp"
 
-constexpr uint32_t INSTRUCTION_TYPE_MASK = 0b11;
-constexpr int INSTRUCTION_TYPE_SHIFT = 26;
-
-constexpr int OPERAND2_MODE_SHIFT = 25;
-
-constexpr uint32_t CONDITION_MASK = 0xF;
-constexpr int CONDITION_SHIFT = 28;
-
 class GBA_CPU;
 
 enum class DataProcessingOpcode
@@ -22,6 +14,13 @@ enum class DataProcessingOpcode
 };
 
 using InstructionFunction = void (*)(uint32_t, GBA_CPU&); // Instruction Function Pointer alias
+
+struct Instruction
+{
+    uint32_t rawInstruction;
+    InstructionFunction function;
+    bool valid = false;
+};
 
 struct ShifterOperand 
 {
@@ -120,8 +119,6 @@ struct BlockDataTransfer_Decoded
     uint16_t registerList;
 };
 
-
-
 DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction);
 Multiply_Decoded Multiply_Decode(uint32_t instruction);
 MultiplyLong_Decoded MultiplyLong_Decode(uint32_t instruction);
@@ -171,8 +168,6 @@ enum class InstructionCategory
     Coprocessor,
     Undefined
 };
-
-
 
 enum InstructionPattern : uint8_t 
 {

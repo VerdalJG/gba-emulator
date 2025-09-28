@@ -3,8 +3,6 @@
 #include "Core/CPU/CPU_Memory.hpp"
 #include <assert.h>
 
-
-
 GBA_CPU::GBA_CPU(GBA_Memory& memory) :
     memorySystem(memory)
 {
@@ -23,35 +21,13 @@ void GBA_CPU::Reset()
 
 void GBA_CPU::Step()
 {
-    // Fetch
-    uint32_t instruction = memorySystem.Read32(visibleRegisters[15]);
-    
-    // Decode
-    InstructionFunction operationToExecute;
-    
-    // Thumb mode does not use condition bits
-    if (IsThumbMode()) 
-    {
-        // Handle Thumb mode here
-    }
-    else // ARM Mode
-    {
-        Condition condition = GetConditionType(instruction);
-        if (condition == Condition::UD)
-        {
-            HandleUndefinedBehavior(instruction); // TODO: Change later
-            return;
-        }
+    AdvanceInstructionPipeline();
 
-        if (ConditionPassed(condition, *this))
-        {
-            operationToExecute = DecodeInstruction(instruction);
-        }
-    }
-    
-    // Execute
-    if (!operationToExecute) return; // Condition failed
-    (*operationToExecute)(instruction, *this); // Dereference due to this being a member function pointer
+    Execute();
+    Decode();
+    Fetch();
+
+    AdvanceProgramCounter();
 }
 
 void GBA_CPU::RequestInterrupt()
@@ -97,4 +73,76 @@ InstructionFunction GBA_CPU::DecodeInstruction(uint32_t instruction)
 void GBA_CPU::HandleUndefinedBehavior(uint32_t instruction)
 {
     // In an emulator, treat it as NOP (No operation), and just step to next instruction
+}
+
+void GBA_CPU::AdvanceInstructionPipeline()
+{
+    if (instructionPipeline[1].valid)
+    {
+        instructionPipeline[2] = instructionPipeline[1]; // Move [1] to [2];
+    }
+
+    if (instructionPipeline[0].valid)
+    {
+        instructionPipeline[1] = instructionPipeline[0]; // Move [0] to [1];
+    }
+}
+
+void GBA_CPU::AdvanceProgramCounter()
+{
+    visibleRegisters[PC_INDEX] += (IsThumbMode() ? 2u : 4u);
+}
+
+void GBA_CPU::FlushPipeline()
+{
+    instructionPipeline[0].valid = false;
+    instructionPipeline[1].valid = false;
+    instructionPipeline[2].valid = false;
+}
+
+void GBA_CPU::Fetch()
+{
+    Instruction newInstruction;
+    newInstruction.rawInstruction = memorySystem.Read32(visibleRegisters[PC_INDEX]);
+    newInstruction.valid = true;
+    instructionPipeline[0] = newInstruction;
+}
+
+void GBA_CPU::Decode()
+{
+    if (!instructionPipeline[1].valid) return;
+
+    InstructionFunction functionToExecute;
+    
+    // Thumb mode does not use condition bits
+    if (IsThumbMode()) 
+    {
+        // Handle Thumb mode here
+    }
+    else // ARM Mode
+    {
+        Condition condition = GetConditionType(instructionPipeline[1].rawInstruction);
+        if (condition == Condition::UD)
+        {
+            HandleUndefinedBehavior(instructionPipeline[1].rawInstruction);
+            return;
+        }
+
+        if (ConditionPassed(condition, *this))
+        {
+            functionToExecute = DecodeInstruction(instructionPipeline[1].rawInstruction);
+        }
+    }
+
+    // Store function pointer in pipeline
+    instructionPipeline[1].function = functionToExecute;
+}
+
+void GBA_CPU::Execute()
+{
+    if (!instructionPipeline[2].valid) return;
+    if (instructionPipeline[2].function == nullptr) return; // No-Op
+
+    // Execute the instruction
+    instructionPipeline[2].function(instructionPipeline[2].rawInstruction, *this);
 }

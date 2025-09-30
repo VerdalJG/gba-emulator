@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 #include <variant>
+#include <memory>
 
 // Memory map locations for GBA
 constexpr uint32_t BIOS_START = 0X00000000;
@@ -38,22 +39,17 @@ enum class Permissions
 
 struct MemoryRegion
 {
-    std::vector<uint8_t>* data;
+    std::shared_ptr<std::vector<uint8_t>> data;
     Permissions permissions;
     uint32_t startAddress;
 
-    MemoryRegion(Permissions permissions, uint32_t startAddress, size_t regionSize)
-    {
-        this->permissions = permissions;
-        this->startAddress = startAddress;
-        data = new std::vector<uint8_t>(regionSize);
-    }
+    MemoryRegion(Permissions permissions, uint32_t startAddress, size_t regionSize) 
+    :   permissions(permissions), startAddress(startAddress),
+        data(std::make_shared<std::vector<uint8_t>>(regionSize)) {}
 
-    ~MemoryRegion()
-    {
-        delete data;
-    }
-}; 
+    MemoryRegion(Permissions permissions, uint32_t startAddress)
+    :   permissions(permissions), startAddress(startAddress), data(nullptr) {}
+};
 
 class GBA_Memory 
 {
@@ -94,16 +90,16 @@ private:
     // ROM0/1/2 all point to the same ROM data but differ by waitstate timing.
     // ROM1 and ROM2 are mirrors of ROM0 at different addresses (for access timing differences).
 
-    MemoryRegion rom0 = MemoryRegion(Permissions::ReadOnly, ROM0_START, ROM_BANK_SIZE);
-    MemoryRegion rom1 = MemoryRegion(Permissions::ReadOnly, ROM1_START, ROM_BANK_SIZE);
-    MemoryRegion rom2 = MemoryRegion(Permissions::ReadOnly, ROM2_START, ROM_BANK_SIZE);
+    MemoryRegion rom0 = MemoryRegion(Permissions::ReadOnly, ROM0_START);
+    MemoryRegion rom1 = MemoryRegion(Permissions::ReadOnly, ROM1_START);
+    MemoryRegion rom2 = MemoryRegion(Permissions::ReadOnly, ROM2_START);
     MemoryRegion sram = MemoryRegion(Permissions::ReadWrite, SRAM_START, SRAM_SIZE);
 
     // The GBA has unused memory area after the SRAM, which goes from 0x10000000 to 0xFFFFFFFF
 
     uint8_t lastBusValue = 0xFF; // For open-bus emulation
 
-    std::vector<uint8_t> rom; 
+    std::shared_ptr<std::vector<uint8_t>> rom; 
 
 };
 

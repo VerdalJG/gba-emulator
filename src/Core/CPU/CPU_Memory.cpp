@@ -32,11 +32,6 @@ MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address)
     // disabled via Port 4000800h) returns the recently pre-fetched opcode.
 }
 
-// void GBAMemory::WriteToRegion(std::vector<uint8_t> data, MemoryRegion region)
-// {
-    
-// }
-
 uint8_t GBA_Memory::Read8(uint32_t address)
 {
     MemoryRegion* region = GetRegionFromAddress(address);
@@ -145,17 +140,17 @@ void GBA_Memory::Write32(uint32_t address, uint32_t value)
 
 void GBA_Memory::LoadROM(const std::vector<uint8_t>& romData)
 {
-    rom = romData;
+    rom = std::make_shared<std::vector<uint8_t>>(romData);
 
     // Ensure rom data is at least 32 MB
-    if (rom.size() < ROM_BANK_SIZE)
+    if (rom.get()->size() < ROM_BANK_SIZE)
     {
-        rom.resize(ROM_BANK_SIZE, 0xFF);
+        rom.get()->resize(ROM_BANK_SIZE, 0xFF);
     }
 
-    rom0.data = &rom;
-    rom1.data = &rom;
-    rom2.data = &rom;
+    rom0.data = rom;
+    rom1.data = rom;
+    rom2.data = rom;
 }
 
 void GBA_Memory::LoadBIOS(const std::vector<uint8_t>& biosData)

@@ -68,8 +68,6 @@ InstructionFunction GBA_CPU::DecodeInstruction(uint32_t instruction)
     }
 }
 
-
-
 void GBA_CPU::HandleUndefinedBehavior(uint32_t instruction)
 {
     // In an emulator, treat it as NOP (No operation), and just step to next instruction

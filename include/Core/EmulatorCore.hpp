@@ -17,6 +17,13 @@ public:
     bool LoadROM(const std::vector<uint8_t>& romData);
     void Run();
     void Shutdown();
+    
+    void SetUsingHLE(bool enabled) { usingHLEBios = enabled; }
+    bool GetUsingHLE() { return usingHLEBios; }
+
+    GBA_CPU& GetCPU() { return cpu; }
+    GBA_Memory& GetMemory() { return memory; }
+
 
 // private:
     void Update();
@@ -24,9 +31,10 @@ public:
     void Render();
     void HandleSDLEvents();
 
-private:
+protected:
     GBA_Memory memory;
     GBA_CPU cpu;
+    bool usingHLEBios = false; // High level emulation bios, used when can't use GBA real BIOS
     
     //GBA_PPU ppu; // For video
     //GBA_APU apu; // For audio

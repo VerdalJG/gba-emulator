@@ -1,12 +1,13 @@
 #include "Core/CPU/GBA_CPU.hpp"
 #include "Core/CPU/Instructions/Decoder.hpp"
 #include "Core/CPU/CPU_Memory.hpp"
+#include "Core/EmulatorCore.hpp"
 #include <assert.h>
 
-GBA_CPU::GBA_CPU(GBA_Memory& memory) :
-    memorySystem(memory)
+GBA_CPU::GBA_CPU(EmulatorCore* core) :
+    core(core)
 {
-
+    assert(core != nullptr && "CPU must have valid EmulatorCore object");
 }
 
 GBA_CPU::~GBA_CPU()
@@ -105,7 +106,7 @@ void GBA_CPU::FlushPipeline()
 void GBA_CPU::Fetch()
 {
     Instruction newInstruction;
-    newInstruction.rawInstruction = memorySystem.Read32(visibleRegisters[PC_INDEX]);
+    newInstruction.rawInstruction = GetMemorySystem().Read32(visibleRegisters[PC_INDEX]);
     newInstruction.valid = true;
     instructionPipeline[0] = newInstruction;
 }
@@ -147,4 +148,12 @@ void GBA_CPU::Execute()
 
     // Execute the instruction
     instructionPipeline[2].function(instructionPipeline[2].rawInstruction, *this);
+}
+
+GBA_Memory& GBA_CPU::GetMemorySystem()
+{
+    if (core)
+    {
+        return core->GetMemory();
+    }
 }

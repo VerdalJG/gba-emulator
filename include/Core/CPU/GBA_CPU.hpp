@@ -6,12 +6,13 @@
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 
 class GBA_Memory;
+class EmulatorCore;
 
 // Emulates the ARM7TDMI, ARMv4t core
 class GBA_CPU 
 {
 public:
-    GBA_CPU(GBA_Memory& memory);
+    GBA_CPU(EmulatorCore* core);
     ~GBA_CPU();
 
     void Reset();            // Reset to CPU initial state
@@ -49,7 +50,7 @@ public:
     void SaveCPSRIntoSPSR(int exceptionModeIndex);
     void UpdateVisibleRegistersForMode(OperatingMode newMode);
 
-    inline GBA_Memory& GetMemorySystem() { return memorySystem; }
+    GBA_Memory& GetMemorySystem();
 
     static const int SP_INDEX = 13;
     static const int LR_INDEX = 14;
@@ -78,7 +79,7 @@ protected:
     void HandleUndefinedBehavior(uint32_t instruction);
 
 private:
-    GBA_Memory& memorySystem;
+    EmulatorCore* core;
 };
 
 

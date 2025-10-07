@@ -1,6 +1,7 @@
 #include "EmulatorHandler.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Utils.hpp"
+#include "Core/CPU/CPU_Memory.hpp"
 
 // std includes
 #include <fstream>
@@ -11,6 +12,7 @@
 // QT includes
 #include <QThread>
 #include <QMessageBox>
+#include <QDebug>
 
 EmulatorHandler::EmulatorHandler() :
     emulatorCore(new EmulatorCore())
@@ -28,18 +30,27 @@ void EmulatorHandler::LoadStateFromSlot(int slot)
 
 void EmulatorHandler::Startup()
 {
-    std::string path = "bios/gba_bios.bin";
     std::vector<uint8_t> biosData;
+    std::string biosPath = "bios/gba_bios.bin";
+    bool loadedBios = LoadFile(biosPath, biosData);
     
-    if (LoadFile(path, biosData))
+    
+    if (loadedBios && biosData.size() == BIOS_SIZE)
     {
+        emulatorCore->SetUsingHLE(true);
         emulatorCore->LoadBIOS(biosData);
+        qDebug() << "Loaded real BIOS\n";
+    }
+    else 
+    {
+        emulatorCore->SetUsingHLE(false);
+        qDebug() << "Using HLE BIOS (No valid 'gba_bios.bin' found) \n ";
     }
 }
 
 bool EmulatorHandler::LoadROM(const std::string &romPath)
 {
-    printf("Loading ROM from path: %s\n", romPath.c_str());
+    qDebug() << "Loading ROM from path: " << romPath;
 
     std::vector<uint8_t> romData;
 

@@ -16,7 +16,11 @@ GBA_CPU::~GBA_CPU()
 
 void GBA_CPU::Reset()
 {
-
+    // Fill registers with 0
+    std::fill(std::begin(visibleRegisters), std::end(visibleRegisters), 0);
+    cpsr = 0x000000D3;   // Supervisor mode, IRQ/FIQ disabled
+    SetValueAtRegister(PC_INDEX, 0x00000000);
+    FlushPipeline();
 }
 
 void GBA_CPU::Step()

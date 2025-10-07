@@ -46,6 +46,12 @@ void EmulatorCore::LoadBIOS(const std::vector<uint8_t> &biosData)
 
 bool EmulatorCore::LoadROM(const std::vector<uint8_t>& romData)
 {
+    if (romData.empty() || romData.size() > ROM_BANK_SIZE)
+    {
+        printf("ROM size invalid: %zu bytes\n", romData.size());
+        return false;
+    }
+
     memory.LoadROM(romData);
     return true; // Assume it is loaded successfully for now
 }

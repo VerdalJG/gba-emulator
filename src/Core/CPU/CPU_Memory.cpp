@@ -1,4 +1,5 @@
 #include "Core/CPU/CPU_Memory.hpp"
+#include <stdexcept>
 
 MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) 
 {
@@ -158,9 +159,9 @@ void GBA_Memory::LoadBIOS(const std::vector<uint8_t>& biosData)
     if (biosData.size() != BIOS_SIZE)
     {
         // Error: Invalid bios data size
-        return;
+        throw std::runtime_error("Invalid BIOS size: expected 16 KB");
     }
 
-    std::copy(biosData.begin(), biosData.end(), (*bios.data).begin());
+    std::copy(biosData.begin(), biosData.end(), bios.data->begin());
 }
 

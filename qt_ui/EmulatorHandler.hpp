@@ -15,6 +15,7 @@ public:
     int GetSaveStateSlots() const { return saveStateSlots; }
     void SaveStateToSlot(int slot);
     void LoadStateFromSlot(int slot);
+    void Startup();
     bool LoadROM(const std::string& romPath);
     void PauseEmulation();
     void ResumeEmulation();

@@ -27,6 +27,7 @@ public:
 private:
     GBA_Memory memory;
     GBA_CPU cpu;
+    
     //GBA_PPU ppu; // For video
     //GBA_APU apu; // For audio
     //InputHandler inputHandler; // For input handling

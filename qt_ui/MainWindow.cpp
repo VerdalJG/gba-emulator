@@ -32,6 +32,9 @@ MainWindow::MainWindow(int width, int height, const char* windowTitle, QWidget *
 
     statusBar()->showMessage("Ready");
 
+    // Load BIOS here first
+    emulatorHandler->Startup();
+
     // Move to thread because main thread is blocked with Qt event loop
     emulatorHandler->moveToThread(emulatorThread);
 

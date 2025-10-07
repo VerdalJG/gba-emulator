@@ -1,5 +1,6 @@
 #include "EmulatorHandler.hpp"
 #include "Core/EmulatorCore.hpp"
+#include "Utils.hpp"
 
 // std includes
 #include <fstream>
@@ -25,41 +26,31 @@ void EmulatorHandler::LoadStateFromSlot(int slot)
 {
 }
 
+void EmulatorHandler::Startup()
+{
+    std::string path = "bios/gba_bios.bin";
+    std::vector<uint8_t> biosData;
+    
+    if (LoadFile(path, biosData))
+    {
+        emulatorCore->LoadBIOS(biosData);
+    }
+}
+
 bool EmulatorHandler::LoadROM(const std::string &romPath)
 {
     printf("Loading ROM from path: %s\n", romPath.c_str());
 
-    // Open the ROM file in binary mode and read its contents from the end of the file (ate = at the end)
-    std::ifstream romFile(romPath, std::ios::binary | std::ios::ate);
+    std::vector<uint8_t> romData;
 
-    if (!romFile.is_open())
+    if (!LoadFile(romPath, romData))
     {
-        QMessageBox::critical(nullptr, "Error", "Failed to open ROM file. Check the file path.");
-        return false;
-    }
-
-    // Get the size of the file by reading the position at the end of file
-    std::streamsize fileSize = romFile.tellg();
-
-    if (fileSize <= 0)
-    {
-        QMessageBox::critical(nullptr, "Error", "ROM file appears to be empty or unreadable.");
-        return false;
-    }
-
-    // Go back to the beginning of the file
-    romFile.seekg(0, std::ios::beg);
-
-    
-    std::vector<uint8_t> romData(fileSize);
-    if (!romFile.read(reinterpret_cast<char*>(romData.data()), fileSize))
-    {
-        QMessageBox::critical(nullptr, "Error", "Failed to read ROM file. Check the file format.");
-        return false;
+        return false; // Error logging done inside LoadFile()
     }
 
     // Pass ROM data to the core
-    if (!emulatorCore->LoadROM(romData)) {
+    if (!emulatorCore->LoadROM(romData)) 
+    {
         QMessageBox::critical(nullptr, "Error", "Core failed to load ROM.");
         return false;
     }

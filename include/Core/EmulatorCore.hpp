@@ -1,6 +1,7 @@
 #pragma once
 //#include <SDL3/SDL3.h>
 //#include "Timer.hpp"
+#include "Core/GBA_HLE.hpp"
 #include "Core/CPU/GBA_CPU.hpp"
 #include "Core/CPU/CPU_Memory.hpp"
 #include <string>
@@ -32,6 +33,7 @@ public:
     void HandleSDLEvents();
 
 protected:
+    GBA_HLE hle;
     GBA_Memory memory;
     GBA_CPU cpu;
     bool usingHLEBios = false; // High level emulation bios, used when can't use GBA real BIOS

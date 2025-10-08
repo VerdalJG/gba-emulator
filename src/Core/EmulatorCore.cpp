@@ -1,7 +1,7 @@
 #include "Core/EmulatorCore.hpp"
 //#include "SDLUtils.hpp"
 
-EmulatorCore::EmulatorCore() : memory(), cpu(this)
+EmulatorCore::EmulatorCore() : memory(), cpu(this), hle(this)
 {
 }
 
@@ -53,7 +53,7 @@ bool EmulatorCore::LoadROM(const std::vector<uint8_t>& romData)
     }
 
     memory.LoadROM(romData);
-    return true; // Assume it is loaded successfully for now
+    return true;
 }
 
 void EmulatorCore::Run()

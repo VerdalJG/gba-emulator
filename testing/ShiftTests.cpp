@@ -1,13 +1,14 @@
 #include <gtest/gtest.h>
 #include "Testing/TestCPU.hpp"
+#include "Core/EmulatorCore.hpp"
 #include "Core/CPU/Instructions/Shifts.hpp"
 #include "Core/CPU/Instructions/AddressingMode1.hpp"
 
 class ShiftTests : public::testing::Test
 {
 protected:
-    GBA_Memory memory;
-    TestCPU cpu{memory};
+    EmulatorCore core;
+    TestCPU cpu{&core};
 };
 
 struct ShiftTestCase {

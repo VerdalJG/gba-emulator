@@ -5,7 +5,7 @@
 class TestCPU : public GBA_CPU
 {
 public:
-    TestCPU(GBA_Memory& memory) : GBA_CPU(memory)
+    TestCPU(EmulatorCore* core) : GBA_CPU(core)
     {
         
     }

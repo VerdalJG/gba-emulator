@@ -32,13 +32,11 @@ MainWindow::MainWindow(int width, int height, const char* windowTitle, QWidget *
 
     statusBar()->showMessage("Ready");
 
-    // Load BIOS here first
-    emulatorHandler->Startup();
-
     // Move to thread because main thread is blocked with Qt event loop
     emulatorHandler->moveToThread(emulatorThread);
 
-    // Connect thread start with emulator handler loop
+    // Connect thread start with emulator handler startup and loop
+    connect(emulatorThread, &QThread::started, emulatorHandler, &EmulatorHandler::Startup);
     connect(emulatorThread, &QThread::started, emulatorHandler, &EmulatorHandler::RunLoop);
 
     // Connect shutdown event
@@ -50,6 +48,10 @@ MainWindow::MainWindow(int width, int height, const char* windowTitle, QWidget *
 
     // Connect finished update event to render
     connect(emulatorHandler, &EmulatorHandler::FrameReady, sdlWidget, &SDLWidget::Render);
+
+    connect(emulatorHandler, &EmulatorHandler::StatusMessage, this, [this](const QString& message) {
+    statusBar()->showMessage(message, 5000); // Show for 5 seconds
+    });
 
     emulatorThread->start();
 }
@@ -90,7 +92,7 @@ void MainWindow::SetupFileMenu(QMenuBar* mainMenuBar)
             // Load the ROM into emulator
             if (emulatorHandler->LoadROM(filePath.toStdString()))
             {
-                qDebug() << "ROM Loaded successfully:" << filePath;
+                emulatorHandler->PostStatus(QString("ROM loaded successfully: %1").arg(filePath));
             }
         }
     });

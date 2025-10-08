@@ -1,6 +1,6 @@
 #include "Core/CPU/GBA_CPU.hpp"
 #include "Core/CPU/CPU_CPSR.hpp"
-#include "GBA_CPU.hpp"
+
 
 void GBA_CPU::UpdateVisibleRegistersForMode(OperatingMode newMode)
 {

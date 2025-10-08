@@ -19,6 +19,7 @@ public:
     bool LoadROM(const std::string& romPath);
     void PauseEmulation();
     void ResumeEmulation();
+    void PostStatus(const QString& message);
 
 public slots:
     void RunLoop();
@@ -26,6 +27,7 @@ public slots:
 
 signals:
     void FrameReady();
+    void StatusMessage(const QString& message);
 
 private:
     EmulatorCore* emulatorCore;

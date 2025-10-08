@@ -152,8 +152,5 @@ void GBA_CPU::Execute()
 
 GBA_Memory& GBA_CPU::GetMemorySystem()
 {
-    if (core)
-    {
-        return core->GetMemory();
-    }
+    return core->GetMemory();
 }

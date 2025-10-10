@@ -6,6 +6,7 @@
 #include "Core/CPU/CPU_Memory.hpp"
 #include <string>
 #include <vector>
+#include <functional>
 
 class EmulatorCore
 {
@@ -24,19 +25,24 @@ public:
 
     GBA_CPU& GetCPU() { return cpu; }
     GBA_Memory& GetMemory() { return memory; }
+    GBA_HLE& GetHLE() { return hle; }
+    void SetPostStatusCallback(std::function<void(const std::string&)> callback);
 
 
-// private:
     void Update();
     void Tick();
     void Render();
     void HandleSDLEvents();
+    void PostStatus(const std::string& message);
+
 
 protected:
     GBA_HLE hle;
     GBA_Memory memory;
     GBA_CPU cpu;
     bool usingHLEBios = false; // High level emulation bios, used when can't use GBA real BIOS
+
+    std::function<void(const std::string&)> postStatusCallback;
     
     //GBA_PPU ppu; // For video
     //GBA_APU apu; // For audio

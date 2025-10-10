@@ -129,3 +129,16 @@ void EmulatorCore::HandleSDLEvents()
 //         // Handle other events like keyboard, mouse, etc.
 //     }
 }
+
+void EmulatorCore::PostStatus(const std::string &message)
+{
+    if (postStatusCallback) 
+    {
+        postStatusCallback(message);
+    }
+}
+
+void EmulatorCore::SetPostStatusCallback(std::function<void(const std::string&)> callback)
+{
+    postStatusCallback = std::move(callback);
+}

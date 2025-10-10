@@ -17,7 +17,12 @@
 EmulatorHandler::EmulatorHandler() :
     emulatorCore(new EmulatorCore())
 {
+    auto statusUICallback = [this](const std::string& message)
+    {
+        emit StatusMessage(QString::fromStdString(message));
+    };
 
+    emulatorCore->SetPostStatusCallback(statusUICallback);
 }
 
 void EmulatorHandler::SaveStateToSlot(int slot)

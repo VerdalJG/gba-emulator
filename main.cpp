@@ -8,6 +8,7 @@
 #include <QMenu>
 #include <QStatusBar>
 
+
 int main(int argc, char* argv[])
 {   
     printf("Welcome to the GBA Emulator From Main!\n");

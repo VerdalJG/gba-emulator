@@ -1,8 +1,14 @@
 #include "Core/EmulatorCore.hpp"
+#include "Utils/Logger.hpp"
 //#include "SDLUtils.hpp"
 
-EmulatorCore::EmulatorCore() : memory(), cpu(this), hle(this)
+EmulatorCore::EmulatorCore(Logger* logger) : memory(), cpu(this), hle(this), logger(logger)
 {
+    if (logger)
+    {
+        // Logging file
+        logger->Log("Emulator started", LogType::Info);
+    }
 }
 
 bool EmulatorCore::Init()
@@ -142,3 +148,12 @@ void EmulatorCore::SetPostStatusCallback(std::function<void(const std::string&)>
 {
     postStatusCallback = std::move(callback);
 }
+
+void EmulatorCore::Log(const std::string& message, LogType logType, const char *functionName)
+{
+    if (logger)
+    {
+        logger->Log(message, logType, functionName);
+    }
+}
+

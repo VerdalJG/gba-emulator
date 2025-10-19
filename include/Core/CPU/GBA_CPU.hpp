@@ -4,6 +4,7 @@
 #include <array>
 #include "Core/CPU/CPU_Modes.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
+#include "Utils/Logger.hpp"
 
 class GBA_Memory;
 class EmulatorCore;
@@ -51,6 +52,8 @@ public:
     void UpdateVisibleRegistersForMode(OperatingMode newMode);
 
     GBA_Memory& GetMemorySystem();
+    EmulatorCore* GetEmulatorCore();
+    void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
     static const int SP_INDEX = 13;
     static const int LR_INDEX = 14;

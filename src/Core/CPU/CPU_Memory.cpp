@@ -1,5 +1,6 @@
 #include "Core/CPU/CPU_Memory.hpp"
 #include <stdexcept>
+#include <assert.h>
 
 MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) 
 {
@@ -23,14 +24,34 @@ MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address)
     // TODO:
     // Reading from BIOS region:
 
-    // If reading from bios memory the GBA allows to read opcodes or data only if the program counter is located inside
-    // of the BIOS area. If the program counter is not in the BIOS area, reading will return the most recent successfully 
-    // fetched BIOS opcode
+    // If reading from bios memory the GBA allows to read opcodes or data only if the program counter 
+    // is located inside of the BIOS area. If the program counter is not in the BIOS area,
+    // reading will return the most recent successfully fetched BIOS opcode
 
     // Reading from Unused memory regions
 
     // Accessing unused memory at 00004000h-01FFFFFFh, and 10000000h-FFFFFFFFh (and 02000000h-03FFFFFFh when RAM is 
     // disabled via Port 4000800h) returns the recently pre-fetched opcode.
+}
+
+MemoryRegion* GBA_Memory::GetRegionFromType(RegionType type)
+{
+    switch (type)
+    {
+        case RegionType::BIOS: return &bios;
+        case RegionType::EWRAM: return &ewram;
+        case RegionType::IWRAM: return &iwram;
+        case RegionType::IORegisters: return &ioRegisters;
+        case RegionType::PaletteRAM: return &paletteRam;
+        case RegionType::VRAM: return &vram;
+        case RegionType::OAM: return &oam;
+        case RegionType::ROM0: return &rom0;
+        case RegionType::ROM1: return &rom1;
+        case RegionType::ROM2: return &rom2;
+        case RegionType::SRAM: return &sram;
+
+        default: return nullptr; // Unused or invalid address, handle accordingly
+    }
 }
 
 uint8_t GBA_Memory::Read8(uint32_t address)
@@ -165,3 +186,76 @@ void GBA_Memory::LoadBIOS(const std::vector<uint8_t>& biosData)
     std::copy(biosData.begin(), biosData.end(), bios.data->begin());
 }
 
+void GBA_Memory::ClearRegion(RegionType type)
+{
+    MemoryRegion* region = GetRegionFromType(type); 
+    std::fill(region->data->begin(), region->data->end(), 0);
+}
+
+void GBA_Memory::Clear8(uint32_t address)
+{
+    Write8(address, 0);
+}
+
+void GBA_Memory::Clear16(uint32_t address)
+{
+    Write16(address, 0);
+}
+
+void GBA_Memory::Clear32(uint32_t address)
+{
+    Write32(address, 0);
+}
+
+void GBA_Memory::ClearAddressRange(uint32_t startAddress, uint32_t endAddress)
+{
+    MemoryRegion* region = GetRegionFromAddress(startAddress);
+
+    assert(region == GetRegionFromAddress(endAddress) && "Start address and end address must pertain to the same region");
+
+    uint32_t startOffset = startAddress - region->startAddress;
+    uint32_t endOffset = endAddress - region->startAddress;
+
+    assert(endOffset < region->data->size() && startOffset <= endOffset && "Attempting to clear more than one region");
+
+    std::fill(region->data->begin() + startOffset, region->data->begin() + endOffset + 1, 0); 
+}
+
+void GBA_Memory::ResetSIORegisters()
+{
+    Write16(0x04000128, 0x8000); // RCNT, uses 0x8000 as reset value
+    Clear16(0x0400012A); // JOYCNT
+    Clear32(0x04000130); // JOY_RECV
+    Clear32(0x04000134); // JOY_TRANS
+    Clear32(0x04000138); // JOYSTAT
+}
+
+void GBA_Memory::ResetSoundRegisters()
+{
+    Clear16(0x04000060); // SOUND1CNT_L
+    Clear16(0x04000062); // SOUND1CNT_H
+    Clear32(0x04000064); // SOUND1CNT_X
+
+    Clear32(0x04000068); // SOUND2CNT_L
+    Clear32(0x0400006C); // SOUND2CNT_H
+
+    Clear16(0x04000070); // SOUND3CNT_L
+    Clear16(0x04000072); // SOUND3CNT_H
+    Clear32(0x04000074); // SOUND3CNT_X
+
+    Clear32(0x04000078); // SOUND4CNT_L
+    Clear32(0x0400007C); // SOUND4CNT_H
+
+    Clear16(0x04000080); // SOUNDCNT_L
+    Clear16(0x04000082); // SOUNDCNT_H
+    Clear32(0x04000084); // SOUNDCNT_X
+
+    Write16(0x04000088, 0x0200); // SOUNDBIAS
+
+    Clear32(0x040000A0); // FIFO_A_L
+    Clear32(0x040000A4); // FIFO_B_L
+}
+
+void GBA_Memory::ResetOtherIORegisters()
+{
+}

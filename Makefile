@@ -1,7 +1,6 @@
 # -S . = Telling source code is in the current folder (root)
 # -B = Telling it to build inside the build folder
 all:
-	cmake -S . -B build
 	cmake --build build
 	./build/Debug/GBA-Emulator.exe
 
@@ -18,3 +17,7 @@ run:
 tst:
 	cmake --build build
 	cd build && ctest --output-on-failure
+
+# Use only when cmake files change (changing any CMakeLists)
+change:
+	cmake -S . -B build

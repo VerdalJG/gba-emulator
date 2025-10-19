@@ -37,6 +37,21 @@ enum class Permissions
     Varies
 };
 
+enum class RegionType
+{
+    BIOS,
+    EWRAM,
+    IWRAM,
+    IORegisters,
+    PaletteRAM,
+    VRAM,
+    OAM,
+    ROM0,
+    ROM1,
+    ROM2,
+    SRAM
+};
+
 struct MemoryRegion
 {
     std::shared_ptr<std::vector<uint8_t>> data;
@@ -57,9 +72,10 @@ public:
     GBA_Memory() = default;
     ~GBA_Memory() = default;
     GBA_Memory(const GBA_Memory&) = delete; // Disable copy constructor
-
+ 
     
     MemoryRegion* GetRegionFromAddress(uint32_t address);
+    MemoryRegion* GetRegionFromType(RegionType type);
     //void WriteToRegion(std::vector<uint8_t> data, MemoryRegion region);
     uint8_t Read8(uint32_t address);
     uint32_t Read16(uint32_t address);
@@ -71,6 +87,16 @@ public:
 
     void LoadROM(const std::vector<uint8_t>& romData);
     void LoadBIOS(const std::vector<uint8_t>& biosData);
+    void ClearRegion(RegionType type);
+    void Clear8(uint32_t address);
+    void Clear16(uint32_t address);
+    void Clear32(uint32_t address);
+    void ClearAddressRange(uint32_t startAddress, uint32_t endAddress);
+
+
+    void ResetSIORegisters();
+    void ResetSoundRegisters();
+    void ResetOtherIORegisters();
 
     
 private:

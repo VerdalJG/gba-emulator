@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <string>
+#include "Utils/Logger.hpp"
 
 class EmulatorCore;
 
@@ -29,7 +30,9 @@ signals:
     void FrameReady();
     void StatusMessage(const QString& message);
 
+
 private:
+    Logger logger;
     EmulatorCore* emulatorCore;
     const int saveStateSlots = 9;
     bool isRunning = false;

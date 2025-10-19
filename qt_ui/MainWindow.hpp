@@ -4,6 +4,7 @@
 
 class SDLWidget;
 class EmulatorHandler;
+class Logger;
 
 class MainWindow : public QMainWindow
 {

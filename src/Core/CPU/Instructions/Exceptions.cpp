@@ -1,5 +1,7 @@
 #include "Core/CPU/Instructions/Exceptions.hpp"
 #include "Core/CPU/GBA_CPU.hpp"
+#include "Core/EmulatorCore.hpp"
+#include "Core/GBA_HLE.hpp"
 
 void UndefinedInstruction(uint32_t instruction, GBA_CPU& cpu)
 {
@@ -33,6 +35,16 @@ void UndefinedInstruction(uint32_t instruction, GBA_CPU& cpu)
 
 void SoftwareInterrupt(uint32_t instruction, GBA_CPU &cpu)
 {
+    // HLE BIOS
+    if (cpu.GetEmulatorCore()->GetUsingHLE())
+    {
+        uint32_t swiNumber = instruction & 0x00FFFFFF;
+        cpu.GetEmulatorCore()->GetHLE().HandleSWI(swiNumber, cpu);
+        return;
+    }
+
+    // Real BIOS path
+
     // Program counter was 2 steps ahead, simulating pipeline offset
     uint32_t interruptAddress = cpu.GetValueAtRegister(GBA_CPU::PC_INDEX) - (cpu.IsThumbMode() ? 4u : 8u); 
 

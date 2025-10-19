@@ -112,7 +112,7 @@ ShifterOperand ShiftOp2_LSL_Immediate(uint32_t rm, uint32_t shiftImm, GBA_CPU &c
         result.value = rm;
         result.carryOut = cpu.GetCPSR_C();
     }
-    else // ShiftImm between 1-31
+    else
     {
         result.value = LogicalShiftLeft(rm, shiftImm);
         result.carryOut = rm >> (32 - shiftImm);

@@ -36,3 +36,6 @@ build/
 
 # Ignore cpp properties (for intellisense)
 .vscode/c_cpp_properties.json
+
+# Ignore log file
+log.txt

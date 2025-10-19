@@ -8,10 +8,12 @@
 #include <vector>
 #include <functional>
 
+class Logger;
+
 class EmulatorCore
 {
 public:
-    EmulatorCore();
+    EmulatorCore(Logger* logger);
     ~EmulatorCore() = default;
 
     bool Init();
@@ -34,6 +36,7 @@ public:
     void Render();
     void HandleSDLEvents();
     void PostStatus(const std::string& message);
+    void Log(const std::string& message, LogType logType, const char* functionName);
 
 
 protected:
@@ -43,6 +46,7 @@ protected:
     bool usingHLEBios = false; // High level emulation bios, used when can't use GBA real BIOS
 
     std::function<void(const std::string&)> postStatusCallback;
+    Logger* logger;
     
     //GBA_PPU ppu; // For video
     //GBA_APU apu; // For audio

@@ -154,3 +154,16 @@ GBA_Memory& GBA_CPU::GetMemorySystem()
 {
     return core->GetMemory();
 }
+
+EmulatorCore* GBA_CPU::GetEmulatorCore()
+{
+    return core;
+}
+
+void GBA_CPU::Log(const std::string& message, LogType logType, const char *functionName)
+{
+    if (core)
+    {
+       core->Log(message, logType, functionName);
+    }
+}

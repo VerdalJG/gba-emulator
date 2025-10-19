@@ -1,7 +1,8 @@
 #include "EmulatorHandler.hpp"
 #include "Core/EmulatorCore.hpp"
-#include "Utils.hpp"
+#include "QtUtils.hpp"
 #include "Core/CPU/CPU_Memory.hpp"
+#include "Utils/Logger.hpp"
 
 // std includes
 #include <fstream>
@@ -15,14 +16,16 @@
 #include <QDebug>
 
 EmulatorHandler::EmulatorHandler() :
-    emulatorCore(new EmulatorCore())
+    logger(),
+    emulatorCore(new EmulatorCore(&logger))
 {
     auto statusUICallback = [this](const std::string& message)
     {
         emit StatusMessage(QString::fromStdString(message));
     };
-
+    
     emulatorCore->SetPostStatusCallback(statusUICallback);
+    printf("BAM\n");
 }
 
 void EmulatorHandler::SaveStateToSlot(int slot)

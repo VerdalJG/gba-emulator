@@ -10,6 +10,7 @@ GBA_HLE::GBA_HLE(EmulatorCore *core) :
 core(core)
 {
     assert(core != nullptr && "HLE must have valid EmulatorCore object");
+    BuildTable();
 }
 
 void GBA_HLE::HandleSWI(uint8_t swiNumber, GBA_CPU &cpu)
@@ -62,21 +63,219 @@ void GBA_HLE::HLE_RegisterRamReset(GBA_CPU &cpu)
     if (mask & (1 << 7)) cpu.GetMemorySystem().ResetOtherIORegisters();
 }
 
+void GBA_HLE::HLE_Halt(GBA_CPU &cpu)
+{
+
+}
+
+void GBA_HLE::HLE_Sleep(GBA_CPU &cpu)
+{
+
+}
+
+void GBA_HLE::HLE_IntrWait(GBA_CPU &cpu)
+{
+
+}
+
 void GBA_HLE::HLE_VBlankIntrWait(GBA_CPU &cpu)
 {
+
 }
 
 void GBA_HLE::HLE_Div(GBA_CPU &cpu)
 {
 }
 
+void GBA_HLE::HLE_DivArm(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_Sqrt(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_ArcTan(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_ArcTan2(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_CpuSet(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_CpuFastSet(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_GetBiosChecksum(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_BgAffineSet(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_ObjAffineSet(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_BitUnpack(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_LZ77UnCompReadNormalWrite8Bit(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_LZ77UnCompReadNormalWrite16Bit(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_HuffUnCompReadNormal(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_RLUnCompReadNormalWrite8bit(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_RLUnCompReadNormalWrite16bit(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_Diff8bitUnFilterWrite8bit(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_Diff8bitUnFilterWrite16bit(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_Diff16bitUnFilter(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundBias(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundDriverInit(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundDriverMode(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundDriverMain(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundDriverVSync(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundChannelClear(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_MidiKey2Freq(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundWhatever0(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundWhatever1(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundWhatever2(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundWhatever3(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundWhatever4(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_MultiBoot(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_HardReset(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_CustomHalt(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundDriverVSyncOff(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundDriverVSyncOn(GBA_CPU &cpu)
+{
+}
+
+void GBA_HLE::HLE_SoundGetJumpList(GBA_CPU &cpu)
+{
+}
+
 void GBA_HLE::BuildTable()
 {
     swiTable = {
-        &HLE_SoftReset,         // 0x00
-        &HLE_RegisterRamReset,  // 0x01
-        &HLE_VBlankIntrWait,    // 0x05
-        &HLE_Div                // 0x06
-        // Add more soon
+        &HLE_SoftReset,                         // 0x00
+        &HLE_RegisterRamReset,                  // 0x01
+        &HLE_Halt,                              // 0x02
+        &HLE_Sleep,                             // 0x03
+        &HLE_IntrWait,                          // 0x04
+        &HLE_VBlankIntrWait,                    // 0x05
+        &HLE_Div,                               // 0x06
+        &HLE_DivArm,                            // 0x07
+        &HLE_Sqrt,                              // 0x08
+        &HLE_ArcTan,                            // 0x09
+        &HLE_ArcTan2,                           // 0x0A
+        &HLE_CpuSet,                            // 0x0B
+        &HLE_CpuFastSet,                        // 0x0C
+        &HLE_GetBiosChecksum,                   // 0x0D
+        &HLE_BgAffineSet,                       // 0x0E
+        &HLE_ObjAffineSet,                      // 0x0F
+        &HLE_BitUnpack,                         // 0x10
+        &HLE_LZ77UnCompReadNormalWrite8Bit,     // 0x11
+        &HLE_LZ77UnCompReadNormalWrite16Bit,    // 0x12
+        &HLE_HuffUnCompReadNormal,              // 0x13
+        &HLE_RLUnCompReadNormalWrite8bit,       // 0x14
+        &HLE_RLUnCompReadNormalWrite16bit,      // 0x15
+        &HLE_Diff8bitUnFilterWrite8bit,         // 0x16
+        &HLE_Diff8bitUnFilterWrite16bit,        // 0x17
+        &HLE_Diff16bitUnFilter,                 // 0x18
+        &HLE_SoundBias,                         // 0x19
+        &HLE_SoundDriverInit,                   // 0x1A
+        &HLE_SoundDriverMode,                   // 0x1B
+        &HLE_SoundDriverMain,                   // 0x1C
+        &HLE_SoundDriverVSync,                  // 0x1D
+        &HLE_SoundChannelClear,                 // 0x1E
+        &HLE_MidiKey2Freq,                      // 0x1F
+        &HLE_SoundWhatever0,                    // 0x20
+        &HLE_SoundWhatever1,                    // 0x21
+        &HLE_SoundWhatever2,                    // 0x22
+        &HLE_SoundWhatever3,                    // 0x23
+        &HLE_SoundWhatever4,                    // 0x24
+        &HLE_MultiBoot,                         // 0x25
+        &HLE_HardReset,                         // 0x26
+        &HLE_CustomHalt,                        // 0x27
+        &HLE_SoundDriverVSyncOff,               // 0x28
+        &HLE_SoundDriverVSyncOn,                // 0x29
+        &HLE_SoundGetJumpList                   // 0x2A
     };
 }

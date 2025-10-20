@@ -258,4 +258,22 @@ void GBA_Memory::ResetSoundRegisters()
 
 void GBA_Memory::ResetOtherIORegisters()
 {
+    // --- Display ---
+    Write16(0x04000000, 0x0080);                // DISPCNT: forced blank enabled
+    Clear16(0x04000004);                        // DISPSTAT
+    
+    // skip VCOUNT (0x04000006) – read-only
+    ClearAddressRange(0x04000008, 0x04000034);  // BGxCNT/HOFS/VOFS, WIN, MOSAIC, BLDCNT, BLDALPHA, BLDY
+
+    // --- DMA 0–3 ---
+    ClearAddressRange(0x040000B0, 0x040000DE);
+
+    // --- Timers 0–3 ---
+    ClearAddressRange(0x04000100, 0x0400010E);
+
+    // --- Keypad ---
+    Clear16(0x04000130);                        // KEYCNT
+
+    // --- Interrupts & system control ---
+    ClearAddressRange(0x04000200, 0x04000208);  // IE, IF, WAITCNT, IME
 }

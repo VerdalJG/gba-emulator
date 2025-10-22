@@ -86,6 +86,7 @@
         "stdfloat": "cpp",
         "any": "cpp",
         "deque": "cpp",
-        "*.rh": "cpp"
+        "*.rh": "cpp",
+        "numbers": "cpp"
     }
 }

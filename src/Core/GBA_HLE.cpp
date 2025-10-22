@@ -1,10 +1,12 @@
 #include "Core/GBA_HLE.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/CPU/CPU_Memory.hpp"
-#include <assert.h>
-
 #include "Core/CPU/GBA_CPU.hpp"
 #include "Utils/Logger.hpp"
+
+//#include <cmath>
+#include <assert.h>
+#include <numbers>
 
 GBA_HLE::GBA_HLE(EmulatorCore *core) : 
 core(core)
@@ -85,22 +87,57 @@ void GBA_HLE::HLE_VBlankIntrWait(GBA_CPU &cpu)
 
 void GBA_HLE::HLE_Div(GBA_CPU &cpu)
 {
+    int32_t dividend = cpu.GetValueAtRegister(0);
+    int32_t divisor = cpu.GetValueAtRegister(1);
+
+    int32_t quotient = dividend / divisor;
+    int32_t remainder = dividend % divisor;
+
+    cpu.SetValueAtRegister(0, quotient);
+    cpu.SetValueAtRegister(1, remainder);
+    cpu.SetValueAtRegister(3, abs(quotient));
 }
 
 void GBA_HLE::HLE_DivArm(GBA_CPU &cpu)
 {
+    int32_t dividend = cpu.GetValueAtRegister(1);
+    int32_t divisor = cpu.GetValueAtRegister(0);
+
+    int32_t quotient = dividend / divisor;
+    int32_t remainder = dividend % divisor;
+
+    cpu.SetValueAtRegister(1, quotient);
+    cpu.SetValueAtRegister(0, remainder);
+    cpu.SetValueAtRegister(3, abs(quotient));
 }
 
 void GBA_HLE::HLE_Sqrt(GBA_CPU &cpu)
 {
+    uint32_t value = cpu.GetValueAtRegister(0);
+
+    uint16_t result = std::sqrt(value);
+    cpu.SetValueAtRegister(0, result);
 }
 
 void GBA_HLE::HLE_ArcTan(GBA_CPU &cpu)
 {
+    int32_t value = static_cast<int16_t>(cpu.GetValueAtRegister(0));
+    double x = static_cast<double>(value) / (1 << 14); // Convert from 1.14 fixed point to float/double
+
+    double angleRadians = std::atan(value);
+
+    // Convert radians to degrees
+    uint16_t angleDegrees = static_cast<uint16_t>(angleRadians * (0x10000 / (2 * std::numbers::pi)));
+
+    cpu.SetValueAtRegister(0, angleDegrees);
 }
 
 void GBA_HLE::HLE_ArcTan2(GBA_CPU &cpu)
 {
+    int32_t r0 = static_cast<int16_t>(cpu.GetValueAtRegister(0));
+    int32_t r1 = static_cast<int16_t>(cpu.GetValueAtRegister(1));
+
+    
 }
 
 void GBA_HLE::HLE_CpuSet(GBA_CPU &cpu)

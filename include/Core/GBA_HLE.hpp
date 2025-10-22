@@ -19,7 +19,7 @@ private:
     EmulatorCore* core;
 
     using SWIFunction = std::function<void(GBA_CPU& cpu)>;
-    std::array<SWIFunction, 100> swiTable; // 0x00 to 0x2B
+    std::array<SWIFunction, 0x43> swiTable; // 0x00 to 0x2B
 
     // HLE implementations:
 

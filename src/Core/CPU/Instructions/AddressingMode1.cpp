@@ -1,5 +1,5 @@
 #include "Core/CPU/Instructions/AddressingMode1.hpp"
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 #include "Core/CPU/Instructions/Shifts.hpp"
 #include <assert.h>
 

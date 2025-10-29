@@ -1,5 +1,5 @@
 #include "Core/CPU/Instructions/Exceptions.hpp"
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_HLE.hpp"
 
@@ -35,7 +35,7 @@ void UndefinedInstruction(uint32_t instruction, GBA_CPU& cpu)
 
 void SoftwareInterrupt(uint32_t instruction, GBA_CPU &cpu)
 {
-    // HLE BIOS
+    // HLE BIOS path
     if (cpu.GetEmulatorCore()->GetUsingHLE())
     {
         uint32_t swiNumber = instruction & 0x00FFFFFF;

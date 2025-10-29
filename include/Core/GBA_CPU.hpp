@@ -51,6 +51,9 @@ public:
     void SaveCPSRIntoSPSR(int exceptionModeIndex);
     void UpdateVisibleRegistersForMode(OperatingMode newMode);
 
+    bool GetHalted() { return halted; }
+    void SetHalted(bool shouldHalt) { halted = shouldHalt; }
+
     GBA_Memory& GetMemorySystem();
     EmulatorCore* GetEmulatorCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
@@ -70,6 +73,7 @@ protected:
     std::array<uint32_t, 5> spsr{};         // SPSR for each banked mode
 
     std::array<Instruction, 3> instructionPipeline{}; // [0] = fetch, [1] = decode, [2] = execute
+    bool halted;
 
     void Fetch();
     void Decode();
@@ -80,6 +84,8 @@ protected:
     void FlushPipeline();
     InstructionFunction DecodeInstruction(uint32_t instruction);
     void HandleUndefinedBehavior(uint32_t instruction);
+
+    void HandleHalt();
 
 private:
     EmulatorCore* core;

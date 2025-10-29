@@ -1,4 +1,4 @@
-#include "Core/CPU/CPU_Memory.hpp"
+#include "Core/GBA_Memory.hpp"
 #include <stdexcept>
 #include <assert.h>
 

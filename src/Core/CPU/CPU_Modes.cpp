@@ -1,4 +1,4 @@
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 #include "Core/CPU/CPU_CPSR.hpp"
 
 

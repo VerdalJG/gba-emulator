@@ -1,7 +1,7 @@
 #include "EmulatorHandler.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "QtUtils.hpp"
-#include "Core/CPU/CPU_Memory.hpp"
+#include "Core/GBA_Memory.hpp"
 #include "Utils/Logger.hpp"
 
 // std includes

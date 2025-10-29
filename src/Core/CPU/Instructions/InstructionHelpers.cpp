@@ -1,7 +1,7 @@
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 #include "Core/CPU/Instructions/Shifts.hpp"
 #include "Core/CPU/Instructions/Conditions.hpp"
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 
 DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction)
 {

@@ -11,8 +11,13 @@ void DataProcessing(uint32_t instruction, GBA_CPU &cpu)
     // Execute operation
     alu(values, op2, cpu);
 }
+bool IsReverseOpcode(DataProcessingOpcode opcode)
+{
+    return opcode == DataProcessingOpcode::RSB || opcode == DataProcessingOpcode::RSC;
+}
 
-bool IsSubtractionOpcode(DataProcessingOpcode opcode)
+
+bool IsSubtractionOpcode(DataProcessingOpcode opcode) 
 {
     switch (opcode)
     {

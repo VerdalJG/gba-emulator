@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <array>
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 #include "Core/CPU/CPU_CPSR.hpp"
 
@@ -30,10 +30,7 @@ void BitClear(DataProcessing_Decoded values, ShifterOperand shifterOperand, GBA_
 void MoveNot(DataProcessing_Decoded values, ShifterOperand shifterOperand, GBA_CPU& cpu);
 
 // Is the opcode RSB/RSC?
-inline bool IsReverseOpcode(DataProcessingOpcode opcode)
-{
-    return opcode == DataProcessingOpcode::RSB || opcode == DataProcessingOpcode::RSC;
-}
+bool IsReverseOpcode(DataProcessingOpcode opcode);
 bool IsSubtractionOpcode(DataProcessingOpcode opcode);
 bool ShouldUseCarryIn(DataProcessingOpcode opcode);
 

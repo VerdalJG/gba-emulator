@@ -1,8 +1,7 @@
 #pragma once
-#include "Core/CPU/GBA_CPU.hpp"
-
 #include <cstdint>
 
+class GBA_CPU;
 
 inline uint8_t GetConditionBits(uint32_t instruction) // Only ARM mode uses condition bits
 {

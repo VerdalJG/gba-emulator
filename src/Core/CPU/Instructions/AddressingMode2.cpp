@@ -1,5 +1,5 @@
 #include "Core/CPU/Instructions/AddressingMode2.hpp"
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 #include <assert.h>
 
 uint32_t CalculateAddress_AddressingMode2(SingleDataTransfer_Decoded values, GBA_CPU& cpu)

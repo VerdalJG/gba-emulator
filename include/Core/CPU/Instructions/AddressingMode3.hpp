@@ -1,8 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "Core/CPU/GBA_CPU.hpp"
-
-class GBA_CPU;
+#include "Core/GBA_CPU.hpp"
 
 uint32_t CalculateAddress_AddressingMode3(HalfwordDataTransfer_Decoded values, GBA_CPU& cpu);
 

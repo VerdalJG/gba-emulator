@@ -1,4 +1,4 @@
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 #include "Core/CPU/CPU_CPSR.hpp"
 
 uint32_t CPSR_OverflowFrom(uint32_t op1, uint32_t op2, uint32_t result, bool isSub)

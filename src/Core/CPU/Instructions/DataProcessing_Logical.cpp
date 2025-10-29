@@ -1,4 +1,4 @@
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 #include "Core/CPU/Instructions/DataProcessing.hpp"
 
 void LogicalAND(DataProcessing_Decoded values, ShifterOperand op2, GBA_CPU& cpu)

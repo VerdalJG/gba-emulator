@@ -2,8 +2,8 @@
 //#include <SDL3/SDL3.h>
 //#include "Timer.hpp"
 #include "Core/GBA_HLE.hpp"
-#include "Core/CPU/GBA_CPU.hpp"
-#include "Core/CPU/CPU_Memory.hpp"
+#include "Core/GBA_CPU.hpp"
+#include "Core/GBA_Memory.hpp"
 #include <string>
 #include <vector>
 #include <functional>

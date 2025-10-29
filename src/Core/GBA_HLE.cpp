@@ -1,7 +1,7 @@
 #include "Core/GBA_HLE.hpp"
 #include "Core/EmulatorCore.hpp"
-#include "Core/CPU/CPU_Memory.hpp"
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_Memory.hpp"
+#include "Core/GBA_CPU.hpp"
 #include "Utils/Logger.hpp"
 
 //#include <cmath>
@@ -67,22 +67,22 @@ void GBA_HLE::HLE_RegisterRamReset(GBA_CPU &cpu)
 
 void GBA_HLE::HLE_Halt(GBA_CPU &cpu)
 {
-
+    cpu.SetHalted(true); // CPU internally handles what to do in HandleHalt()
 }
 
 void GBA_HLE::HLE_Sleep(GBA_CPU &cpu)
 {
-
+    // Low
 }
 
 void GBA_HLE::HLE_IntrWait(GBA_CPU &cpu)
 {
-
+    // High
 }
 
 void GBA_HLE::HLE_VBlankIntrWait(GBA_CPU &cpu)
 {
-
+    // ExHigh
 }
 
 void GBA_HLE::HLE_Div(GBA_CPU &cpu)
@@ -111,13 +111,28 @@ void GBA_HLE::HLE_DivArm(GBA_CPU &cpu)
     cpu.SetValueAtRegister(3, abs(quotient));
 }
 
-void GBA_HLE::HLE_Sqrt(GBA_CPU &cpu)
-{
-    uint32_t value = cpu.GetValueAtRegister(0);
+    void GBA_HLE::HLE_Sqrt(GBA_CPU &cpu)
+    {
+        uint32_t value = cpu.GetValueAtRegister(0);
 
-    uint16_t result = std::sqrt(value);
-    cpu.SetValueAtRegister(0, result);
-}
+        // Sqrt of 0 is 0, don't need to continue
+        if (value == 0) return;
+
+        // Calculate highest bit so we can figure out how much we need to shift
+        uint32_t highestBitIndex = 0;  
+        while (value >>= 1)
+        {
+            ++highestBitIndex;
+        }
+
+        // Shift to the left so that when we get the sqrt, we have the decimal
+        // values across the 16 bits
+        value <<= (31 - highestBitIndex);
+        uint16_t result = std::sqrt(value);
+
+        // Mask result to 16 bits
+        cpu.SetValueAtRegister(0, result & 0xFFFF);
+    }
 
 void GBA_HLE::HLE_ArcTan(GBA_CPU &cpu)
 {
@@ -126,10 +141,10 @@ void GBA_HLE::HLE_ArcTan(GBA_CPU &cpu)
 
     double angleRadians = std::atan(value);
 
-    // Convert radians to degrees
-    uint16_t angleDegrees = static_cast<uint16_t>(angleRadians * (0x10000 / (2 * std::numbers::pi)));
+    // Convert radians to GBA angle representation
+    uint16_t angleGBA = static_cast<uint16_t>(angleRadians * (0x10000 / (2 * std::numbers::pi)));
 
-    cpu.SetValueAtRegister(0, angleDegrees);
+    cpu.SetValueAtRegister(0, angleGBA);
 }
 
 void GBA_HLE::HLE_ArcTan2(GBA_CPU &cpu)
@@ -137,135 +152,180 @@ void GBA_HLE::HLE_ArcTan2(GBA_CPU &cpu)
     int32_t r0 = static_cast<int16_t>(cpu.GetValueAtRegister(0));
     int32_t r1 = static_cast<int16_t>(cpu.GetValueAtRegister(1));
 
-    
+    double r0Angle = static_cast<int16_t>(cpu.GetValueAtRegister(0)) / (1 << 14);
+    double r1Angle = static_cast<int16_t>(cpu.GetValueAtRegister(1)) / (1 << 14);
+
+    double angleRadians = std::atan2(r1Angle, r0Angle);
+
+    if (angleRadians < 0)
+    {
+        angleRadians += 2 * std::numbers::pi; // Wrapping negative angles;
+    }
+
+    // Convert to gba angle representation
+    uint16_t angleGBA = static_cast<uint16_t>(angleRadians * 0x10000 / (2 * std::numbers::pi));
+    cpu.SetValueAtRegister(0, angleGBA);  
 }
 
 void GBA_HLE::HLE_CpuSet(GBA_CPU &cpu)
 {
+    // ExHigh
+    
 }
 
 void GBA_HLE::HLE_CpuFastSet(GBA_CPU &cpu)
 {
+    // ExHigh
 }
 
 void GBA_HLE::HLE_GetBiosChecksum(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_BgAffineSet(GBA_CPU &cpu)
 {
+    // Medium
 }
 
 void GBA_HLE::HLE_ObjAffineSet(GBA_CPU &cpu)
 {
+    // Medium
 }
 
 void GBA_HLE::HLE_BitUnpack(GBA_CPU &cpu)
 {
+    // Medium
 }
 
 void GBA_HLE::HLE_LZ77UnCompReadNormalWrite8Bit(GBA_CPU &cpu)
 {
+    // High
 }
 
 void GBA_HLE::HLE_LZ77UnCompReadNormalWrite16Bit(GBA_CPU &cpu)
 {
+    // High
 }
 
 void GBA_HLE::HLE_HuffUnCompReadNormal(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_RLUnCompReadNormalWrite8bit(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_RLUnCompReadNormalWrite16bit(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_Diff8bitUnFilterWrite8bit(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_Diff8bitUnFilterWrite16bit(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_Diff16bitUnFilter(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundBias(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundDriverInit(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundDriverMode(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundDriverMain(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundDriverVSync(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundChannelClear(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_MidiKey2Freq(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundWhatever0(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundWhatever1(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundWhatever2(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundWhatever3(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundWhatever4(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_MultiBoot(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_HardReset(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_CustomHalt(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundDriverVSyncOff(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundDriverVSyncOn(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::HLE_SoundGetJumpList(GBA_CPU &cpu)
 {
+    // Low
 }
 
 void GBA_HLE::BuildTable()

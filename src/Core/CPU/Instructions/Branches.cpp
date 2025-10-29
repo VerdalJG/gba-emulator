@@ -1,6 +1,6 @@
 #include "Core/CPU/Instructions/Branches.hpp"
 #include "Core/CPU/Instructions/Shifts.hpp"
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 
 
 void Branch(uint32_t instruction, GBA_CPU& cpu)

@@ -1,6 +1,6 @@
-#include "Core/CPU/GBA_CPU.hpp"
+#include "Core/GBA_CPU.hpp"
 #include "Core/CPU/Instructions/Decoder.hpp"
-#include "Core/CPU/CPU_Memory.hpp"
+#include "Core/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
 #include <assert.h>
 
@@ -26,6 +26,12 @@ void GBA_CPU::Reset()
 
 void GBA_CPU::Step()
 {
+    if (halted)
+    {
+        HandleHalt();
+        return;
+    }
+
     AdvanceInstructionPipeline();
 
     Execute();
@@ -76,6 +82,19 @@ InstructionFunction GBA_CPU::DecodeInstruction(uint32_t instruction)
 void GBA_CPU::HandleUndefinedBehavior(uint32_t instruction)
 {
     // In an emulator, treat it as NOP (No operation), and just step to next instruction
+}
+
+void GBA_CPU::HandleHalt()
+{
+    if (/*interrupts.AnyPendingEnabled(*this)*/ true)
+    {
+        halted == false; 
+    }
+    else
+    {
+        // Advance timers
+        // Handle DMA
+    }
 }
 
 void GBA_CPU::AdvanceInstructionPipeline()

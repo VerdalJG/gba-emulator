@@ -1,6 +1,6 @@
 #include "Core/CPU/Instructions/DataProcessingMisc.hpp"
-#include "Core/CPU/GBA_CPU.hpp"
-#include "Core/CPU/CPU_Memory.hpp"
+#include "Core/GBA_CPU.hpp"
+#include "Core/GBA_Memory.hpp"
 #include "Core/CPU/CPU_CPSR.hpp"
 #include "Core/CPU/Instructions/Shifts.hpp"
 

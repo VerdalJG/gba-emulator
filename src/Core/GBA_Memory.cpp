@@ -69,6 +69,7 @@ uint8_t GBA_Memory::Read8(uint32_t address)
 
     if (region == &rom0)
     {
+        
         // Apply waitstate 0
     }
     else if (region == &rom1)

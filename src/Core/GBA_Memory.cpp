@@ -1,8 +1,14 @@
 #include "Core/GBA_Memory.hpp"
+#include "Core/EmulatorCore.hpp"
+
 #include <stdexcept>
 #include <assert.h>
 
-MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) 
+GBA_Memory::GBA_Memory(EmulatorCore *core) : core(core)
+{
+}
+
+MemoryRegion *GBA_Memory::GetRegionFromAddress(uint32_t address)
 {
     switch (address >> 24)
     {

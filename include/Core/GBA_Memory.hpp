@@ -66,10 +66,13 @@ struct MemoryRegion
     :   permissions(permissions), startAddress(startAddress), data(nullptr) {}
 };
 
+class EmulatorCore;
+
 class GBA_Memory 
 {
 public:
-    GBA_Memory() = default;
+    GBA_Memory() = delete;
+    explicit GBA_Memory(EmulatorCore* core);
     ~GBA_Memory() = default;
     GBA_Memory(const GBA_Memory&) = delete; // Disable copy constructor
  
@@ -125,7 +128,8 @@ private:
 
     uint8_t lastBusValue = 0xFF; // For open-bus emulation
 
-    std::shared_ptr<std::vector<uint8_t>> rom; 
+    std::shared_ptr<std::vector<uint8_t>> rom;
+    EmulatorCore* core; 
 
 };
 

@@ -34,7 +34,7 @@ struct ROM_Header
 class GBA_ROM
 {
 public: 
-    GBA_ROM() = default;
+    GBA_ROM() = delete;
     explicit GBA_ROM(EmulatorCore* core);
 
     // Load ROM data

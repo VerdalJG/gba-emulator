@@ -1,5 +1,6 @@
 #include "Core/GBA_ROM.hpp"
 #include "Core/EmulatorCore.hpp"
+#include "Core/GBA_NintendoLogo.hpp"
 
 GBA_ROM::GBA_ROM(EmulatorCore *core) : core(core)
 {
@@ -29,4 +30,28 @@ uint32_t GBA_ROM::Read32(uint32_t address) const
     | (romData[address + 1] << 8)
     | (romData[address + 2] << 16)
     | (romData[address + 3] << 32);
+}
+
+void GBA_ROM::PrintROMInfo()
+{
+    printf("Game Title: %.12s\n", header.gameTitle);
+    printf("Game Code: %.4s\n", header.gameCode);
+    printf("Maker: %.2s\n", header.makerCode);
+    printf("Version: %u\n", header.softwareVersion);
+}
+
+void GBA_ROM::ParseHeader()
+{
+    if (rom->size() < sizeof(ROM_Header))
+    {
+        valid = false;
+        return;
+    }
+
+    std::memcpy(&header, rom->data(), sizeof(ROM_Header));
+
+    if (usingOnlyOfficialSoftware)
+    {
+        valid = std::memcmp(NintendoLogo, header.nintendoLogo, 156) == 0;
+    }
 }

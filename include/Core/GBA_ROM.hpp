@@ -7,6 +7,11 @@
 
 class EmulatorCore;
 
+// We pack the ROM header so the compiler does not
+// any padding to ROM_Header's data and make sure the memory
+// is continuous
+
+#pragma pack(push, 1)
 struct ROM_Header
 {
     // In order of memory addresses:
@@ -24,6 +29,7 @@ struct ROM_Header
     uint8_t complementCheck;
     uint16_t reserved2;
 };
+#pragma pack(pop)
 
 class GBA_ROM
 {
@@ -34,7 +40,6 @@ public:
     // Load ROM data
     void LoadROM(const std::vector<uint8_t>& romData);
     
-
     // Read methods
     uint8_t Read8(uint32_t address) const;
     uint16_t Read16(uint32_t address) const;
@@ -44,11 +49,14 @@ public:
     std::shared_ptr<std::vector<uint8_t>> GetROMData() const { return rom; }
     size_t GetSize() const { return rom->size(); }
     const ROM_Header& GetHeader() const { return header; }
+    void PrintROMInfo();
 
 private:
     std::shared_ptr<std::vector<uint8_t>> rom;
     ROM_Header header;
     EmulatorCore* core;
+    bool valid;
+    bool usingOnlyOfficialSoftware = true;
 
     void ParseHeader();
 };

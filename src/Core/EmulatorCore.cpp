@@ -2,7 +2,7 @@
 #include "Utils/Logger.hpp"
 //#include "SDLUtils.hpp"
 
-EmulatorCore::EmulatorCore(Logger* logger) : memory(), cpu(this), hle(this), logger(logger)
+EmulatorCore::EmulatorCore(Logger* logger) : memory(this), cpu(this), hle(this), logger(logger)
 {
     if (logger)
     {

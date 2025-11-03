@@ -62,4 +62,6 @@ void GBA_ROM::ParseHeader()
     {
         valid = std::memcmp(NintendoLogo, header.nintendoLogo, 156) == 0;
     }
+    
+    valid = true;
 }

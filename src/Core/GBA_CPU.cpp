@@ -88,7 +88,7 @@ void GBA_CPU::HandleHalt()
 {
     if (/*interrupts.AnyPendingEnabled(*this)*/ true)
     {
-        halted == false; 
+        halted = false; 
     }
     else
     {

@@ -130,7 +130,7 @@ private:
 
     uint8_t lastBusValue = 0xFF; // For open-bus emulation
 
-    std::shared_ptr<std::vector<uint8_t>> rom;
+    //std::shared_ptr<std::vector<uint8_t>> rom;
     std::unique_ptr<GBA_ROM> rom;
     EmulatorCore* core; 
 

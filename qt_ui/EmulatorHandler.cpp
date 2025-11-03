@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <vector>
 
-
 // QT includes
 #include <QThread>
 #include <QMessageBox>

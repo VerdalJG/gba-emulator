@@ -1,5 +1,6 @@
 #include "Core/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
+#include "Core/GBA_ROM.hpp"
 
 #include <stdexcept>
 #include <assert.h>
@@ -64,30 +65,37 @@ uint8_t GBA_Memory::Read8(uint32_t address)
 {
     MemoryRegion* region = GetRegionFromAddress(address);
 
-    uint8_t value = 0xFF; // Default for open-bus emulation
-
     if (!region || !region->data)
     {
         return lastBusValue;
     }
 
-    // TODO: Emulate waitstates
-
-    if (region == &rom0)
-    {
-        
-        // Apply waitstate 0
-    }
-    else if (region == &rom1)
-    {
-        // Apply waitstate 1
-    }
-    else if (region == &rom2)
-    {
-        // Apply waitstate 2
-    }
-
+    uint8_t value = 0xFF; // Default for open-bus emulations
+    
     size_t offset = address - region->startAddress;
+    bool inRomRegion = region == &rom0 || region == &rom1 || region == &rom2;
+
+    if (inRomRegion)
+    {
+        // TODO: Emulate waitstates
+        if (region == &rom0)
+        {
+            // Apply waitstate 0
+            // timerController.cycles += 1;
+        }
+        else if (region == &rom1)
+        {
+            // Apply waitstate 1
+            // timerController.cycles += 2;
+        }
+        else if (region == &rom2)
+        {
+            // Apply waitstate 2
+            // timerController.cycles += 3;
+        }
+        value = rom->Read8(offset);
+    }
+
     if (offset >= region->data->size())
     {
         // Error: out of region bounds
@@ -169,17 +177,11 @@ void GBA_Memory::Write32(uint32_t address, uint32_t value)
 
 void GBA_Memory::LoadROM(const std::vector<uint8_t>& romData)
 {
-    rom = std::make_shared<std::vector<uint8_t>>(romData);
+    rom->LoadROM(romData);
 
-    // Ensure rom data is at least 32 MB
-    if (rom.get()->size() < ROM_BANK_SIZE)
-    {
-        rom.get()->resize(ROM_BANK_SIZE, 0xFF);
-    }
-
-    rom0.data = rom;
-    rom1.data = rom;
-    rom2.data = rom;
+    rom0.data = rom->GetROMData();
+    rom1.data = rom->GetROMData();
+    rom2.data = rom->GetROMData();
 }
 
 void GBA_Memory::LoadBIOS(const std::vector<uint8_t>& biosData)

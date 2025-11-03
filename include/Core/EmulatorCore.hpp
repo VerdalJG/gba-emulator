@@ -4,6 +4,11 @@
 #include "Core/GBA_HLE.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/GBA_Memory.hpp"
+#include "Core/GBA_InterruptController.hpp"
+#include "Core/GBA_PPU.hpp"
+#include "Core/GBA_TimerController.hpp"
+#include "Core/GBA_DMAController.hpp"
+
 #include <string>
 #include <vector>
 #include <functional>
@@ -43,6 +48,7 @@ protected:
     GBA_HLE hle;
     GBA_Memory memory;
     GBA_CPU cpu;
+    
     bool usingHLEBios = false; // High level emulation bios, used when can't use GBA real BIOS
 
     std::function<void(const std::string&)> postStatusCallback;

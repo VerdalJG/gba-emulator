@@ -6,6 +6,8 @@
 #include <variant>
 #include <memory>
 
+#include "Core/GBA_ROM.hpp"
+
 // Memory map locations for GBA
 constexpr uint32_t BIOS_START = 0X00000000;
 constexpr uint32_t EWRAM_START = 0x02000000;
@@ -129,6 +131,7 @@ private:
     uint8_t lastBusValue = 0xFF; // For open-bus emulation
 
     std::shared_ptr<std::vector<uint8_t>> rom;
+    std::unique_ptr<GBA_ROM> rom;
     EmulatorCore* core; 
 
 };

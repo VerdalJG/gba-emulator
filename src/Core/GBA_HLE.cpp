@@ -111,28 +111,28 @@ void GBA_HLE::HLE_DivArm(GBA_CPU &cpu)
     cpu.SetValueAtRegister(3, abs(quotient));
 }
 
-    void GBA_HLE::HLE_Sqrt(GBA_CPU &cpu)
+void GBA_HLE::HLE_Sqrt(GBA_CPU &cpu)
+{
+    uint32_t value = cpu.GetValueAtRegister(0);
+
+    // Sqrt of 0 is 0, don't need to continue
+    if (value == 0) return;
+
+    // Calculate highest bit so we can figure out how much we need to shift
+    uint32_t highestBitIndex = 0;  
+    while (value >>= 1)
     {
-        uint32_t value = cpu.GetValueAtRegister(0);
-
-        // Sqrt of 0 is 0, don't need to continue
-        if (value == 0) return;
-
-        // Calculate highest bit so we can figure out how much we need to shift
-        uint32_t highestBitIndex = 0;  
-        while (value >>= 1)
-        {
-            ++highestBitIndex;
-        }
-
-        // Shift to the left so that when we get the sqrt, we have the decimal
-        // values across the 16 bits
-        value <<= (31 - highestBitIndex);
-        uint16_t result = std::sqrt(value);
-
-        // Mask result to 16 bits
-        cpu.SetValueAtRegister(0, result & 0xFFFF);
+        ++highestBitIndex;
     }
+
+    // Shift to the left so that when we get the sqrt, we have the decimal
+    // values across the 16 bits
+    value <<= (31 - highestBitIndex);
+    uint16_t result = std::sqrt(value);
+
+    // Mask result to 16 bits
+    cpu.SetValueAtRegister(0, result & 0xFFFF);
+}
 
 void GBA_HLE::HLE_ArcTan(GBA_CPU &cpu)
 {

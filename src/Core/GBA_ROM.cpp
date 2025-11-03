@@ -1,6 +1,7 @@
 #include "Core/GBA_ROM.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_NintendoLogo.hpp"
+#include "Core/GBA_Memory.hpp"
 
 GBA_ROM::GBA_ROM(EmulatorCore *core) : core(core)
 {
@@ -9,6 +10,13 @@ GBA_ROM::GBA_ROM(EmulatorCore *core) : core(core)
 void GBA_ROM::LoadROM(const std::vector<uint8_t>& romData)
 {
     rom = std::make_shared<std::vector<uint8_t>>(romData);
+
+    // Ensure rom data is at least 32 MB - 
+    // NOT CORRECT MIRRORING BEHAVIOR BUT should be simple and stable
+    if (rom->size() < ROM_BANK_SIZE)
+    {
+        rom->resize(ROM_BANK_SIZE, 0xFF);
+    }
 }
 
 uint8_t GBA_ROM::Read8(uint32_t address) const
@@ -29,7 +37,7 @@ uint32_t GBA_ROM::Read32(uint32_t address) const
     return romData[address]
     | (romData[address + 1] << 8)
     | (romData[address + 2] << 16)
-    | (romData[address + 3] << 32);
+    | (romData[address + 3] << 24);
 }
 
 void GBA_ROM::PrintROMInfo()

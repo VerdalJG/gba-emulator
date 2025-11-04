@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "Core/GBA_ROM.hpp"
+#include "Core/GBA_WaitstateController.hpp"
 
 // Memory map locations for GBA
 constexpr uint32_t BIOS_START = 0X00000000;
@@ -81,9 +82,9 @@ public:
     
     MemoryRegion* GetRegionFromAddress(uint32_t address);
     MemoryRegion* GetRegionFromType(RegionType type);
-    //void WriteToRegion(std::vector<uint8_t> data, MemoryRegion region);
+    
     uint8_t Read8(uint32_t address);
-    uint32_t Read16(uint32_t address);
+    uint16_t Read16(uint32_t address);
     uint32_t Read32(uint32_t address);
 
     void Write8(uint32_t address, uint8_t value);
@@ -133,6 +134,24 @@ private:
     //std::shared_ptr<std::vector<uint8_t>> rom;
     std::unique_ptr<GBA_ROM> rom;
     EmulatorCore* core; 
+    GBA_WaitstateController waitstateController;
+
+    template <typename T>
+    T Read(uint32_t address, AccessSize size)
+    {
+        const uint32_t alignmentMask =  (sizeof(T) == 1) ? 0u :
+                                        (sizeof(T) == 2) ? 1u :
+                                        (sizeof(T) == 4) ? 3u;
+
+        address &= alignmentMask;
+
+        MemoryRegion* region = GetRegionFromAddress(address);
+
+        if (!region || region->data)
+        {
+            T busFill = 0;
+        }
+    }
 
 };
 

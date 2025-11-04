@@ -1,47 +1,54 @@
 #include "Core/GBA_WaitstateController.hpp"
 #include "Core/GBA_Memory.hpp"
 
-void WaitstateController::SetWaitstateConfig(uint16_t waitcnt)
+void GBA_WaitstateController::SetWaitstateConfig(uint16_t waitcnt)
 {
     // SRAM (bits 0-1): 00->4, 01->3, 10->2, 11->8
     static constexpr int sramMap[4] = {4, 3, 2, 8};
     sram_cycles = sramMap[waitcnt & 0b11];
 
     // WS0 first (bits 2-3): 00->4,01->3,10->2,11->8
-    firstAccess[0] = sramMap[(waitcnt >> 2) & 0b11];
+    nonSequentialAccess[0] = sramMap[(waitcnt >> 2) & 0b11];
 
     // WS0 second (bit 4): 0->2, 1->1
-    secondAccess[0] = ((waitcnt >> 4) & 0b1) ? 1 : 2;
+    sequentialAccess[0] = ((waitcnt >> 4) & 0b1) ? 1 : 2;
 
     // WS1 first (bits 5-6)
-    firstAccess[1] = sramMap[(waitcnt >> 5) & 0b11];
+    nonSequentialAccess[1] = sramMap[(waitcnt >> 5) & 0b11];
 
     // WS1 second (bit 7): 0->4, 1->1 (special mapping)
-    secondAccess[1] = ((waitcnt >> 7) & 0b1) ? 1 : 4;
+    sequentialAccess[1] = ((waitcnt >> 7) & 0b1) ? 1 : 4;
 
     // WS2 first (bits 8-9)
-    firstAccess[2] = sramMap[(waitcnt >> 8) & 0b11];
+    nonSequentialAccess[2] = sramMap[(waitcnt >> 8) & 0b11];
 
     // WS2 second (bit 10): 0->8, 1->1 (special mapping)
-    secondAccess[2] = ((waitcnt >> 10) & 0b1) ? 1 : 8;
+    sequentialAccess[2] = ((waitcnt >> 10) & 0b1) ? 1 : 8;
 
     // Prefetch (bit 14)
     prefetchEnabled = (waitcnt >> 14) & 1;
 }
 
 
-int WaitstateController::GetCycles(uint32_t address, AccessSize size, bool isSequential) const
+int GBA_WaitstateController::GetCycles(uint32_t address, AccessSize size, bool isSequential) const
 {
     if (address >= SRAM_START) return 1 + sram_cycles;
     if (address >= ROM0_START)
     {
         int romRegion;
         if (address >= ROM2_START) romRegion = 2;
-        if (address >= ROM1_START) romRegion = 1;
-        if (address >= ROM0_START) romRegion = 0;
+        else if (address >= ROM1_START) romRegion = 1;
+        else if (address >= ROM0_START) romRegion = 0;
 
-        int waitstate = isSequential ? secondAccess[romRegion] : firstAccess[romRegion];
-        return 1 + waitstate;
+        if (size == AccessSize::Word)
+        {
+            return 1 + sequentialAccess[romRegion] + nonSequentialAccess[romRegion];
+        }
+        else
+        {
+            int cycles = isSequential ? sequentialAccess[romRegion] : nonSequentialAccess[romRegion];
+            return 1 + cycles;
+        }
     }
 
     if (address >= EWRAM_START && address < IWRAM_START) 

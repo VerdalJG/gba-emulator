@@ -63,98 +63,17 @@ MemoryRegion* GBA_Memory::GetRegionFromType(RegionType type)
 
 uint8_t GBA_Memory::Read8(uint32_t address)
 {
-    MemoryRegion* region = GetRegionFromAddress(address);
-
-    // Get the amount of cycles the memory access would take
-    int cycles = waitstateController.GetCycles(address, AccessSize::Byte, false);
-    // TODO: Add cycles here - something like:
-    // core->timerController.AddCycles(cycles);
-
-    if (!region || !region->data)
-    {
-        return lastBusValue;
-    }
-
-    uint8_t value = 0xFF; // Default for open-bus emulations
-    size_t offset = address - region->startAddress;
-    const std::vector<uint8_t>& regionData = *region->data;
-
-    if (offset >= regionData.size())
-    {
-        return lastBusValue; // Out of region bounds
-    }
-     
-    value = regionData[offset];
-    lastBusValue = value;
-    return value;
+    return Read<uint8_t>(address, AccessSize::Byte);
 }
 
 uint16_t GBA_Memory::Read16(uint32_t address)
 {
-    address &= ~1; // Align to nearest even byte address
-    MemoryRegion* region = GetRegionFromAddress(address);
-
-    // Get the amount of cycles the memory access would take
-    int cycles = waitstateController.GetCycles(address, AccessSize::Halfword, false);
-    // TODO: Add cycles here - something like:
-    // core->timerController.AddCycles(cycles);
-
-    if (!region || !region->data)
-    {
-        return static_cast<uint16_t>(lastBusValue) | static_cast<uint16_t>(lastBusValue) << 8;
-    }
-
-    uint16_t value = 0xFFFF; // Default for open-bus emulations
-    size_t offset = address - region->startAddress;
-    const std::vector<uint8_t>& regionData = *region->data;
-
-    if (offset + 1 >= regionData.size()) // Out of region bounds
-    {
-        return static_cast<uint16_t>(lastBusValue) | static_cast<uint16_t>(lastBusValue) << 8;
-    }
-     
-    value = regionData[offset] | (regionData[offset + 1] << 8);
-    lastBusValue = static_cast<uint8_t>(value & 0xFF);
-    return value;
+    return Read<uint16_t>(address, AccessSize::Halfword);
 }
 
 uint32_t GBA_Memory::Read32(uint32_t address)
 {
-    address &= ~3; // Align to nearest address that is a multiple of 4
-    MemoryRegion* region = GetRegionFromAddress(address);
-
-    // Get the amount of cycles the memory access would take
-    int cycles = waitstateController.GetCycles(address, AccessSize::Word, false);
-    // TODO: Add cycles here - something like:
-    // core->timerController.AddCycles(cycles);
-
-    if (!region || !region->data)
-    {
-        return static_cast<uint32_t>(lastBusValue) | 
-        static_cast<uint32_t>(lastBusValue) << 8   |
-        static_cast<uint32_t>(lastBusValue) << 16  |
-        static_cast<uint32_t>(lastBusValue) << 24;
-    }
-
-    uint32_t value = 0xFFFFFFFF; // Default for open-bus emulations
-    size_t offset = address - region->startAddress;
-    const std::vector<uint8_t>& regionData = *region->data;
-
-    if (offset + 3 >= regionData.size()) // Out of region bounds
-    {
-        return static_cast<uint32_t>(lastBusValue)  
-        | static_cast<uint32_t>(lastBusValue) << 8   
-        | static_cast<uint32_t>(lastBusValue) << 16  
-        | static_cast<uint32_t>(lastBusValue) << 24;
-    }
-
-    value = regionData[offset]            
-    | regionData[offset + 1] << 8   
-    | regionData[offset + 2] << 16 
-    | regionData[offset + 3] << 24;
-
-    lastBusValue = static_cast<uint8_t>(value & 0xFF);
-    return value;
+    return Read<uint32_t>(address, AccessSize::Word);
 }   
 
 void GBA_Memory::Write8(uint32_t address, uint8_t value)

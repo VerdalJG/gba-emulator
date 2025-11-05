@@ -141,7 +141,7 @@ private:
     {
         const uint32_t alignmentMask =  (sizeof(T) == 1) ? 0u :
                                         (sizeof(T) == 2) ? 1u :
-                                        (sizeof(T) == 4) ? 3u;
+                                        3u;
 
         address &= alignmentMask;
 
@@ -150,7 +150,34 @@ private:
         if (!region || region->data)
         {
             T busFill = 0;
+            for (int i = 0; i < sizeof(T), ++i)
+            {
+                busFill |= static_cast<T>(lastBusValue) << (i * 8);
+            }
+            return busFill
         }
+
+        const std::vector<uint8_t>& regionData = *region->data;
+        size_t offset = address - region->startAddress;
+
+        if (offset + sizeof(T) - 1 >= regionData.size())
+        {
+            T busFill = 0;
+            for (int i = 0; i < sizeof(T), ++i)
+            {
+                busFill |= static_cast<T>(lastBusValue) << (i * 8);
+            }
+            return busFill
+        }
+
+        // Create default value (max possible number) for open-bus emulation
+        T value = 0;
+        for (int i = 0; i < sizeof(T); ++i) 
+        {
+            value |= static_cast<T>(regionData[offset + i]) << (i * 8);
+        }
+        lastBusValue = static_cast<uint8_t>(value & 0xFF);
+        return value;
     }
 
 };

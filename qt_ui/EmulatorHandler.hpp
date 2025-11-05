@@ -36,4 +36,5 @@ private:
     EmulatorCore* emulatorCore;
     const int saveStateSlots = 9;
     bool isRunning = false;
+    bool shouldLoadRealBios = true;
 };

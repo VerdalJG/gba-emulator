@@ -24,7 +24,6 @@ EmulatorHandler::EmulatorHandler() :
     };
     
     emulatorCore->SetPostStatusCallback(statusUICallback);
-    printf("BAM\n");
 }
 
 void EmulatorHandler::SaveStateToSlot(int slot)
@@ -37,22 +36,30 @@ void EmulatorHandler::LoadStateFromSlot(int slot)
 
 void EmulatorHandler::Startup()
 {
-    std::vector<uint8_t> biosData;
-    std::string biosPath = "bios/gba_bios.bin";
-    bool loadedBios = LoadFile(biosPath, biosData);
-
-    Q_ASSERT(emulatorCore && "EmulatorCore is null in Startup()");
-    
-    if (loadedBios && biosData.size() == BIOS_SIZE)
+    if (shouldLoadRealBios)
     {
-        emulatorCore->SetUsingHLE(false);
-        emulatorCore->LoadBIOS(biosData);
-        PostStatus("Loaded real BIOS");
+        std::vector<uint8_t> biosData;
+        std::string biosPath = "bios/gba_bios.bin";
+        bool loadedBios = LoadFile(biosPath, biosData);
+
+        Q_ASSERT(emulatorCore && "EmulatorCore is null in Startup()");
+        
+        if (loadedBios && biosData.size() == BIOS_SIZE)
+        {
+            emulatorCore->SetUsingHLE(false);
+            emulatorCore->LoadBIOS(biosData);
+            PostStatus("Loaded real BIOS");
+        }
+        else 
+        {
+            emulatorCore->SetUsingHLE(true);
+            PostStatus("Using HLE BIOS (No valid 'gba_bios.bin' found)");
+        }
     }
     else 
     {
         emulatorCore->SetUsingHLE(true);
-        PostStatus("Using HLE BIOS (No valid 'gba_bios.bin' found)");
+        PostStatus("Using HLE BIOS");
     }
 }
 

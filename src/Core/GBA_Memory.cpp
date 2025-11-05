@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <assert.h>
 
+
 GBA_Memory::GBA_Memory(EmulatorCore *core) : core(core)
 {
 }
@@ -78,44 +79,17 @@ uint32_t GBA_Memory::Read32(uint32_t address)
 
 void GBA_Memory::Write8(uint32_t address, uint8_t value)
 {
-    MemoryRegion* region = GetRegionFromAddress(address);
-
-    if (region == nullptr)
-    {
-        // Error: Attempt to write to an invalid region
-        return;
-    }
-
-    if (region->permissions == Permissions::ReadOnly)
-    {
-        // Error: Attempt to write to a read-only region
-        return;
-    }
-    else
-    {
-        size_t offset = address - region->startAddress;
-        if (offset >= region->data->size())
-        {
-            // Error: out of region bounds
-            return;
-        }
-
-        (*region->data)[offset] = value;
-    }
+    Write<uint8_t>(address, value);
 }
 
 void GBA_Memory::Write16(uint32_t address, uint32_t value)
 {
-    address &= ~1; // Alignment
-    Write8(address, static_cast<uint8_t>(value & 0xFF)); // Write lower byte
-    Write8(address + 1, static_cast<uint8_t>((value >> 8) & 0xFF)); // Write upper byte
+    Write<uint16_t>(address, value);
 }
 
 void GBA_Memory::Write32(uint32_t address, uint32_t value)
 {
-    address &= ~3; // Alignment
-    Write16(address, static_cast<uint32_t>(value & 0xFFFF)); // Write lower 16 bits
-    Write16(address + 2, static_cast<uint32_t>((value >> 16) & 0xFFFF)); // Write upper 16 bits
+    Write<uint32_t>(address, value);
 }
 
 void GBA_Memory::LoadROM(const std::vector<uint8_t>& romData)
@@ -228,4 +202,9 @@ void GBA_Memory::ResetOtherIORegisters()
 
     // --- Interrupts & system control ---
     ClearAddressRange(0x04000200, 0x04000208);  // IE, IF, WAITCNT, IME
+}
+
+void GBA_Memory::Log(const std::string &message, LogType logType, const char* functionName)
+{
+    core->Log(message, logType, functionName);
 }

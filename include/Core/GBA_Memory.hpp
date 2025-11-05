@@ -9,6 +9,8 @@
 #include "Core/GBA_ROM.hpp"
 #include "Core/GBA_WaitstateController.hpp"
 
+#include "Utils/Logger.hpp"
+
 // Memory map locations for GBA
 constexpr uint32_t BIOS_START = 0X00000000;
 constexpr uint32_t EWRAM_START = 0x02000000;
@@ -79,7 +81,6 @@ public:
     ~GBA_Memory() = default;
     GBA_Memory(const GBA_Memory&) = delete; // Disable copy constructor
  
-    
     MemoryRegion* GetRegionFromAddress(uint32_t address);
     MemoryRegion* GetRegionFromType(RegionType type);
     
@@ -91,14 +92,14 @@ public:
     void Write16(uint32_t address, uint32_t value);
     void Write32(uint32_t address, uint32_t value);
 
-    void LoadROM(const std::vector<uint8_t>& romData);
-    void LoadBIOS(const std::vector<uint8_t>& biosData);
     void ClearRegion(RegionType type);
     void Clear8(uint32_t address);
     void Clear16(uint32_t address);
     void Clear32(uint32_t address);
     void ClearAddressRange(uint32_t startAddress, uint32_t endAddress);
 
+    void LoadROM(const std::vector<uint8_t>& romData);
+    void LoadBIOS(const std::vector<uint8_t>& biosData);
 
     void ResetSIORegisters();
     void ResetSoundRegisters();
@@ -119,7 +120,7 @@ private:
     
     // External memory (cartridge)
 
-    // ROM0/1/2 all point to the same ROM data but differ by waitstate timing.
+    // ROM0/ROM1/ROM2 all point to the same ROM data but differ by waitstate timing.
     // ROM1 and ROM2 are mirrors of ROM0 at different addresses (for access timing differences).
 
     MemoryRegion rom0 = MemoryRegion(Permissions::ReadOnly, ROM0_START);
@@ -136,25 +137,26 @@ private:
     EmulatorCore* core; 
     GBA_WaitstateController waitstateController;
 
+    void Log(const std::string& message, LogType logType, const char* functionName = "");
+
     template <typename T>
     T Read(uint32_t address, AccessSize size)
     {
-        const uint32_t alignmentMask =  (sizeof(T) == 1) ? 0u :
-                                        (sizeof(T) == 2) ? 1u :
-                                        3u;
-
-        address &= alignmentMask;
+        // Align if needed  
+        if (sizeof(T) > 1) address &= ~(sizeof(T) - 1u);
 
         MemoryRegion* region = GetRegionFromAddress(address);
 
-        if (!region || region->data)
+        if (!region || !region->data)
         {
+            std::string message = "Read in invalid region at: " + std::to_string(address);
+            Log(message, LogType::Warning);
             T busFill = 0;
-            for (int i = 0; i < sizeof(T), ++i)
+            for (int i = 0; i < sizeof(T); ++i)
             {
                 busFill |= static_cast<T>(lastBusValue) << (i * 8);
             }
-            return busFill
+            return busFill;
         }
 
         const std::vector<uint8_t>& regionData = *region->data;
@@ -162,12 +164,14 @@ private:
 
         if (offset + sizeof(T) - 1 >= regionData.size())
         {
+            std::string message = "Read of " + std::to_string(sizeof(T)) + " bytes in multiple regions at: " + std::to_string(address);
+            Log(message, LogType::Warning);
             T busFill = 0;
-            for (int i = 0; i < sizeof(T), ++i)
+            for (int i = 0; i < sizeof(T); ++i)
             {
                 busFill |= static_cast<T>(lastBusValue) << (i * 8);
             }
-            return busFill
+            return busFill;
         }
 
         // Create default value (max possible number) for open-bus emulation
@@ -180,10 +184,43 @@ private:
         return value;
     }
 
+    template <typename T>
+    void Write(uint32_t address, T value)
+    {
+        // Align if needed
+        if (sizeof(T) > 1) address &= ~(sizeof(T) - 1u);
+
+        MemoryRegion* region = GetRegionFromAddress(address);
+
+        if (!region || !region->data)
+        {
+            std::string message = "Attempting to write to invalid region at: " + std::to_string(address);
+            Log(message, LogType::Warning);
+            return;
+        }
+
+        if (region->permissions == Permissions::ReadOnly)
+        {
+            std::string message = "Attempting to write to read-only region at: " + std::to_string(address);
+            Log(message, LogType::Warning);
+            return;
+        }
+        
+        size_t offset = address - region->startAddress;
+        if (offset + sizeof(T) - 1 >= region->data->size())
+        {
+            std::string message = "Attempting to write to read-only region at: " + std::to_string(address);
+            Log(message, LogType::Warning);
+            return;
+        }
+
+        for (int i = 0; i < sizeof(T); ++i)
+        {
+            (*region->data)[offset + i] = static_cast<uint8_t>((value >> (i * 8)) & 0xFF);
+        }
+    }
+
 };
-
-
-// TODO: Functions that interact with memory - memory init, load rom, read and write
 
 
 // https://problemkaputt.de/gbatek-gba-memory-map.htm REFERENCE

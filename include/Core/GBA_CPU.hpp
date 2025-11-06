@@ -109,4 +109,18 @@ private:
 - Potentially move specific instruction structs to their specific hpp's to not clutter InstructionHelpers.hpp/cpp
 - Thumb instruction set (surely fast)
 
+
+TESTING REPOSITORIES:
+
+Arm-Wrestler:
+https://github.com/shonumi/Emu-Docs/tree/master/GameBoy%20Advance/test_roms/arm_wrestler
+
+Specific tests:
+- jsmolka
+https://github.com/jsmolka/gba-tests/tree/3fc2dc019f91180585c7f71d1d68c271baa331fe/arm
+
+-png183
+https://github.com/png183/gba-tests/tree/master - has ROM's
+
+
 */

@@ -7,69 +7,9 @@
 #include <memory>
 
 #include "Core/GBA_ROM.hpp"
-#include "Core/GBA_WaitstateController.hpp"
+#include "Core/GBA_Memory_Helpers.hpp"
 
 #include "Utils/Logger.hpp"
-
-// Memory map locations for GBA
-constexpr uint32_t BIOS_START = 0X00000000;
-constexpr uint32_t EWRAM_START = 0x02000000;
-constexpr uint32_t IWRAM_START = 0x03000000;
-constexpr uint32_t IOREGISTERS_START = 0x04000000;
-constexpr uint32_t PALETTE_RAM_START = 0x05000000;
-constexpr uint32_t VRAM_START = 0x06000000;
-constexpr uint32_t OAM_START = 0x07000000;
-constexpr uint32_t ROM0_START = 0x08000000;
-constexpr uint32_t ROM1_START = 0x0A000000;
-constexpr uint32_t ROM2_START = 0x0C000000;
-constexpr uint32_t SRAM_START = 0x0E000000;
-
-// Memory map sizes for GBA
-constexpr size_t BIOS_SIZE = 0x4000; // 16KB
-constexpr size_t EWRAM_SIZE = 0x40000; // External work RAM / On GBA mainboard RAM - 256KB
-constexpr size_t IWRAM_SIZE = 0x8000; // Internal work RAM / On CPU chip RAM - 32KB - Fastest RAM
-constexpr size_t IOREGISTERS_SIZE = 0x3FF; // I/O Registers - 1024 bytes - documentation is specifically 0x3FF
-constexpr size_t PALETTE_RAM_SIZE = 0x400; // Palette RAM - 1KB
-constexpr size_t VRAM_SIZE = 0x18000; // Video RAM - 144KB
-constexpr size_t OAM_SIZE = 0x400; // Object Attribute Memory - 1KB
-constexpr size_t ROM_BANK_SIZE = 0x2000000; // Maximum ROM size - 32MB, most games are less than 16MB
-constexpr size_t SRAM_SIZE = 0x10000; // 64 KB 
-
-enum class Permissions 
-{
-    ReadOnly,
-    ReadWrite,
-    Varies
-};
-
-enum class RegionType
-{
-    BIOS,
-    EWRAM,
-    IWRAM,
-    IORegisters,
-    PaletteRAM,
-    VRAM,
-    OAM,
-    ROM0,
-    ROM1,
-    ROM2,
-    SRAM
-};
-
-struct MemoryRegion
-{
-    std::shared_ptr<std::vector<uint8_t>> data;
-    Permissions permissions;
-    uint32_t startAddress;
-
-    MemoryRegion(Permissions permissions, uint32_t startAddress, size_t regionSize) 
-    :   permissions(permissions), startAddress(startAddress),
-        data(std::make_shared<std::vector<uint8_t>>(regionSize)) {}
-
-    MemoryRegion(Permissions permissions, uint32_t startAddress)
-    :   permissions(permissions), startAddress(startAddress), data(nullptr) {}
-};
 
 class EmulatorCore;
 
@@ -108,31 +48,30 @@ public:
     
 private:
     // General internal memory
-    MemoryRegion bios = MemoryRegion(Permissions::ReadOnly, BIOS_START, BIOS_SIZE);
-    MemoryRegion ewram = MemoryRegion(Permissions::ReadWrite, EWRAM_START, EWRAM_SIZE); // External work RAM
-    MemoryRegion iwram = MemoryRegion(Permissions::ReadWrite, IWRAM_START, IWRAM_SIZE); // Internal work RAM
-    MemoryRegion ioRegisters = MemoryRegion(Permissions::Varies, IOREGISTERS_START, IOREGISTERS_SIZE);
+    MemoryRegion bios = MemoryRegion(Permissions::ReadOnly, BIOS_START, BIOS_SIZE, RegionType::BIOS);
+    MemoryRegion ewram = MemoryRegion(Permissions::ReadWrite, EWRAM_START, EWRAM_SIZE, RegionType::EWRAM); // External work RAM
+    MemoryRegion iwram = MemoryRegion(Permissions::ReadWrite, IWRAM_START, IWRAM_SIZE, RegionType::IWRAM); // Internal work RAM
+    MemoryRegion ioRegisters = MemoryRegion(Permissions::Varies, IOREGISTERS_START, IOREGISTERS_SIZE, RegionType::IORegisters);
 
     // Internal display memory
-    MemoryRegion paletteRam = MemoryRegion(Permissions::ReadWrite, PALETTE_RAM_START, PALETTE_RAM_SIZE);
-    MemoryRegion vram = MemoryRegion(Permissions::ReadWrite, VRAM_START, VRAM_SIZE); // Video RAM
-    MemoryRegion oam = MemoryRegion(Permissions::ReadWrite, OAM_START, OAM_SIZE);
+    MemoryRegion paletteRam = MemoryRegion(Permissions::ReadWrite, PALETTE_RAM_START, PALETTE_RAM_SIZE, RegionType::PaletteRAM);
+    MemoryRegion vram = MemoryRegion(Permissions::ReadWrite, VRAM_START, VRAM_SIZE, RegionType::VRAM); // Video RAM
+    MemoryRegion oam = MemoryRegion(Permissions::ReadWrite, OAM_START, OAM_SIZE, RegionType::OAM); // Object-Attribute RAM
     
     // External memory (cartridge)
 
     // ROM0/ROM1/ROM2 all point to the same ROM data but differ by waitstate timing.
     // ROM1 and ROM2 are mirrors of ROM0 at different addresses (for access timing differences).
 
-    MemoryRegion rom0 = MemoryRegion(Permissions::ReadOnly, ROM0_START);
-    MemoryRegion rom1 = MemoryRegion(Permissions::ReadOnly, ROM1_START);
-    MemoryRegion rom2 = MemoryRegion(Permissions::ReadOnly, ROM2_START);
-    MemoryRegion sram = MemoryRegion(Permissions::ReadWrite, SRAM_START, SRAM_SIZE);
+    MemoryRegion rom0 = MemoryRegion(Permissions::ReadOnly, ROM0_START, RegionType::ROM0);
+    MemoryRegion rom1 = MemoryRegion(Permissions::ReadOnly, ROM1_START, RegionType::ROM1);
+    MemoryRegion rom2 = MemoryRegion(Permissions::ReadOnly, ROM2_START, RegionType::ROM2);
+    MemoryRegion sram = MemoryRegion(Permissions::ReadWrite, SRAM_START, SRAM_SIZE, RegionType::SRAM);
 
     // The GBA has unused memory area after the SRAM, which goes from 0x10000000 to 0xFFFFFFFF
 
-    uint8_t lastBusValue = 0xFF; // For open-bus emulation
+    LastBusAccess lastAccess; // For open-bus emulation
 
-    //std::shared_ptr<std::vector<uint8_t>> rom;
     std::unique_ptr<GBA_ROM> rom;
     EmulatorCore* core; 
     GBA_WaitstateController waitstateController;
@@ -140,87 +79,16 @@ private:
     void Log(const std::string& message, LogType logType, const char* functionName = "");
 
     template <typename T>
-    T Read(uint32_t address, AccessSize size)
-    {
-        // Align if needed  
-        if (sizeof(T) > 1) address &= ~(sizeof(T) - 1u);
-
-        MemoryRegion* region = GetRegionFromAddress(address);
-
-        if (!region || !region->data)
-        {
-            std::string message = "Read in invalid region at: " + std::to_string(address);
-            Log(message, LogType::Warning);
-            T busFill = 0;
-            for (int i = 0; i < sizeof(T); ++i)
-            {
-                busFill |= static_cast<T>(lastBusValue) << (i * 8);
-            }
-            return busFill;
-        }
-
-        const std::vector<uint8_t>& regionData = *region->data;
-        size_t offset = address - region->startAddress;
-
-        if (offset + sizeof(T) - 1 >= regionData.size())
-        {
-            std::string message = "Read of " + std::to_string(sizeof(T)) + " bytes in multiple regions at: " + std::to_string(address);
-            Log(message, LogType::Warning);
-            T busFill = 0;
-            for (int i = 0; i < sizeof(T); ++i)
-            {
-                busFill |= static_cast<T>(lastBusValue) << (i * 8);
-            }
-            return busFill;
-        }
-
-        // Create default value (max possible number) for open-bus emulation
-        T value = 0;
-        for (int i = 0; i < sizeof(T); ++i) 
-        {
-            value |= static_cast<T>(regionData[offset + i]) << (i * 8);
-        }
-        lastBusValue = static_cast<uint8_t>(value & 0xFF);
-        return value;
-    }
+    T Read(uint32_t address, AccessSize size);
 
     template <typename T>
-    void Write(uint32_t address, T value)
-    {
-        // Align if needed
-        if (sizeof(T) > 1) address &= ~(sizeof(T) - 1u);
+    void Write(uint32_t address, T value);
 
-        MemoryRegion* region = GetRegionFromAddress(address);
-
-        if (!region || !region->data)
-        {
-            std::string message = "Attempting to write to invalid region at: " + std::to_string(address);
-            Log(message, LogType::Warning);
-            return;
-        }
-
-        if (region->permissions == Permissions::ReadOnly)
-        {
-            std::string message = "Attempting to write to read-only region at: " + std::to_string(address);
-            Log(message, LogType::Warning);
-            return;
-        }
-        
-        size_t offset = address - region->startAddress;
-        if (offset + sizeof(T) - 1 >= region->data->size())
-        {
-            std::string message = "Attempting to write to read-only region at: " + std::to_string(address);
-            Log(message, LogType::Warning);
-            return;
-        }
-
-        for (int i = 0; i < sizeof(T); ++i)
-        {
-            (*region->data)[offset + i] = static_cast<uint8_t>((value >> (i * 8)) & 0xFF);
-        }
-    }
+    template <typename T>
+    T FillFromLastBusAccess() const;
 
 };
 
+#include "GBA_Memory.tpp"
 
 // https://problemkaputt.de/gbatek-gba-memory-map.htm REFERENCE

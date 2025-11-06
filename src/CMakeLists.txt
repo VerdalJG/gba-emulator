@@ -1,5 +1,8 @@
 # Collect all files from src and subdirectories - put into SRC_FILES
-file(GLOB_RECURSE CORE_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB_RECURSE CORE_SOURCES CONFIGURE_DEPENDS 
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${PROJECT_SOURCE_DIR}/include/*.tpp"    
+)
 
 # Create the library with name EmulatorCore
 add_library(EmulatorCore STATIC ${CORE_SOURCES})

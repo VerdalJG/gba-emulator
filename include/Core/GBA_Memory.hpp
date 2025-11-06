@@ -21,8 +21,8 @@ public:
     ~GBA_Memory() = default;
     GBA_Memory(const GBA_Memory&) = delete; // Disable copy constructor
  
-    MemoryRegion* GetRegionFromAddress(uint32_t address);
-    MemoryRegion* GetRegionFromType(RegionType type);
+    const MemoryRegion* GetRegionFromAddress(uint32_t address) const;
+    const MemoryRegion* GetRegionFromType(RegionType type) const;
     
     uint8_t Read8(uint32_t address);
     uint16_t Read16(uint32_t address);
@@ -76,7 +76,7 @@ private:
     EmulatorCore* core; 
     GBA_WaitstateController waitstateController;
 
-    void Log(const std::string& message, LogType logType, const char* functionName = "");
+    void Log(const std::string& message, LogType logType, const char* functionName = "") const;
 
     template <typename T>
     T Read(uint32_t address, AccessSize size);

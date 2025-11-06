@@ -10,7 +10,7 @@ GBA_Memory::GBA_Memory(EmulatorCore *core) : core(core)
 {
 }
 
-MemoryRegion *GBA_Memory::GetRegionFromAddress(uint32_t address)
+const MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) const
 {
     switch (address >> 24)
     {
@@ -42,7 +42,7 @@ MemoryRegion *GBA_Memory::GetRegionFromAddress(uint32_t address)
     // disabled via Port 4000800h) returns the recently pre-fetched opcode.
 }
 
-MemoryRegion* GBA_Memory::GetRegionFromType(RegionType type)
+const MemoryRegion* GBA_Memory::GetRegionFromType(RegionType type) const
 {
     switch (type)
     {
@@ -114,7 +114,7 @@ void GBA_Memory::LoadBIOS(const std::vector<uint8_t>& biosData)
 
 void GBA_Memory::ClearRegion(RegionType type)
 {
-    MemoryRegion* region = GetRegionFromType(type); 
+    const MemoryRegion* region = GetRegionFromType(type); 
     std::fill(region->data->begin(), region->data->end(), 0);
 }
 
@@ -135,7 +135,7 @@ void GBA_Memory::Clear32(uint32_t address)
 
 void GBA_Memory::ClearAddressRange(uint32_t startAddress, uint32_t endAddress)
 {
-    MemoryRegion* region = GetRegionFromAddress(startAddress);
+    const MemoryRegion* region = GetRegionFromAddress(startAddress);
 
     assert(region == GetRegionFromAddress(endAddress) && "Start address and end address must pertain to the same region");
 
@@ -204,7 +204,7 @@ void GBA_Memory::ResetOtherIORegisters()
     ClearAddressRange(0x04000200, 0x04000208);  // IE, IF, WAITCNT, IME
 }
 
-void GBA_Memory::Log(const std::string &message, LogType logType, const char* functionName)
+void GBA_Memory::Log(const std::string &message, LogType logType, const char* functionName) const
 {
     core->Log(message, logType, functionName);
 }

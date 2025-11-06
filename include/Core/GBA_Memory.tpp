@@ -6,7 +6,7 @@ T GBA_Memory::Read(uint32_t address, AccessSize size)
     // Align if needed  
     if (sizeof(T) > 1) address &= ~(sizeof(T) - 1u);
 
-    MemoryRegion* region = GetRegionFromAddress(address);
+    const MemoryRegion* region = GetRegionFromAddress(address);
 
     if (!region || !region->data)
     {
@@ -43,7 +43,7 @@ void GBA_Memory::Write(uint32_t address, T value)
     // Align if needed
     if (sizeof(T) > 1) address &= ~(sizeof(T) - 1u);
 
-    MemoryRegion* region = GetRegionFromAddress(address);
+    const MemoryRegion* region = GetRegionFromAddress(address);
 
     if (!region || !region->data)
     {
@@ -83,7 +83,7 @@ T GBA_Memory::FillFromLastBusAccess() const
         return static_cast<T>(0xFFFFFFFFu);
     }
 
-    MemoryRegion* lastRegion = GetRegionFromType(lastAccess.region);
+    const MemoryRegion* lastRegion = GetRegionFromType(lastAccess.region);
     size_t offset = lastAccess.address - lastRegion->startAddress;
     const std::vector<uint8_t>& regionData = *lastRegion->data;
 
@@ -94,5 +94,3 @@ T GBA_Memory::FillFromLastBusAccess() const
     }
     return busFill;
 }
-
-// THE ERROR IS WITH CONST FUNCTIONS 

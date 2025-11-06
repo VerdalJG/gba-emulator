@@ -75,7 +75,7 @@ struct LastBusAccess
     AccessSize size = AccessSize::Word;
     RegionType region = RegionType::Invalid;
 
-    void UpdateValues(uint32_t address, size_t size, MemoryRegion* region)
+    void UpdateValues(uint32_t address, size_t size, const MemoryRegion* region)
     {
         this->address = address;
         this->size = static_cast<AccessSize>(size);

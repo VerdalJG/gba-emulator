@@ -99,7 +99,7 @@ void EmulatorHandler::RunLoop()
 {
     while (isRunning)
     {
-        emulatorCore->Update();
+        emulatorCore->Step();
         emit FrameReady();
         QThread::msleep(16);
     }

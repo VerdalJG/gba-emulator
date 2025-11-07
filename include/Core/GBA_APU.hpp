@@ -3,12 +3,12 @@
 
 class EmulatorCore;
 
-class GBA_PPU
+class GBA_APU
 {
 public:
-    GBA_PPU() = delete;
-    explicit GBA_PPU(EmulatorCore* core);
-    ~GBA_PPU() = default;
+    GBA_APU() = delete;
+    explicit GBA_APU(EmulatorCore* core);
+    ~GBA_APU() = default;
 
     void Step(uint32_t cycles);
 

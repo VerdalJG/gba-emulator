@@ -36,14 +36,10 @@ class GBA_ROM
 public: 
     GBA_ROM() = delete;
     explicit GBA_ROM(EmulatorCore* core);
+    ~GBA_ROM() = default;
 
     // Load ROM data
     void LoadROM(const std::vector<uint8_t>& romData);
-    
-    // Read methods
-    uint8_t Read8(uint32_t address) const;
-    uint16_t Read16(uint32_t address) const;
-    uint32_t Read32(uint32_t address) const;
 
     // ROM info
     std::shared_ptr<std::vector<uint8_t>> GetROMData() const { return rom; }

@@ -2,7 +2,9 @@
 #include "Utils/Logger.hpp"
 //#include "SDLUtils.hpp"
 
-EmulatorCore::EmulatorCore(Logger* logger) : memory(this), cpu(this), hle(this), logger(logger)
+EmulatorCore::EmulatorCore(Logger* logger) : memory(this), cpu(this), 
+    hle(this), logger(logger), ppu(this), apu(this), timerController(this), 
+    interruptController(this)
 {
     if (logger)
     {
@@ -86,22 +88,15 @@ void EmulatorCore::Shutdown()
     // SDL_Quit(); // Quit SDL subsystems
 }
 
-void EmulatorCore::Update()
+void EmulatorCore::Step(uint32_t cycles)
 {
-    // HandleSDLEvents(); // Handle SDL events like input, window events, etc.
+    cpu.Step(/*cycles*/);
+    // dma.Step(cycles);
+    ppu.Step(cycles);
+    apu.Step(cycles);
 
-    // if (!isRunning)
-    // {
-    //     return; // Exit if we reached a quit event
-    // }
-
-    // // Update Timer
-    // timer.Update();
-
-    // if (timer.ShouldRunNewFrame())
-    // {
-    //     Tick(); // Tick all components (CPU, PPU, APU, etc.)
-    // }
+    
+    // 
 }
 
 void EmulatorCore::Tick()

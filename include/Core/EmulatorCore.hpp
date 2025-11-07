@@ -8,6 +8,7 @@
 #include "Core/GBA_PPU.hpp"
 #include "Core/GBA_TimerController.hpp"
 #include "Core/GBA_DMAController.hpp"
+#include "Core/GBA_APU.hpp"
 
 #include <string>
 #include <vector>
@@ -36,7 +37,7 @@ public:
     void SetPostStatusCallback(std::function<void(const std::string&)> callback);
 
 
-    void Update();
+    void Step(uint32_t cycles);
     void Tick();
     void Render();
     void HandleSDLEvents();
@@ -45,17 +46,18 @@ public:
 
 
 protected:
+    bool usingHLEBios = false; // High level emulation bios, used when can't use GBA real BIOS
+    std::function<void(const std::string&)> postStatusCallback;
+    Logger* logger;
+
+    // Core Components:
     GBA_HLE hle;
     GBA_Memory memory;
     GBA_CPU cpu;
-    
-    bool usingHLEBios = false; // High level emulation bios, used when can't use GBA real BIOS
-
-    std::function<void(const std::string&)> postStatusCallback;
-    Logger* logger;
-    
-    //GBA_PPU ppu; // For video
-    //GBA_APU apu; // For audio
+    GBA_PPU ppu; // For video
+    GBA_APU apu; // For audio
+    GBA_TimerController timerController;
+    GBA_InterruptController interruptController;
     //InputHandler inputHandler; // For input handling
 
 

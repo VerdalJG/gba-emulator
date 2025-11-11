@@ -4,7 +4,7 @@
 
 EmulatorCore::EmulatorCore(Logger* logger) : memory(this), cpu(this), 
     hle(this), logger(logger), ppu(this), apu(this), timerController(this), 
-    interruptController(this)
+    interruptController(this), dmaController(this)
 {
     if (logger)
     {
@@ -88,15 +88,16 @@ void EmulatorCore::Shutdown()
     // SDL_Quit(); // Quit SDL subsystems
 }
 
-void EmulatorCore::Step(uint32_t cycles)
+void EmulatorCore::Step()
 {
-    cpu.Step(/*cycles*/);
-    // dma.Step(cycles);
-    ppu.Step(cycles);
-    apu.Step(cycles);
-
-    
-    // 
+    while (!ppu.FrameReady())
+    {
+        cpu.Step();
+        uint32_t cycles = cpu.GetCurrentInstructionCycles();
+        dmaController.Step(cycles);
+        ppu.Step(cycles);
+        apu.Step(cycles);
+    }
 }
 
 void EmulatorCore::Tick()

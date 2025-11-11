@@ -2,7 +2,9 @@
 #include "Core/CPU/Instructions/Decoder.hpp"
 #include "Core/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
+
 #include <assert.h>
+
 
 GBA_CPU::GBA_CPU(EmulatorCore* core) :
     core(core)
@@ -22,6 +24,7 @@ void GBA_CPU::Reset()
     cpsr = 0x000000D3;   // Supervisor mode, IRQ/FIQ disabled
     SetValueAtRegister(PC_INDEX, 0x00000000);
     FlushPipeline();
+    totalCycles = 0;
 }
 
 void GBA_CPU::Step()
@@ -31,6 +34,8 @@ void GBA_CPU::Step()
         HandleHalt();
         return;
     }
+
+    currentInstructionCycles = 0;
 
     AdvanceInstructionPipeline();
 
@@ -169,7 +174,15 @@ void GBA_CPU::Execute()
     instructionPipeline[2].function(instructionPipeline[2].rawInstruction, *this);
 }
 
-GBA_Memory& GBA_CPU::GetMemorySystem()
+void GBA_CPU::AddCycles(uint32_t cycles)
+{
+    if (cycles == 0) return;
+
+    currentFrameCycles += cycles;
+    totalCycles += cycles;
+}
+
+GBA_Memory &GBA_CPU::GetMemorySystem() 
 {
     return core->GetMemory();
 }

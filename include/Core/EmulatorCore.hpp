@@ -37,7 +37,7 @@ public:
     void SetPostStatusCallback(std::function<void(const std::string&)> callback);
 
 
-    void Step(uint32_t cycles);
+    void Step();
     void Tick();
     void Render();
     void HandleSDLEvents();
@@ -56,6 +56,7 @@ protected:
     GBA_CPU cpu;
     GBA_PPU ppu; // For video
     GBA_APU apu; // For audio
+    GBA_DMAController dmaController; 
     GBA_TimerController timerController;
     GBA_InterruptController interruptController;
     //InputHandler inputHandler; // For input handling

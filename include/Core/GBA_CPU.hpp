@@ -54,6 +54,11 @@ public:
     bool GetHalted() { return halted; }
     void SetHalted(bool shouldHalt) { halted = shouldHalt; }
 
+    void AddCycles(uint32_t cycles);
+    uint32_t GetTotalCycles() { return totalCycles; }
+    uint32_t GetCurrentInstructionCycles() { return currentInstructionCycles; }
+    uint32_t GetCurrentFrameCycles() { return currentFrameCycles; }
+
     GBA_Memory& GetMemorySystem();
     EmulatorCore* GetEmulatorCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
@@ -89,6 +94,9 @@ protected:
 
 private:
     EmulatorCore* core;
+    uint32_t totalCycles;
+    uint32_t currentInstructionCycles;
+    uint32_t currentFrameCycles;
 };
 
 

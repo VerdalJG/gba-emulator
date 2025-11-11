@@ -6,6 +6,11 @@ GBA_PPU::GBA_PPU(EmulatorCore *core) : core(core)
     assert(core != nullptr && "PPU must have valid EmulatorCore object");
 }
 
-void GBA_PPU::Step(uint32_t cycles)
+bool GBA_PPU::FrameReady()
+{
+    return false;
+}
+
+void GBA_PPU::Step(uint32_t cycles) 
 {
 }

@@ -10,6 +10,8 @@ public:
     explicit GBA_PPU(EmulatorCore* core);
     ~GBA_PPU() = default;
 
+    bool FrameReady();
+
     void Step(uint32_t cycles);
 
 private:

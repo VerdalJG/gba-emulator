@@ -13,5 +13,4 @@ void GBA_TimerController::AddCycles(uint32_t cycles)
     if (!core || cycles == 0) return;
 
     totalCycles += cycles;
-    core->Step(cycles);
 }

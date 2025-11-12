@@ -45,6 +45,7 @@ public:
     void ResetSoundRegisters();
     void ResetOtherIORegisters();
 
+    const GBA_WaitstateController& GetWaitstateController() const { return waitstateController; } 
     
 private:
     // General internal memory

@@ -2,6 +2,7 @@
 #include "Core/CPU/Instructions/Decoder.hpp"
 #include "Core/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
+#include "Core/GBA_WaitstateController.hpp"
 
 #include <assert.h>
 
@@ -32,7 +33,7 @@ void GBA_CPU::Step()
     if (halted)
     {
         HandleHalt();
-        return;
+        return; // No instructions/cycles during cpu halt
     }
 
     currentInstructionCycles = 0;
@@ -178,6 +179,7 @@ void GBA_CPU::AddCycles(uint32_t cycles)
 {
     if (cycles == 0) return;
 
+    currentInstructionCycles += cycles;
     currentFrameCycles += cycles;
     totalCycles += cycles;
 }
@@ -198,4 +200,28 @@ void GBA_CPU::Log(const std::string& message, LogType logType, const char *funct
     {
        core->Log(message, logType, functionName);
     }
+}
+
+uint8_t GBA_CPU::Read8FromMemory(uint32_t address, bool isSequential)
+{
+    const GBA_Memory& memory = GetMemorySystem();
+    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Byte, isSequential);
+    AddCycles(cycles);
+    return GetMemorySystem().Read8(address);
+}
+
+uint16_t GBA_CPU::Read16FromMemory(uint32_t address, bool isSequential)
+{
+    const GBA_Memory& memory = GetMemorySystem();
+    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Halfword, isSequential);
+    AddCycles(cycles);
+    return GetMemorySystem().Read16(address);
+}
+
+uint32_t GBA_CPU::Read32FromMemory(uint32_t address, bool isSequential)
+{
+    const GBA_Memory& memory = GetMemorySystem();
+    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Word, isSequential);
+    AddCycles(cycles);
+    return GetMemorySystem().Read32(address);
 }

@@ -63,6 +63,10 @@ public:
     EmulatorCore* GetEmulatorCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
+    uint8_t Read8FromMemory(uint32_t address, bool isSequential);
+    uint16_t Read16FromMemory(uint32_t address, bool isSequential);
+    uint32_t Read32FromMemory(uint32_t address, bool isSequential);
+
     static const int SP_INDEX = 13;
     static const int LR_INDEX = 14;
     static const int PC_INDEX = 15;

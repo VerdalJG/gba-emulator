@@ -1,7 +1,7 @@
 
 
 template <typename T>
-T GBA_Memory::Read(uint32_t address, AccessSize size) const
+T GBA_Memory::Read(uint32_t address, AccessSize size) 
 {
     // Align if needed  
     if (sizeof(T) > 1) address &= ~(sizeof(T) - 1u);

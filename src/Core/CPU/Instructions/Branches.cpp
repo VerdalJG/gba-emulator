@@ -37,5 +37,6 @@ void BranchAndExchange(uint32_t instruction, GBA_CPU& cpu)
 
     // Switch to arm/thumb if needed
     cpu.UpdateCPSR((rm & 1) << 5, 0x10); // Update bit 5, ARM = 0, Thumb = 1
+    rm &= ~3u; // Word-alignment
     cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, rm & 0xFFFFFFFE); // Branch to the address held
 }

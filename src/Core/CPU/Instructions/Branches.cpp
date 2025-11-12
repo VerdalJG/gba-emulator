@@ -21,7 +21,8 @@ void Branch(uint32_t instruction, GBA_CPU& cpu)
     int32_t signExtended_30 = static_cast<int32_t>(ArithmeticShiftRight(shifted_24, 6));
 
     int32_t targetAddress = (signExtended_30 << 2) + currentPC;
-
+    
+    targetAddress &= ~3u; // Word-alignment
     cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, targetAddress);
 }
 

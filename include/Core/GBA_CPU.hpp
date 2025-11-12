@@ -24,8 +24,12 @@ public:
     inline uint32_t GetValueAtRegister(int registerIndex) { return visibleRegisters[registerIndex]; }
     inline void SetValueAtRegister(int registerIndex, uint32_t value) 
     { 
-        visibleRegisters[registerIndex] = value; 
-        if (registerIndex == PC_INDEX) FlushPipeline();
+        if (registerIndex == PC_INDEX)
+        {
+            FlushPipeline();
+            value &= ~3;
+        } 
+        visibleRegisters[registerIndex] = value;  
     }
 
     inline uint32_t GetValueAtUserRegister(int registerIndex) { return sharedR8_R12[8 - registerIndex]; }
@@ -67,9 +71,14 @@ public:
     uint16_t Read16FromMemory(uint32_t address, bool isSequential);
     uint32_t Read32FromMemory(uint32_t address, bool isSequential);
 
+    void Write8ToMemory(uint32_t address, uint8_t value, bool isSequential);
+    void Write16ToMemory(uint32_t address, uint16_t value, bool isSequential);
+    void Write32ToMemory(uint32_t address, uint32_t value, bool isSequential);
+
     static const int SP_INDEX = 13;
     static const int LR_INDEX = 14;
     static const int PC_INDEX = 15;
+    static const int PIPELINE_FLUSH_PENALTY = 2;
 
 protected:
     std::array<uint32_t, 16> visibleRegisters{};    // R0 - R14 contain data, R15 contains address of next instruction (PC)
@@ -101,6 +110,8 @@ private:
     uint32_t totalCycles;
     uint32_t currentInstructionCycles;
     uint32_t currentFrameCycles;
+    bool nextInstructionFetchIsSequential = false;
+    bool nextDataAccessIsSequential = false;
 };
 
 

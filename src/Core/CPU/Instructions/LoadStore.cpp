@@ -20,7 +20,6 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
 
     if (!values.sFlag && !values.hFlag) return; // This is another instruction - Mult or Single Data Swap
 
-    GBA_Memory& memory = cpu.GetMemorySystem();
     uint32_t effectiveAddress = CalculateAddress_AddressingMode3(values, cpu);
 
     bool isLoad = values.lFlag;
@@ -35,24 +34,25 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         if (!isHalfword)
         {
             // LDRSB
-            uint8_t loadedByte = memory.Read8(effectiveAddress);
+            uint8_t loadedByte = cpu.Read8FromMemory(effectiveAddress, false);
             uint32_t valueToLoad = SignExtendTo32(loadedByte);
             cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
         }
-        else
-        {
-            // Account for misaligned halfword
-            bool misaligned = effectiveAddress & 1; // First bit must be 0 to be divisible by 2 (halfword)
-            uint16_t loadedHalfword = memory.Read16(effectiveAddress);
-            if (misaligned)
+            else
             {
-                loadedHalfword = RotateRight(loadedHalfword, 8);
+                // Account for misaligned halfword
+                bool misaligned = effectiveAddress & 1; // First bit must be 0 to be divisible by 2 (halfword)
+                uint32_t alignedAddress = effectiveAddress & ~1;
+                uint16_t loadedHalfword = cpu.Read16FromMemory(effectiveAddress, false);
+                if (misaligned)
+                {
+                    loadedHalfword = RotateRight(loadedHalfword, 8);
+                }
+                
+                // LDRSH vs LDRH
+                uint32_t valueToLoad = isSigned ? SignExtendTo32(loadedHalfword) : ZeroExtendTo32(loadedHalfword);
+                cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
             }
-            
-            // LDRSH vs LDRH
-            uint32_t valueToLoad = isSigned ? SignExtendTo32(loadedHalfword) : ZeroExtendTo32(loadedHalfword);
-            cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
-        }
     }
     else // STRH
     {
@@ -62,8 +62,18 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         // GBA SPECIFIC: NORMALLY YOU WOULD ABORT THE INSTRUCTION IF IT IS NOT ALIGNED
         // INSTEAD, THE GBA JUST PROCEEDS AND DOES THE STORE INSTRUCTION WITH THE UNALIGNED ADDRESS
         uint16_t valueToStore = static_cast<uint16_t>(rd);
-        memory.Write8(effectiveAddress, valueToStore & 0xFF); // Lowest 8 bits
-        memory.Write8(effectiveAddress + 1, valueToStore >> 8); // Shift higher bits
+
+        bool misaligned = effectiveAddress & 1;
+        if (misaligned)
+        {
+            cpu.Write8ToMemory(effectiveAddress, valueToStore & 0xFF, false); // Lowest 8 bits
+            cpu.Write8ToMemory(effectiveAddress + 1, valueToStore >> 8, true); // Shift higher bits
+        }
+        else
+        {  
+            cpu.Write16ToMemory(effectiveAddress, valueToStore, false);
+        }
+        
     }
 
     // Only post-index case updates here
@@ -89,7 +99,6 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
     bool preIndexed = values.pFlag;
     bool shouldWriteback = values.wFlag;
     
-    GBA_Memory& memory = cpu.GetMemorySystem();
     uint32_t effectiveAddress = CalculateAddress_AddressingMode2(values, cpu);
     
     if (isLoad)
@@ -98,7 +107,7 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         if (isByte)
         {
             // LDRB
-            uint8_t loadedByte = memory.Read8(effectiveAddress);
+            uint8_t loadedByte = cpu.Read8FromMemory(effectiveAddress, false);
             valueToLoad = ZeroExtendTo32(loadedByte);
         }
         else
@@ -106,7 +115,7 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
             // LDR
             // First and second bit must be 0 to be divisible by 4 (word)
             bool misaligned = effectiveAddress & 3; 
-            valueToLoad = memory.Read32(effectiveAddress);
+            valueToLoad = cpu.Read32FromMemory(effectiveAddress, false);
             if (misaligned)
             {
                 // Rotate by how many bytes it is misaligned by
@@ -134,12 +143,12 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         {
             // STRB
             uint8_t byte = rd & 0xFF;
-            memory.Write8(effectiveAddress, byte);
+            cpu.Write8ToMemory(effectiveAddress, byte, false);
         }
         else
         {
             // STR
-            memory.Write32(effectiveAddress, rd);
+            cpu.Write32ToMemory(effectiveAddress, rd, false);
         }
     }
 
@@ -202,15 +211,14 @@ void LDM(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     bool baseRegisterInList = (values.registerList >> values.rnIndex) & 1;
     AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
     uint32_t address = addressing4.startAddress;
-
-    GBA_Memory& memory = cpu.GetMemorySystem();
     
     for (int i = 0; i < 16; ++i)
     {
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex) continue;
 
-        uint32_t loaded = memory.Read32(address);
+        bool sequential = i != 0;
+        uint32_t loaded = cpu.Read32FromMemory(address, sequential);
 
         if (i == GBA_CPU::PC_INDEX)
         {
@@ -238,15 +246,14 @@ void LDMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     bool baseRegisterInList = (values.registerList >> values.rnIndex) & 1;
     AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
     uint32_t address = addressing4.startAddress;
-
-    GBA_Memory& memory = cpu.GetMemorySystem();
     
     for (int i = 0; i < 8; ++i)
     {
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex) continue;
 
-        uint32_t loaded = memory.Read32(address);
+        bool sequential = i != 0;
+        uint32_t loaded = cpu.Read32FromMemory(address, sequential);
 
         cpu.SetValueAtRegister(i, loaded);
 
@@ -258,7 +265,7 @@ void LDMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex) continue;
 
-        uint32_t loaded = memory.Read32(address);
+        uint32_t loaded = cpu.Read32FromMemory(address, true);
 
         if (cpu.GetCurrentOperatingMode() == OperatingMode::FIQ)
         {
@@ -287,14 +294,13 @@ void LDMRestoreCPSR(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
     uint32_t address = addressing4.startAddress;
 
-    GBA_Memory& memory = cpu.GetMemorySystem();
-
     for (int i = 0; i < 15; ++i)
     {
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex) continue;
 
-        uint32_t loaded = memory.Read32(address);
+        bool sequential = i != 0;
+        uint32_t loaded = cpu.Read32FromMemory(address, sequential);
         cpu.SetValueAtRegister(i, loaded);
 
         address += 4;
@@ -303,7 +309,7 @@ void LDMRestoreCPSR(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     int bank = BankIndex(cpu.GetCurrentOperatingMode());
     cpu.RestoreCPSRFromSPSR(bank);
 
-    uint32_t loaded = memory.Read32(address);
+    uint32_t loaded = cpu.Read32FromMemory(address, true);
     uint32_t pcValue = cpu.IsThumbMode() ? loaded & 0xFFFFFFFE : loaded & 0xFFFFFFFC;
 
     cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, pcValue); // Ignore bits [1:0]
@@ -321,9 +327,8 @@ void LDMEmptyRegisterList(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
 {
     AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
     uint32_t address = addressing4.startAddress;
-    GBA_Memory& memory = cpu.GetMemorySystem();
 
-    uint32_t loaded = memory.Read32(address);
+    uint32_t loaded = cpu.Read32FromMemory(address, false);
     cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, loaded);
 
     assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
@@ -335,14 +340,14 @@ void STM(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu); 
     uint32_t address = addressing4.startAddress;
 
-    GBA_Memory& memory = cpu.GetMemorySystem();
-
     for (int i = 0; i < 15; ++i)
     {
         if (!((values.registerList >> i) & 1)) continue;
 
         uint32_t toStore = cpu.GetValueAtRegister(i);
-        memory.Write32(address, toStore);
+
+        bool sequential = i != 0;
+        cpu.Write32ToMemory(address, toStore, sequential);
 
         address += 4;
     }
@@ -360,15 +365,15 @@ void STMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
 {
     AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
     uint32_t address = addressing4.startAddress;
-
-    GBA_Memory& memory = cpu.GetMemorySystem();
     
     for (int i = 0; i < 8; ++i)
     {
         if (!((values.registerList >> i) & 1)) continue;
 
         uint32_t toStore = cpu.GetValueAtRegister(i);
-        memory.Write32(address, toStore);
+
+        bool sequential = i != 0;
+        cpu.Write32ToMemory(address, toStore, sequential);
 
         address += 4;
     }
@@ -388,7 +393,8 @@ void STMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
             toStore = cpu.GetValueAtRegister(i);
         }
 
-        memory.Write32(address, toStore);
+        bool sequential = i != 0;
+        cpu.Write32ToMemory(address, toStore, sequential);
 
         address += 4;
     }
@@ -407,10 +413,9 @@ void STMEmptyRegisterList(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
 {
     AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
     uint32_t address = addressing4.startAddress;
-    GBA_Memory& memory = cpu.GetMemorySystem();
 
-    uint32_t toStore = memory.Read32(address);
-    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, toStore);
+    uint32_t toStore = cpu.GetValueAtRegister(GBA_CPU::PC_INDEX);
+    cpu.Write32ToMemory(address, toStore, false);
 
     assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
 }

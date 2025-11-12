@@ -132,8 +132,6 @@ void UMLAL(uint32_t &rdLo, uint32_t &rdHi, uint64_t& product)
 void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu) 
 {
     SingleDataSwap_Decoded values = SingleDataSwap_Decode(instruction);
-    
-    GBA_Memory& memory = cpu.GetMemorySystem();
 
     uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
     uint32_t rm = cpu.GetValueAtRegister(values.rmIndex);
@@ -151,17 +149,18 @@ void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu)
 
     if (values.bFlag) // SWPB
     {
-        temp = memory.Read8(rn);
+        temp = cpu.Read8FromMemory(rn, false);
         uint8_t byteToWrite = rm & 0xFF;
-        memory.Write8(rn, byteToWrite);
+        cpu.Write8ToMemory(rn, byteToWrite, false);
     }
     else // SWP
     {
         uint32_t rotatedBytes = (rn & 0b11);
         uint32_t rotatedBits = rotatedBytes * 8; // Rotate by byte size
-        temp = RotateRight(memory.Read32(rn), rotatedBits); // Normally rotate right is only used for unaligned addresses
-        memory.Write32(rn, rm); 
+        temp = RotateRight(cpu.Read32FromMemory(rn, false), rotatedBits); // Normally rotate right is only used for unaligned addresses
+        cpu.Write32ToMemory(rn, rm, false); 
     }
+
     cpu.SetValueAtRegister(values.rdIndex, temp); 
 }
 

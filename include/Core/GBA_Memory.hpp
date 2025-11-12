@@ -24,9 +24,9 @@ public:
     const MemoryRegion* GetRegionFromAddress(uint32_t address) const;
     const MemoryRegion* GetRegionFromType(RegionType type) const;
     
-    uint8_t Read8(uint32_t address);
-    uint16_t Read16(uint32_t address);
-    uint32_t Read32(uint32_t address);
+    uint8_t Read8(uint32_t address) const;
+    uint16_t Read16(uint32_t address) const;
+    uint32_t Read32(uint32_t address) const;
 
     void Write8(uint32_t address, uint8_t value);
     void Write16(uint32_t address, uint32_t value);
@@ -80,7 +80,7 @@ private:
     void Log(const std::string& message, LogType logType, const char* functionName = "") const;
 
     template <typename T>
-    T Read(uint32_t address, AccessSize size);
+    T Read(uint32_t address, AccessSize size) const;
 
     template <typename T>
     void Write(uint32_t address, T value);

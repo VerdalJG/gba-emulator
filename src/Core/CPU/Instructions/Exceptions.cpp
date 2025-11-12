@@ -29,6 +29,8 @@ void UndefinedInstruction(uint32_t instruction, GBA_CPU& cpu)
     uint32_t bitsToUpdate = 0xCF; // 0b10111111 
     cpu.UpdateCPSR(updatedCPSR, bitsToUpdate);
 
+    cpu.AddCycles(1); // Total cycles: 3 (pipeline flush + mode switch to supervisor)
+
     // Branch to Vector - BIOS region (0x04) for Undefined instruction
     cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, 0x04);
 }
@@ -40,6 +42,7 @@ void SoftwareInterrupt(uint32_t instruction, GBA_CPU &cpu)
     {
         uint32_t swiNumber = instruction & 0x00FFFFFF;
         cpu.GetEmulatorCore()->GetHLE().HandleSWI(swiNumber, cpu);
+        cpu.AddCycles(3); // Simulate pipeline flush + mode switch
         return;
     }
 
@@ -68,6 +71,8 @@ void SoftwareInterrupt(uint32_t instruction, GBA_CPU &cpu)
     // Normally bit 5 is preserved, but GBA sets to ARM Mode- Bit 5 == 0
     uint32_t bitsToUpdate = 0xCF; // 0b10111111 
     cpu.UpdateCPSR(updatedCPSR, bitsToUpdate);
+
+    cpu.AddCycles(1); // Total cycles: 3 (pipeline flush + mode switch to supervisor)
 
     // Branch to Vector - BIOS region (0x08) for Software interrupt instruction
     cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, 0x08);

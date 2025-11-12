@@ -62,17 +62,17 @@ const MemoryRegion* GBA_Memory::GetRegionFromType(RegionType type) const
     }
 }
 
-uint8_t GBA_Memory::Read8(uint32_t address)
+uint8_t GBA_Memory::Read8(uint32_t address) const
 {
     return Read<uint8_t>(address, AccessSize::Byte);
 }
 
-uint16_t GBA_Memory::Read16(uint32_t address)
+uint16_t GBA_Memory::Read16(uint32_t address) const
 {
     return Read<uint16_t>(address, AccessSize::Halfword);
 }
 
-uint32_t GBA_Memory::Read32(uint32_t address)
+uint32_t GBA_Memory::Read32(uint32_t address) const
 {
     return Read<uint32_t>(address, AccessSize::Word);
 }   

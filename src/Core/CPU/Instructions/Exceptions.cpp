@@ -2,6 +2,7 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_HLE.hpp"
+#include "Core/CPU/CPU_CyclePenalties.hpp"
 
 void UndefinedInstruction(uint32_t instruction, GBA_CPU& cpu)
 {
@@ -29,7 +30,7 @@ void UndefinedInstruction(uint32_t instruction, GBA_CPU& cpu)
     uint32_t bitsToUpdate = 0xCF; // 0b10111111 
     cpu.UpdateCPSR(updatedCPSR, bitsToUpdate);
 
-    cpu.AddCycles(1); // Total cycles: 3 (pipeline flush + mode switch to supervisor)
+    cpu.AddCycles(MODE_SWITCH_PENALTY); // Total cycles: 3 (pipeline flush + mode switch to supervisor)
 
     // Branch to Vector - BIOS region (0x04) for Undefined instruction
     cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, 0x04);
@@ -42,7 +43,9 @@ void SoftwareInterrupt(uint32_t instruction, GBA_CPU &cpu)
     {
         uint32_t swiNumber = instruction & 0x00FFFFFF;
         cpu.GetEmulatorCore()->GetHLE().HandleSWI(swiNumber, cpu);
-        cpu.AddCycles(3); // Simulate pipeline flush + mode switch
+
+        // Simulate pipeline flush + mode switch
+        cpu.AddCycles(PIPELINE_FLUSH_PENALTY + MODE_SWITCH_PENALTY); 
         return;
     }
 
@@ -72,7 +75,7 @@ void SoftwareInterrupt(uint32_t instruction, GBA_CPU &cpu)
     uint32_t bitsToUpdate = 0xCF; // 0b10111111 
     cpu.UpdateCPSR(updatedCPSR, bitsToUpdate);
 
-    cpu.AddCycles(1); // Total cycles: 3 (pipeline flush + mode switch to supervisor)
+    cpu.AddCycles(MODE_SWITCH_PENALTY); // Total cycles: 3 (pipeline flush + mode switch to supervisor)
 
     // Branch to Vector - BIOS region (0x08) for Software interrupt instruction
     cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, 0x08);

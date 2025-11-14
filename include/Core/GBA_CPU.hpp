@@ -78,7 +78,6 @@ public:
     static const int SP_INDEX = 13;
     static const int LR_INDEX = 14;
     static const int PC_INDEX = 15;
-    static const int PIPELINE_FLUSH_PENALTY = 2;
 
 protected:
     std::array<uint32_t, 16> visibleRegisters{};    // R0 - R14 contain data, R15 contains address of next instruction (PC)

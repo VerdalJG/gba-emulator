@@ -3,6 +3,7 @@
 #include "Core/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_WaitstateController.hpp"
+#include "Core/CPU/CPU_CyclePenalties.hpp"
 
 #include <assert.h>
 

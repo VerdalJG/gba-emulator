@@ -207,7 +207,7 @@ void GBA_CPU::Log(const std::string& message, LogType logType, const char *funct
 
 uint8_t GBA_CPU::Read8FromMemory(uint32_t address, bool isSequential)
 {
-    const GBA_Memory& memory = GetMemorySystem();
+    GBA_Memory& memory = GetMemorySystem();
     uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Byte, isSequential);
     AddCycles(cycles);
     return memory.Read8(address);
@@ -215,7 +215,7 @@ uint8_t GBA_CPU::Read8FromMemory(uint32_t address, bool isSequential)
 
 uint16_t GBA_CPU::Read16FromMemory(uint32_t address, bool isSequential)
 {
-    const GBA_Memory& memory = GetMemorySystem();
+    GBA_Memory& memory = GetMemorySystem();
     uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Halfword, isSequential);
     AddCycles(cycles);
     return memory.Read16(address);
@@ -223,7 +223,7 @@ uint16_t GBA_CPU::Read16FromMemory(uint32_t address, bool isSequential)
 
 uint32_t GBA_CPU::Read32FromMemory(uint32_t address, bool isSequential)
 {
-    const GBA_Memory& memory = GetMemorySystem();
+    GBA_Memory& memory = GetMemorySystem();
     uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Word, isSequential);
     AddCycles(cycles);
     return memory.Read32(address);

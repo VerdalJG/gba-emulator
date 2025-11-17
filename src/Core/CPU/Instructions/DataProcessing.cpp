@@ -1,5 +1,6 @@
 #include "Core/CPU/Instructions/DataProcessing.hpp"
 #include "Core/CPU/Instructions/AddressingMode1.hpp"
+#include "Core/CPU/CPU_CyclePenalties.hpp"
 
 void DataProcessing(uint32_t instruction, GBA_CPU &cpu)
 {
@@ -10,7 +11,9 @@ void DataProcessing(uint32_t instruction, GBA_CPU &cpu)
 
     // Execute operation
     alu(values, op2, cpu);
+    cpu.AddCycles(GBA_Timings::DATA_PROCESSING_COST);
 }
+
 bool IsReverseOpcode(DataProcessingOpcode opcode)
 {
     return opcode == DataProcessingOpcode::RSB || opcode == DataProcessingOpcode::RSC;

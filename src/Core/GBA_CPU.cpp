@@ -40,9 +40,9 @@ void GBA_CPU::Step()
 
     AdvanceInstructionPipeline();
 
-    Execute();
-    Decode();
     Fetch();
+    Decode();
+    Execute();
 
     AdvanceProgramCounter();
 }
@@ -105,15 +105,8 @@ void GBA_CPU::HandleHalt()
 
 void GBA_CPU::AdvanceInstructionPipeline()
 {
-    if (instructionPipeline[1].valid)
-    {
-        instructionPipeline[2] = instructionPipeline[1]; // Move [1] to [2];
-    }
-
-    if (instructionPipeline[0].valid)
-    {
-        instructionPipeline[1] = instructionPipeline[0]; // Move [0] to [1];
-    }
+    instructionPipeline[2] = instructionPipeline[1]; // Move [1] to [2];
+    instructionPipeline[1] = instructionPipeline[0]; // Move [0] to [1];
 }
 
 void GBA_CPU::AdvanceProgramCounter()
@@ -127,7 +120,7 @@ void GBA_CPU::FlushPipeline()
     instructionPipeline[1].valid = false;
     instructionPipeline[2].valid = false;
     nextInstructionFetchIsSequential = false;
-    AddCycles(PIPELINE_FLUSH_PENALTY);
+    AddCycles(GBA_Timings::PIPELINE_FLUSH_PENALTY);
 }
 
 void GBA_CPU::Fetch()

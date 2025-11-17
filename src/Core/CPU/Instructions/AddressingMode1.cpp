@@ -1,6 +1,8 @@
 #include "Core/CPU/Instructions/AddressingMode1.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/CPU/Instructions/Shifts.hpp"
+#include "Core/CPU/CPU_CyclePenalties.hpp"
+
 #include <assert.h>
 
 ShifterOperand CalculateOp2_AddressingMode1(uint16_t shifterOperandBits, bool isImmediate, GBA_CPU &cpu)
@@ -37,6 +39,7 @@ ShifterOperand CalculateOp2_Register(uint16_t shifterOperandBits, GBA_CPU &cpu)
     bool bit4 = (shifterOperandBits >> 4) & 1;
     if (bit4) // Shift by register
     {
+        cpu.AddCycles(GBA_Timings::OP2_SHIFTED_REGISTER_PENALTY); // Add one cycle
         return ShiftOp2_Register(shifterOperandBits, shiftOperation, cpu);
     }
     else // Shift by immediate

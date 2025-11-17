@@ -15,9 +15,9 @@ void Multiply(uint32_t instruction, GBA_CPU& cpu)
     
     // Check for Unpredictable conditions
     bool usingPC = values.rmIndex == 15 || values.rsIndex == 15 || values.rdIndex == 15 || values.rnIndex == 15;
-    bool rdrmDistinct = values.rdIndex != values.rmIndex;
+    bool rdRmAreDifferent = values.rdIndex != values.rmIndex;
 
-    if (usingPC || !rdrmDistinct) return; // UNPREDICTABLE
+    if (usingPC || !rdRmAreDifferent) return; // UNPREDICTABLE
 
     // MUL and MLA
     uint32_t result = values.accumulateFlag ? (rm * rs + rn) : (rm * rs);

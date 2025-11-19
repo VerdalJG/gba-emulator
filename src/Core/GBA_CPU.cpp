@@ -3,7 +3,7 @@
 #include "Core/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_WaitstateController.hpp"
-#include "Core/CPU/CPU_CyclePenalties.hpp"
+#include "Core/CPU/CPU_Timings.hpp"
 
 #include <assert.h>
 
@@ -120,7 +120,7 @@ void GBA_CPU::FlushPipeline()
     instructionPipeline[1].valid = false;
     instructionPipeline[2].valid = false;
     nextInstructionFetchIsSequential = false;
-    AddCycles(GBA_Timings::PIPELINE_FLUSH_PENALTY);
+    AddCycles(CPU_Timings::PIPELINE_FLUSH_PENALTY);
 }
 
 void GBA_CPU::Fetch()

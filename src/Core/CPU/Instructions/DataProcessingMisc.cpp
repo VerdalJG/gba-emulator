@@ -3,6 +3,8 @@
 #include "Core/GBA_Memory.hpp"
 #include "Core/CPU/CPU_CPSR.hpp"
 #include "Core/CPU/Instructions/Shifts.hpp"
+#include "Core/CPU/CPU_Timings.hpp"
+#include "Core/CPU/Instructions/InstructionHelpers.hpp"
 
 void Multiply(uint32_t instruction, GBA_CPU& cpu)
 {
@@ -22,6 +24,11 @@ void Multiply(uint32_t instruction, GBA_CPU& cpu)
     // MUL and MLA
     uint32_t result = values.accumulateFlag ? (rm * rs + rn) : (rm * rs);
     cpu.SetValueAtRegister(values.rdIndex, result);
+
+    // CPU Cycles calculation
+    uint32_t multiplierCycles = CalculateMultiplierCycles(rs);
+    uint32_t totalCycles = CPU_Timings::ALU_BASE_COST + multiplierCycles + values.accumulateFlag;
+    cpu.AddCycles(totalCycles);
 
     // CPSR update
     if (!values.setCPSRFlag) return;
@@ -85,6 +92,12 @@ void MultiplyLong(uint32_t instruction, GBA_CPU& cpu)
 
     cpu.SetValueAtRegister(values.rdHiIndex, rdHi);
     cpu.SetValueAtRegister(values.rdLoIndex, rdLo);
+
+    // CPU Cycles calculation
+    uint32_t multiplierCycles = CalculateMultiplierCycles(rs);
+    uint32_t accumulateCycles = values.accumulateFlag ? 2u : 1u;
+    uint32_t totalCycles = CPU_Timings::ALU_BASE_COST + multiplierCycles + accumulateCycles;
+    cpu.AddCycles(totalCycles);
 
     if (!values.setCPSRFlag) return;
     

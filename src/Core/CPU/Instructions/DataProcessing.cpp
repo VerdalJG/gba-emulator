@@ -81,13 +81,18 @@ void UpdateCPSR_Arithmetic(DataProcessing_Decoded values, uint32_t rn, uint32_t 
     cpu.UpdateCPSR(flags, 0xF0000000);
 }
 
-void UpdateCPSR_Logical(uint32_t result, uint32_t op2CarryOut, GBA_CPU &cpu)
+void UpdateCPSR_Logical(uint32_t result, ShifterOperand op2, GBA_CPU &cpu)
 {
     uint32_t N = CPSR_IsNegative(result);
     uint32_t Z = CPSR_IsZero(result);
-    uint32_t C = op2CarryOut << 29;
+    uint32_t flags = N | Z;
 
-    uint32_t flags = N | Z | C;
+    // C flag is only affected if op2 is shifted    
+    if (op2.shifted)
+    {
+        uint32_t C = op2.carryOut << 29;
+        flags |= C;
+    }
 
     cpu.UpdateCPSR(flags, 0xE0000000);
 }

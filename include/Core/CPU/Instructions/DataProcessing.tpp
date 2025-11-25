@@ -47,7 +47,7 @@ void LogicalOperation(DataProcessing_Decoded values, ShifterOperand op2, Func op
         HandleProgramCounterCPSRCase(cpu);
     }
 
-    UpdateCPSR_Logical(result, op2.carryOut, cpu);
+    UpdateCPSR_Logical(result, op2, cpu);
 }
 
 template <typename Func>
@@ -56,5 +56,5 @@ void LogicalTestOperation(DataProcessing_Decoded values, ShifterOperand op2, Fun
     uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
     uint32_t result = operation(rn, op2.value);
 
-    UpdateCPSR_Logical(result, op2.carryOut, cpu);
+    UpdateCPSR_Logical(result, op2, cpu);
 }

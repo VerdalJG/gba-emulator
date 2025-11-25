@@ -1,6 +1,6 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/CPU/CPU_CPSR.hpp"
-#include "Core/CPU/CPU_CyclePenalties.hpp"
+#include "Core/CPU/CPU_Timings.hpp"
 
 uint32_t CPSR_OverflowFrom(uint32_t op1, uint32_t op2, uint32_t result, bool isSub)
 {
@@ -31,7 +31,7 @@ void HandleProgramCounterCPSRCase(GBA_CPU& cpu)
 
         if (oldMode != newMode)
         {
-            cpu.AddCycles(GBA_Timings::MODE_SWITCH_PENALTY);
+            cpu.AddCycles(CPU_Timings::MODE_SWITCH_PENALTY);
         }
     }
     else

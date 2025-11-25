@@ -119,8 +119,7 @@ void GBA_CPU::FlushPipeline()
     instructionPipeline[0].valid = false;
     instructionPipeline[1].valid = false;
     instructionPipeline[2].valid = false;
-    nextInstructionFetchIsSequential = false;
-    AddCycles(CPU_Timings::PIPELINE_FLUSH_PENALTY);
+    nextInstructionFetchIsSequential = false;   
 }
 
 void GBA_CPU::Fetch()

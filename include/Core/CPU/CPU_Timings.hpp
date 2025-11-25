@@ -3,7 +3,6 @@
 
 namespace CPU_Timings
 {
-    constexpr uint32_t PIPELINE_FLUSH_PENALTY = 2;
     constexpr uint32_t MODE_SWITCH_PENALTY = 1;
     constexpr uint32_t OP2_SHIFTED_REGISTER_PENALTY = 1;
     constexpr uint32_t ALU_BASE_COST = 1;

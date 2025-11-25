@@ -24,6 +24,7 @@ struct Instruction
 
 struct ShifterOperand 
 {
+    bool shifted = false;
     uint32_t value;
     uint32_t carryOut : 1; // Store only 1 bit of information
 };

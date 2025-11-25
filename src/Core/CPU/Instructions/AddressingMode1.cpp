@@ -1,7 +1,7 @@
 #include "Core/CPU/Instructions/AddressingMode1.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/CPU/Instructions/Shifts.hpp"
-#include "Core/CPU/CPU_CyclePenalties.hpp"
+#include "Core/CPU/CPU_Timings.hpp"
 
 #include <assert.h>
 
@@ -28,6 +28,7 @@ ShifterOperand CalculateOp2_Immediate(uint16_t shifterOperandBits, GBA_CPU &cpu)
     // The rotation amount is in steps of two, this also means not all 32-bit values are available, 
     // but allows more to be obtained
     result.value = RotateRight(immediate_8, rotation * 2);
+    result.shifted = rotation;
     result.carryOut = rotation == 0 ? cpu.GetCPSR_C() : (result.value >> 31);
 
     return result;
@@ -39,7 +40,7 @@ ShifterOperand CalculateOp2_Register(uint16_t shifterOperandBits, GBA_CPU &cpu)
     bool bit4 = (shifterOperandBits >> 4) & 1;
     if (bit4) // Shift by register
     {
-        cpu.AddCycles(GBA_Timings::OP2_SHIFTED_REGISTER_PENALTY); // Add one cycle
+        cpu.AddCycles(CPU_Timings::OP2_SHIFTED_REGISTER_PENALTY); // Add one INTERNAL cycle
         return ShiftOp2_Register(shifterOperandBits, shiftOperation, cpu);
     }
     else // Shift by immediate
@@ -121,6 +122,7 @@ ShifterOperand ShiftOp2_LSL_Immediate(uint32_t rm, uint32_t shiftImm, GBA_CPU &c
         result.carryOut = rm >> (32 - shiftImm);
     }
 
+    result.shifted = shiftImm;
     return result;
 }
 
@@ -149,6 +151,7 @@ ShifterOperand ShiftOp2_LSL_Register(uint32_t rm, uint32_t rs, GBA_CPU &cpu)
         result.carryOut = 0;
     }
 
+    result.shifted = rs;
     return result;
 }
 
@@ -159,6 +162,7 @@ ShifterOperand ShiftOp2_LSR_Immediate(uint32_t rm, uint32_t shiftImm, GBA_CPU &c
     if (shiftImm == 0) // LSR #32
     {
         result.value = 0;
+        shiftImm = 32;
         result.carryOut = (rm >> 31);
     }
     else // shiftImm > 0
@@ -167,6 +171,7 @@ ShifterOperand ShiftOp2_LSR_Immediate(uint32_t rm, uint32_t shiftImm, GBA_CPU &c
         result.carryOut = rm >> (shiftImm - 1);
     }
 
+    result.shifted = shiftImm;
     return result;
 }
 
@@ -195,6 +200,7 @@ ShifterOperand ShiftOp2_LSR_Register(uint32_t rm, uint32_t rs, GBA_CPU &cpu)
         result.carryOut = 0;
     }
 
+    result.shifted = rs;
     return result;
 }
 
@@ -216,6 +222,7 @@ ShifterOperand ShiftOp2_ASR_Immediate(uint32_t rm, uint32_t shiftImm, GBA_CPU &c
         }
 
         result.carryOut = rm >> 31;
+        shiftImm = 32;
     }
     else // shiftImm > 0
     {
@@ -223,6 +230,7 @@ ShifterOperand ShiftOp2_ASR_Immediate(uint32_t rm, uint32_t shiftImm, GBA_CPU &c
         result.carryOut = rm >> (shiftImm - 1);
     }
 
+    result.shifted = shiftImm;
     return result;
 }
 
@@ -256,6 +264,7 @@ ShifterOperand ShiftOp2_ASR_Register(uint32_t rm, uint32_t rs, GBA_CPU &cpu)
         result.carryOut = rm >> 31;
     }
 
+    result.shifted = rs;
     return result;
 }
 
@@ -271,6 +280,7 @@ ShifterOperand ShiftOp2_ROR_Immediate(uint32_t rm, uint32_t shiftImm, GBA_CPU &c
     {
         result.value = RotateRight(rm, shiftImm);
         result.carryOut = rm >> (shiftImm - 1);
+        result.shifted = shiftImm;
     }
 
     return result;
@@ -299,6 +309,7 @@ ShifterOperand ShiftOp2_ROR_Register(uint32_t rm, uint32_t rs, GBA_CPU &cpu)
         result.carryOut = rm >> (relevantBits_5 - 1);
     }
 
+    result.shifted = relevantBits_5;
     return result;
 }
 
@@ -308,6 +319,7 @@ ShifterOperand ShiftOp2_RRX(uint32_t rm, GBA_CPU &cpu)
 
     result.value = RotateRightExtendCarry(rm, cpu);
     result.carryOut = rm & 1; 
+    result.shifted = 1;
 
     return result;
 }

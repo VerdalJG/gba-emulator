@@ -144,5 +144,5 @@ https://github.com/jsmolka/gba-tests/tree/3fc2dc019f91180585c7f71d1d68c271baa331
 -png183
 https://github.com/png183/gba-tests/tree/master - has ROM's
 
-
+https://github.com/mgba-emu/suite - timings
 */

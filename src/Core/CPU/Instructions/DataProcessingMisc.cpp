@@ -27,7 +27,7 @@ void Multiply(uint32_t instruction, GBA_CPU& cpu)
 
     // CPU Cycles calculation
     uint32_t multiplierCycles = CalculateMultiplierCycles(rs);
-    uint32_t totalCycles = CPU_Timings::ALU_BASE_COST + multiplierCycles + values.accumulateFlag;
+    uint32_t totalCycles = multiplierCycles + values.accumulateFlag;
     cpu.AddCycles(totalCycles);
 
     // CPSR update
@@ -96,7 +96,7 @@ void MultiplyLong(uint32_t instruction, GBA_CPU& cpu)
     // CPU Cycles calculation
     uint32_t multiplierCycles = CalculateMultiplierCycles(rs);
     uint32_t accumulateCycles = values.accumulateFlag ? 2u : 1u;
-    uint32_t totalCycles = CPU_Timings::ALU_BASE_COST + multiplierCycles + accumulateCycles;
+    uint32_t totalCycles = multiplierCycles + accumulateCycles;
     cpu.AddCycles(totalCycles);
 
     if (!values.setCPSRFlag) return;
@@ -175,6 +175,7 @@ void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu)
     }
 
     cpu.SetValueAtRegister(values.rdIndex, temp); 
+    cpu.AddCycles(CPU_Timings::SWAP_BASE_COST);
 }
 
 

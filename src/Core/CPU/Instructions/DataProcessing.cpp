@@ -11,7 +11,6 @@ void DataProcessing(uint32_t instruction, GBA_CPU &cpu)
 
     // Execute operation
     alu(values, op2, cpu);
-    cpu.AddCycles(CPU_Timings::ALU_BASE_COST);
 }
 
 bool IsReverseOpcode(DataProcessingOpcode opcode)

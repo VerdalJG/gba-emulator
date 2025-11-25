@@ -5,6 +5,7 @@
 #include "Core/CPU/Instructions/Shifts.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 
+#include "Core/CPU/CPU_Timings.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/GBA_Memory.hpp"
 
@@ -38,21 +39,23 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
             uint32_t valueToLoad = SignExtendTo32(loadedByte);
             cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
         }
-            else
+        else
+        {
+            // Account for misaligned halfword
+            bool misaligned = effectiveAddress & 1; // First bit must be 0 to be divisible by 2 (halfword)
+            uint32_t alignedAddress = effectiveAddress & ~1;
+            uint16_t loadedHalfword = cpu.Read16FromMemory(effectiveAddress, false);
+            if (misaligned)
             {
-                // Account for misaligned halfword
-                bool misaligned = effectiveAddress & 1; // First bit must be 0 to be divisible by 2 (halfword)
-                uint32_t alignedAddress = effectiveAddress & ~1;
-                uint16_t loadedHalfword = cpu.Read16FromMemory(effectiveAddress, false);
-                if (misaligned)
-                {
-                    loadedHalfword = RotateRight(loadedHalfword, 8);
-                }
-                
-                // LDRSH vs LDRH
-                uint32_t valueToLoad = isSigned ? SignExtendTo32(loadedHalfword) : ZeroExtendTo32(loadedHalfword);
-                cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
+                loadedHalfword = RotateRight(loadedHalfword, 8);
             }
+            
+            // LDRSH vs LDRH
+            uint32_t valueToLoad = isSigned ? SignExtendTo32(loadedHalfword) : ZeroExtendTo32(loadedHalfword);
+            cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
+        }
+
+        cpu.AddCycles(CPU_Timings::LOAD_BASE_COST);
     }
     else // STRH
     {
@@ -130,6 +133,7 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         }
 
         cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
+        cpu.AddCycles(CPU_Timings::LOAD_BASE_COST);
     }
     else
     {
@@ -192,6 +196,7 @@ void BlockDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         {   
             LDM(values, cpu);
         }
+        cpu.AddCycles(CPU_Timings::LOAD_BASE_COST);
     }
     else
     {

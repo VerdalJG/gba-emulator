@@ -75,6 +75,8 @@ public:
     void Write16ToMemory(uint32_t address, uint16_t value, bool isSequential);
     void Write32ToMemory(uint32_t address, uint32_t value, bool isSequential);
 
+    void SetNextFetchSequential(bool isSequential) { nextInstructionFetchIsSequential = isSequential; } 
+
     static const int SP_INDEX = 13;
     static const int LR_INDEX = 14;
     static const int PC_INDEX = 15;

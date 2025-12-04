@@ -73,7 +73,7 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         {  
             cpu.Write16ToMemory(effectiveAddress, valueToStore, false);
         }
-        
+        cpu.SetNextFetchSequential(false);
     }
 
     // Only post-index case updates here
@@ -150,6 +150,7 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
             // STR
             cpu.Write32ToMemory(effectiveAddress, rd, false);
         }
+        cpu.SetNextFetchSequential(false);
     }
 
     // Post-indexed update
@@ -203,6 +204,7 @@ void BlockDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         {
             STM(values, cpu);
         }
+        cpu.SetNextFetchSequential(false);
     }
 }
 

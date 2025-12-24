@@ -44,8 +44,8 @@ void SoftwareInterrupt(uint32_t instruction, GBA_CPU &cpu)
         uint32_t swiNumber = instruction & 0x00FFFFFF;
         cpu.GetEmulatorCore()->GetHLE().HandleSWI(swiNumber, cpu);
 
-        // Simulate pipeline flush + mode switch
-        cpu.AddCycles(CPU_Timings::PIPELINE_FLUSH_PENALTY + CPU_Timings::MODE_SWITCH_PENALTY); 
+        // Mode switch
+        cpu.AddCycles(CPU_Timings::MODE_SWITCH_PENALTY); 
         return;
     }
 

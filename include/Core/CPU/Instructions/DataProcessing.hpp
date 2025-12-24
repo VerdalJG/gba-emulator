@@ -35,7 +35,7 @@ bool IsSubtractionOpcode(DataProcessingOpcode opcode);
 bool ShouldUseCarryIn(DataProcessingOpcode opcode);
 
 void UpdateCPSR_Arithmetic(DataProcessing_Decoded values, uint32_t rn, uint32_t op2, uint32_t result, GBA_CPU& cpu);
-void UpdateCPSR_Logical(uint32_t result, uint32_t op2CarryOut, GBA_CPU& cpu);
+void UpdateCPSR_Logical(uint32_t result, ShifterOperand op2, GBA_CPU& cpu);
 
 // Templating is better performance wise and 
 // avoids some errors on specific compilers vs 'auto' as parameter

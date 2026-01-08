@@ -71,8 +71,11 @@ bool EmulatorHandler::LoadROM(const std::string &romPath)
 
     if (!LoadFile(romPath, romData))
     {
+        QMessageBox::critical(nullptr, "Error", "File failed to load.");
         return false; // Error logging done inside LoadFile()
     }
+
+    Q_ASSERT(emulatorCore && "EmulatorCore is null in LoadROM()");
 
     // Pass ROM data to the core
     if (!emulatorCore->LoadROM(romData)) 
@@ -99,6 +102,7 @@ void EmulatorHandler::RunLoop()
 {
     while (isRunning)
     {
+        PostStatus("RunningLoop!");
         emulatorCore->Step();
         emit FrameReady();
         QThread::msleep(16); // This is practically Vsync

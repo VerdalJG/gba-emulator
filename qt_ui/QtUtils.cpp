@@ -29,6 +29,8 @@ bool LoadFile(const std::string& path, std::vector<uint8_t>& buffer)
         return false;
     }
 
+
+
     buffer.assign(data.begin(), data.end()); // Put into vector
     return true;
 }

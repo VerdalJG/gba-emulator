@@ -94,6 +94,10 @@ void GBA_Memory::Write32(uint32_t address, uint32_t value)
 
 void GBA_Memory::LoadROM(const std::vector<uint8_t>& romData)
 {
+    assert(rom && "ROM object is null in GBA_Memory::LoadROM()");
+
+
+    // Crash is here
     rom->LoadROM(romData);
 
     rom0.data = rom->GetROMData();

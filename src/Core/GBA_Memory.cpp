@@ -8,6 +8,7 @@
 
 GBA_Memory::GBA_Memory(EmulatorCore *core) : core(core)
 {
+    rom = std::make_unique<GBA_ROM>(core);
 }
 
 const MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) const
@@ -96,13 +97,13 @@ void GBA_Memory::LoadROM(const std::vector<uint8_t>& romData)
 {
     assert(rom && "ROM object is null in GBA_Memory::LoadROM()");
 
-
-    // Crash is here
     rom->LoadROM(romData);
 
     rom0.data = rom->GetROMData();
     rom1.data = rom->GetROMData();
     rom2.data = rom->GetROMData();
+
+    rom->PrintROMInfo();
 }
 
 void GBA_Memory::LoadBIOS(const std::vector<uint8_t>& biosData)

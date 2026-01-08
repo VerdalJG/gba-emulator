@@ -3,24 +3,27 @@
 #include "Core/GBA_NintendoLogo.hpp"
 #include "Core/GBA_Memory.hpp"
 
+#include <assert.h>
+
 GBA_ROM::GBA_ROM(EmulatorCore *core) : core(core)
 {
 }
 
 void GBA_ROM::LoadROM(const std::vector<uint8_t>& romData)
 {
-    rom = std::make_shared<std::vector<uint8_t>>(romData);
+    this->romData = std::make_shared<std::vector<uint8_t>>(romData);
 
     // Ensure rom data is at least 32 MB - 
     // NOT CORRECT MIRRORING BEHAVIOR BUT should be simple and stable
-    if (rom->size() < ROM_BANK_SIZE)
+    if (this->romData->size() < ROM_BANK_SIZE)
     {
-        rom->resize(ROM_BANK_SIZE, 0xFF);
+        this->romData->resize(ROM_BANK_SIZE, 0xFF);
     }
 }
 
 void GBA_ROM::PrintROMInfo()
 {
+    ParseHeader();
     printf("Game Title: %.12s\n", header.gameTitle);
     printf("Game Code: %.4s\n", header.gameCode);
     printf("Maker: %.2s\n", header.makerCode);
@@ -29,18 +32,21 @@ void GBA_ROM::PrintROMInfo()
 
 void GBA_ROM::ParseHeader()
 {
-    if (rom->size() < sizeof(ROM_Header))
+    if (romData->size() < sizeof(ROM_Header))
     {
         valid = false;
         return;
     }
 
-    std::memcpy(&header, rom->data(), sizeof(ROM_Header));
+    std::memcpy(&header, romData->data(), sizeof(ROM_Header));
 
     if (usingOnlyOfficialSoftware)
     {
         valid = std::memcmp(NintendoLogo, header.nintendoLogo, 156) == 0;
+        assert(valid && "Not original Nintendo ROM");
     }
-    
-    valid = true;
+    else
+    {
+        valid = true;
+    }
 }

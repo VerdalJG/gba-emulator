@@ -21,14 +21,18 @@ public:
     void PauseEmulation();
     void ResumeEmulation();
     void PostStatus(const QString& message);
+    void OnROMLoaded();
 
 public slots:
     void RunLoop();
     void Shutdown();
+    void LoadROMRequest(const QString& path);
 
 signals:
     void FrameReady();
     void StatusMessage(const QString& message);
+    void ROMLoaded(const QString& path);
+    void ErrorOccurred(const QString& errorMessage);
 
 
 private:

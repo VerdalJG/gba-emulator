@@ -1,5 +1,8 @@
 #include "Core/EmulatorCore.hpp"
+#include "Core/GBA_Memory_Helpers.hpp"
+
 #include "Utils/Logger.hpp"
+
 //#include "SDLUtils.hpp"
 
 EmulatorCore::EmulatorCore(Logger* logger) : memory(this), cpu(this), 
@@ -13,8 +16,11 @@ EmulatorCore::EmulatorCore(Logger* logger) : memory(this), cpu(this),
     }
 }
 
-bool EmulatorCore::Init()
+bool EmulatorCore::InitializeCPU()
 {
+    // TODO: For now skip bios
+    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, ROM0_START);
+
     // SDL_SetAppMetadata("GBAEmu", "Version 0.1", "GBAEmulator");
 
     // // Initialize SDL

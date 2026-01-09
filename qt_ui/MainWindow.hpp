@@ -14,6 +14,9 @@ public:
     MainWindow(int width, int height, const char* windowTitle, QWidget* parent = nullptr);
     ~MainWindow() override;
 
+signals:
+    void RequestLoadROM(const QString& path);
+
 private:
     void SetupMenuBar();
     void SetupFileMenu(QMenuBar* mainMenuBar);

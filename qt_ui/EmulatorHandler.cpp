@@ -1,7 +1,9 @@
 #include "EmulatorHandler.hpp"
-#include "Core/EmulatorCore.hpp"
 #include "QtUtils.hpp"
+
+#include "Core/EmulatorCore.hpp"
 #include "Core/GBA_Memory.hpp"
+
 #include "Utils/Logger.hpp"
 
 // std includes
@@ -69,6 +71,7 @@ bool EmulatorHandler::LoadROM(const std::string &romPath)
 
     std::vector<uint8_t> romData;
 
+    // Load file into romData
     if (!LoadFile(romPath, romData))
     {
         QMessageBox::critical(nullptr, "Error", "File failed to load.");
@@ -84,7 +87,6 @@ bool EmulatorHandler::LoadROM(const std::string &romPath)
         return false;
     }
 
-    //isRunning = true;
     return true;
 }
 
@@ -96,13 +98,13 @@ void EmulatorHandler::PauseEmulation()
 void EmulatorHandler::ResumeEmulation()
 {
     isRunning = true;
+    RunLoop();
 }
 
 void EmulatorHandler::RunLoop()
 {
     while (isRunning)
     {
-        PostStatus("RunningLoop!");
         emulatorCore->Step();
         emit FrameReady();
         QThread::msleep(16); // This is practically Vsync
@@ -115,8 +117,24 @@ void EmulatorHandler::Shutdown()
     emulatorCore->Shutdown();
 }
 
+void EmulatorHandler::LoadROMRequest(const QString &path)
+{
+    if (LoadROM(path.toStdString()))
+    {
+        PostStatus(QString("ROM loaded successfully: %1").arg(path));
+        OnROMLoaded();
+    }
+}
+
 void EmulatorHandler::PostStatus(const QString &message)
 {
     emit StatusMessage(message);
     qDebug() << message;
+}
+
+void EmulatorHandler::OnROMLoaded()
+{
+    emulatorCore->InitializeCPU();
+    isRunning = true;
+    RunLoop();
 }

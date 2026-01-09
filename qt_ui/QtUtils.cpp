@@ -16,7 +16,7 @@ bool LoadFile(const std::string& path, std::vector<uint8_t>& buffer)
     if (!file.open(QIODevice::ReadOnly))
     {
         QString message = QString("Failed to open file: %1").arg(filePath);
-        QMessageBox::critical(nullptr, "Error", message);
+        //QMessageBox::critical(nullptr, "Error", message);
         return false;
     }
 
@@ -25,7 +25,7 @@ bool LoadFile(const std::string& path, std::vector<uint8_t>& buffer)
     if (data.isEmpty())
     {
         QString message = QString("Failed to read file: %1").arg(filePath);
-        QMessageBox::critical(nullptr, "Error", message);
+        //QMessageBox::critical(nullptr, "Error", message);
         return false;
     }
 

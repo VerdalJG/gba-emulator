@@ -22,7 +22,7 @@ public:
     EmulatorCore(Logger* logger);
     ~EmulatorCore() = default;
 
-    bool Init();
+    bool InitializeCPU();
     void LoadBIOS(const std::vector<uint8_t>& biosData);
     bool LoadROM(const std::vector<uint8_t>& romData);
     void Run();

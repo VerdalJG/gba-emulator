@@ -37,7 +37,10 @@ MainWindow::MainWindow(int width, int height, const char* windowTitle, QWidget *
 
     // Connect thread start with emulator handler startup and loop
     connect(emulatorThread, &QThread::started, emulatorHandler, &EmulatorHandler::Startup);
-    connect(emulatorThread, &QThread::started, emulatorHandler, &EmulatorHandler::RunLoop);
+
+    // Connect signal from GUI -> Emulator
+    connect(this, &MainWindow::RequestLoadROM, emulatorHandler, 
+        &EmulatorHandler::LoadROMRequest, Qt::QueuedConnection);
 
     // Connect shutdown event
     connect(qApp, &QApplication::aboutToQuit, [this] () {
@@ -89,10 +92,14 @@ void MainWindow::SetupFileMenu(QMenuBar* mainMenuBar)
 
         if (!filePath.isEmpty()) 
         {
+            emit RequestLoadROM(filePath); // Emit to emulator thread
+
+            // TODO: Move to emulator thread
             // Load the ROM into emulator
             if (emulatorHandler->LoadROM(filePath.toStdString()))
             {
                 emulatorHandler->PostStatus(QString("ROM loaded successfully: %1").arg(filePath));
+                emulatorHandler->OnROMLoaded();
             }
         }
     });

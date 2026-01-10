@@ -22,7 +22,7 @@ EmulatorHandler::EmulatorHandler() :
 {
     auto statusUICallback = [this](const std::string& message)
     {
-        emit StatusMessage(QString::fromStdString(message));
+        PostStatus(QString::fromStdString(message));
     };
     
     emulatorCore->SetPostStatusCallback(statusUICallback);
@@ -65,7 +65,7 @@ void EmulatorHandler::Startup()
     }
 }
 
-bool EmulatorHandler::LoadROM(const std::string &romPath)
+bool EmulatorHandler::LoadROM(const std::string& romPath)
 {
     qDebug() << "Loading ROM from path: " << romPath;
 
@@ -74,8 +74,8 @@ bool EmulatorHandler::LoadROM(const std::string &romPath)
     // Load file into romData
     if (!LoadFile(romPath, romData))
     {
-        QMessageBox::critical(nullptr, "Error", "File failed to load.");
-        return false; // Error logging done inside LoadFile()
+        emit ErrorOccurred("File failed to load.");
+        return false;
     }
 
     Q_ASSERT(emulatorCore && "EmulatorCore is null in LoadROM()");
@@ -83,7 +83,7 @@ bool EmulatorHandler::LoadROM(const std::string &romPath)
     // Pass ROM data to the core
     if (!emulatorCore->LoadROM(romData)) 
     {
-        QMessageBox::critical(nullptr, "Error", "Core failed to load ROM.");
+        emit ErrorOccurred("Core failed to load ROM.");
         return false;
     }
 
@@ -117,7 +117,7 @@ void EmulatorHandler::Shutdown()
     emulatorCore->Shutdown();
 }
 
-void EmulatorHandler::LoadROMRequest(const QString &path)
+void EmulatorHandler::LoadROMRequest(const QString& path)
 {
     if (LoadROM(path.toStdString()))
     {
@@ -126,9 +126,9 @@ void EmulatorHandler::LoadROMRequest(const QString &path)
     }
 }
 
-void EmulatorHandler::PostStatus(const QString &message)
+void EmulatorHandler::PostStatus(const QString& message, int seconds)
 {
-    emit StatusMessage(message);
+    emit StatusMessage(message, seconds);
     qDebug() << message;
 }
 

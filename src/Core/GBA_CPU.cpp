@@ -135,7 +135,7 @@ void GBA_CPU::Decode()
 {
     if (!instructionPipeline[1].valid) return;
 
-    InstructionFunction functionToExecute;
+    InstructionFunction functionToExecute = nullptr;
     
     // Thumb mode does not use condition bits
     if (IsThumbMode()) 
@@ -156,6 +156,8 @@ void GBA_CPU::Decode()
             functionToExecute = DecodeInstruction(instructionPipeline[1].rawInstruction);
         }
     }
+
+    if (functionToExecute == nullptr) return;
 
     // Store function pointer in pipeline
     instructionPipeline[1].function = functionToExecute;

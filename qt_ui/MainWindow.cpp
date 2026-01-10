@@ -18,7 +18,7 @@
 // SDL headers
 #include "SDL/SDLWidget.hpp"
 
-MainWindow::MainWindow(int width, int height, const char* windowTitle, QWidget *parent) :
+MainWindow::MainWindow(int width, int height, QWidget *parent) :
     QMainWindow(parent),
     sdlWidget(new SDLWidget(this)),
     emulatorHandler(new EmulatorHandler()),
@@ -27,7 +27,7 @@ MainWindow::MainWindow(int width, int height, const char* windowTitle, QWidget *
     SetupMenuBar();
 
     setCentralWidget(sdlWidget);
-    setWindowTitle(windowTitle);
+    setWindowTitle(BASE_WINDOW_TITLE);
     resize(width, height);
 
     statusBar()->showMessage("Ready");
@@ -52,9 +52,14 @@ MainWindow::MainWindow(int width, int height, const char* windowTitle, QWidget *
     // Connect finished update event to render
     connect(emulatorHandler, &EmulatorHandler::FrameReady, sdlWidget, &SDLWidget::Render);
 
-    connect(emulatorHandler, &EmulatorHandler::StatusMessage, this, [this](const QString& message) {
-    statusBar()->showMessage(message, 5000); // Show for 5 seconds
-    });
+    // Connect status message posting
+    connect(emulatorHandler, &EmulatorHandler::StatusMessage, this, &MainWindow::PostStatusMessage);
+
+    // Connect error message posting
+    connect(emulatorHandler, &EmulatorHandler::ErrorOccurred, this, &MainWindow::PostErrorMessage);
+
+    // Connect rom loaded to update window title
+    connect(emulatorHandler, &EmulatorHandler::ROMLoaded, this, &MainWindow::OnROMLoaded);
 
     emulatorThread->start();
 }
@@ -93,14 +98,6 @@ void MainWindow::SetupFileMenu(QMenuBar* mainMenuBar)
         if (!filePath.isEmpty()) 
         {
             emit RequestLoadROM(filePath); // Emit to emulator thread
-
-            // TODO: Move to emulator thread
-            // Load the ROM into emulator
-            if (emulatorHandler->LoadROM(filePath.toStdString()))
-            {
-                emulatorHandler->PostStatus(QString("ROM loaded successfully: %1").arg(filePath));
-                emulatorHandler->OnROMLoaded();
-            }
         }
     });
 
@@ -112,17 +109,17 @@ void MainWindow::SetupFileMenu(QMenuBar* mainMenuBar)
 
     for (int i = 0; i < emulatorHandler->GetSaveStateSlots(); ++i)
     {
+        // Save slot action and binding
         QString slotLabel = QString("Slot %1").arg(i + 1);
         QAction* saveSlotAction = new QAction(slotLabel, this);
         saveStateMenu->addAction(saveSlotAction);
-
         QObject::connect(saveSlotAction, &QAction::triggered, [this, i]() {
             emulatorHandler->SaveStateToSlot(i);
         });
 
+        // Load slot action and binding
         QAction* loadSlotAction = new QAction(slotLabel, this);
         loadStateMenu->addAction(loadSlotAction);
-
         QObject::connect(loadSlotAction, &QAction::triggered, [this, i]() {
             emulatorHandler->LoadStateFromSlot(i);
         });
@@ -131,7 +128,6 @@ void MainWindow::SetupFileMenu(QMenuBar* mainMenuBar)
     // Exit action
     QAction* exitAction = new QAction("Exit", this);
     fileMenu->addAction(exitAction);
-
     QObject::connect(exitAction, &QAction::triggered, this, &MainWindow::close);
 }
 
@@ -142,46 +138,68 @@ void MainWindow::SetupEmulationMenu(QMenuBar* mainMenuBar)
     // Reset emulation action
     QAction* resetAction = new QAction("Reset", this);
     emulationMenu->addAction(resetAction);
-
     QObject::connect(resetAction, &QAction::triggered, [this]() {
         emulatorHandler->Shutdown();
         emulatorHandler->RunLoop();
         qDebug() << "Emulation has been reset";
     });
 
-    // Pause and resume actions
+    // Pause action creation and binding
     QAction* pauseAction = new QAction("Pause", this);
     emulationMenu->addAction(pauseAction);
-
     QObject::connect(pauseAction, &QAction::triggered, [this]() {
         emulatorHandler->PauseEmulation();
         qDebug() << "Emulation paused";
     });
 
+    // Resume action creation and binding
     QAction* resumeAction = new QAction("Resume", this);
     emulationMenu->addAction(resumeAction);
-
     QObject::connect(resumeAction, &QAction::triggered, [this]() {
         emulatorHandler->ResumeEmulation();
     });
 
-    QAction* shutdownGameAction = new QAction("Shutdown Game", this);
-    emulationMenu->addAction(shutdownGameAction);
-
-    QObject::connect(shutdownGameAction, &QAction::triggered, [this] () {
+    // Close ROM creation and binding
+    QAction* closeROMAction = new QAction("Close ROM", this);
+    emulationMenu->addAction(closeROMAction);
+    QObject::connect(closeROMAction, &QAction::triggered, [this] () {
         emulatorHandler->Shutdown();
+        setWindowTitle(BASE_WINDOW_TITLE);
         qDebug() << "Emulation shutdown";
     });
 }
 
 void MainWindow::SetupOptionsMenu(QMenuBar* mainMenuBar)
 {
+    // Add menu button
     QMenu* optionsMenu = mainMenuBar->addMenu("Options");
 
+    // Add Controls in dropdown
     QAction* controlsAction = new QAction("Controls", this);
     optionsMenu->addAction(controlsAction);
 
+    // Bind the action from selecting the controls option
     QObject::connect(controlsAction, &QAction::triggered, [this]() {
         QMessageBox::information(this, "Controls setting", "Controls dialog is not implemented yet.");
     });
+}
+
+void MainWindow::PostStatusMessage(const QString& message, int seconds)
+{
+    int messageDisplayMilliseconds = seconds * 1000;
+    statusBar()->showMessage(message, messageDisplayMilliseconds);
+}
+
+void MainWindow::PostErrorMessage(const QString& errorMessage)
+{
+    QMessageBox::critical(this, QString("Error"), errorMessage);
+}
+
+void MainWindow::OnROMLoaded(const QString& path)
+{
+    // Extract ROM Name
+    QString romName = QFileInfo(path).completeBaseName();
+
+    // Construct full title
+    QString fullTitle = BASE_WINDOW_TITLE + " - " + romName;
 }

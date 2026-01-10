@@ -11,7 +11,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(int width, int height, const char* windowTitle, QWidget* parent = nullptr);
+    MainWindow(int width, int height, QWidget* parent = nullptr);
     ~MainWindow() override;
 
 signals:
@@ -23,8 +23,14 @@ private:
     void SetupEmulationMenu(QMenuBar* mainMenuBar);
     void SetupOptionsMenu(QMenuBar* mainMenuBar);
 
+    void PostStatusMessage(const QString& message, int seconds);
+    void PostErrorMessage(const QString& errorMessage);
+    void OnROMLoaded(const QString& romName);
+
     SDLWidget* sdlWidget;
     EmulatorHandler* emulatorHandler;
     QThread* emulatorThread;
+
+    const QString BASE_WINDOW_TITLE = "VerdalGBA";
 
 };

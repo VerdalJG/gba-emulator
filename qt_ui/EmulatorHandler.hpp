@@ -20,7 +20,7 @@ public:
     bool LoadROM(const std::string& romPath);
     void PauseEmulation();
     void ResumeEmulation();
-    void PostStatus(const QString& message);
+    void PostStatus(const QString& message, int seconds = 5);
     void OnROMLoaded();
 
 public slots:
@@ -30,7 +30,7 @@ public slots:
 
 signals:
     void FrameReady();
-    void StatusMessage(const QString& message);
+    void StatusMessage(const QString& message, int seconds = 5);
     void ROMLoaded(const QString& path);
     void ErrorOccurred(const QString& errorMessage);
 

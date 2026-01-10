@@ -11,12 +11,12 @@
 bool LoadFile(const std::string& path, std::vector<uint8_t>& buffer)
 {
     QString filePath = QString::fromStdString(path);
+    
     // Open file
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly))
     {
-        QString message = QString("Failed to open file: %1").arg(filePath);
-        //QMessageBox::critical(nullptr, "Error", message);
+        qDebug() << "Failed to open file: " << filePath;
         return false;
     }
 
@@ -24,12 +24,9 @@ bool LoadFile(const std::string& path, std::vector<uint8_t>& buffer)
     QByteArray data = file.readAll();
     if (data.isEmpty())
     {
-        QString message = QString("Failed to read file: %1").arg(filePath);
-        //QMessageBox::critical(nullptr, "Error", message);
+        qDebug() << "Failed to read file: " << filePath;
         return false;
     }
-
-
 
     buffer.assign(data.begin(), data.end()); // Put into vector
     return true;

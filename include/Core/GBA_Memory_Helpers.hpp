@@ -69,16 +69,15 @@ struct MemoryRegion
         type(type) {}
 };
 
+enum class AccessSize
+{
+    Byte = 1,
+    Halfword = 2,
+    Word = 4
+};
+
 struct LastBusAccess
 {
-    uint32_t address = 0;
+    uint32_t value = 0;
     AccessSize size = AccessSize::Word;
-    RegionType region = RegionType::Invalid;
-
-    void UpdateValues(uint32_t address, size_t size, const MemoryRegion* region)
-    {
-        this->address = address;
-        this->size = static_cast<AccessSize>(size);
-        this->region = region->type;
-    }
 };

@@ -1,12 +1,7 @@
 #pragma once
 #include <cstdint>
 
-enum class AccessSize
-{
-    Byte = 1,
-    Halfword = 2,
-    Word = 4
-};
+
 
 class GBA_WaitstateController
 {

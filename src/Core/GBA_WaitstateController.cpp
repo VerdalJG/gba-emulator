@@ -1,5 +1,6 @@
 #include "Core/GBA_WaitstateController.hpp"
 #include "Core/GBA_Memory.hpp"
+#include "Core/GBA_Memory_Helpers.hpp"
 
 void GBA_WaitstateController::SetWaitstateConfig(uint16_t waitcnt)
 {

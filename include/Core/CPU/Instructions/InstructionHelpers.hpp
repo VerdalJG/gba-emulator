@@ -18,7 +18,7 @@ using InstructionFunction = void (*)(uint32_t, GBA_CPU&); // Instruction Functio
 struct Instruction
 {
     uint32_t rawInstruction;
-    InstructionFunction function;
+    InstructionFunction function = nullptr;
     bool valid = false;
 };
 

@@ -44,7 +44,8 @@ void GBA_CPU::Step()
     Decode();
     Execute();
 
-    AdvanceProgramCounter();
+    // Advance program counter
+    visibleRegisters[PC_INDEX] += (IsThumbMode() ? 2u : 4u);
 }
 
 void GBA_CPU::RequestInterrupt()
@@ -109,10 +110,7 @@ void GBA_CPU::AdvanceInstructionPipeline()
     instructionPipeline[1] = instructionPipeline[0]; // Move [0] to [1];
 }
 
-void GBA_CPU::AdvanceProgramCounter()
-{
-    visibleRegisters[PC_INDEX] += (IsThumbMode() ? 2u : 4u);
-}
+
 
 void GBA_CPU::FlushPipeline()
 {
@@ -141,6 +139,7 @@ void GBA_CPU::Decode()
     if (IsThumbMode()) 
     {
         // Handle Thumb mode here
+        return;
     }
     else // ARM Mode
     {

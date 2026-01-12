@@ -29,7 +29,7 @@ public:
     uint32_t Read32(uint32_t address);
 
     void Write8(uint32_t address, uint8_t value);
-    void Write16(uint32_t address, uint32_t value);
+    void Write16(uint32_t address, uint16_t value);
     void Write32(uint32_t address, uint32_t value);
 
     void ClearRegion(RegionType type);
@@ -45,6 +45,12 @@ public:
     void ResetSoundRegisters();
     void ResetOtherIORegisters();
 
+    template <typename T>
+    T GetLastBusValue() const
+    {
+        return static_cast<T>(lastBusAccess.value)
+    }
+    
     const GBA_WaitstateController& GetWaitstateController() const { return waitstateController; } 
     
 private:
@@ -71,8 +77,9 @@ private:
 
     // The GBA has unused memory area after the SRAM, which goes from 0x10000000 to 0xFFFFFFFF
 
-    LastBusAccess lastAccess; // For open-bus emulation
+    LastBusAccess lastBusAccess; // For open-bus emulation
 
+    std::unique_ptr<GBA_ROM> rom;
     std::unique_ptr<GBA_ROM> rom;
     EmulatorCore* core; 
     GBA_WaitstateController waitstateController;
@@ -84,9 +91,6 @@ private:
 
     template <typename T>
     void Write(uint32_t address, T value);
-
-    template <typename T>
-    T FillFromLastBusAccess() const;
 
 };
 

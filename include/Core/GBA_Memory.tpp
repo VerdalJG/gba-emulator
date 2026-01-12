@@ -1,5 +1,3 @@
-
-
 template <typename T>
 T GBA_Memory::Read(uint32_t address, AccessSize size) 
 {
@@ -13,7 +11,7 @@ T GBA_Memory::Read(uint32_t address, AccessSize size)
         const std::string message = "Read in invalid region at: " + std::to_string(address);
         Log(message, LogType::Warning);
         
-        return FillFromLastBusAccess<T>();
+        return GetLastBusValue<T>();
     }
 
     const std::vector<uint8_t>& regionData = *region->data;
@@ -24,16 +22,17 @@ T GBA_Memory::Read(uint32_t address, AccessSize size)
         const std::string message = "Read of " + std::to_string(sizeof(T)) + " bytes in multiple regions at: " + std::to_string(address);
         Log(message, LogType::Warning);
 
-        return FillFromLastBusAccess<T>();
+        return GetLastBusValue<T>();
     }
 
-    // Create default value (max possible number) for open-bus emulation
+    // Create default value for open-bus emulation
     T value = 0;
     for (int i = 0; i < sizeof(T); ++i) 
     {
         value |= static_cast<T>(regionData[offset + i]) << (i * 8);
     }
-    lastAccess.UpdateValues(address, sizeof(T), region);
+    lastBusAccess.value = value;
+    lastBusAccess.size = size;
     return value;
 }
 
@@ -71,26 +70,4 @@ void GBA_Memory::Write(uint32_t address, T value)
     {
         (*region->data)[offset + i] = static_cast<uint8_t>((value >> (i * 8)) & 0xFF);
     }
-}
-
-template <typename T>
-T GBA_Memory::FillFromLastBusAccess() const
-{
-    if (lastAccess.region == RegionType::Invalid)
-    {
-        const std::string message = "Attempting to use an invalid last bus access";
-        Log(message, LogType::Error);
-        return static_cast<T>(0xFFFFFFFFu);
-    }
-
-    const MemoryRegion* lastRegion = GetRegionFromType(lastAccess.region);
-    size_t offset = lastAccess.address - lastRegion->startAddress;
-    const std::vector<uint8_t>& regionData = *lastRegion->data;
-
-    T busFill = 0;
-    for (int i = 0; i < sizeof(T); ++i)
-    {
-        busFill |= static_cast<T>(regionData[offset]) << (i * 8);
-    }
-    return busFill;
 }

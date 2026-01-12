@@ -9,6 +9,7 @@
 #include "Core/GBA_TimerController.hpp"
 #include "Core/GBA_DMAController.hpp"
 #include "Core/GBA_APU.hpp"
+#include "Core/GBA_IO.hpp"
 
 #include <string>
 #include <vector>
@@ -59,6 +60,7 @@ protected:
     GBA_DMAController dmaController; 
     GBA_TimerController timerController;
     GBA_InterruptController interruptController;
+    GBA_IO io;
     //InputHandler inputHandler; // For input handling
 
 

@@ -83,7 +83,7 @@ void GBA_Memory::Write8(uint32_t address, uint8_t value)
     Write<uint8_t>(address, value);
 }
 
-void GBA_Memory::Write16(uint32_t address, uint32_t value)
+void GBA_Memory::Write16(uint32_t address, uint16_t value)
 {
     Write<uint16_t>(address, value);
 }

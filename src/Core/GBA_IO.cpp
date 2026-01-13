@@ -4,12 +4,10 @@
 
 GBA_IO::GBA_IO(EmulatorCore* core, GBA_PPU* ppu, GBA_APU* apu, 
     GBA_DMAController* dma, GBA_TimerController* timers, 
-    GBA_InterruptController* interrupt) : core(core), ppu(ppu), apu(apu), 
+    GBA_InterruptController* interrupts) : core(core), ppu(ppu), apu(apu), 
     dma(dma), timers(timers), 
-    interrupt(interrupt)
-{
-    
-}
+    interrupts(interrupts)
+{}
 
 uint8_t GBA_IO::Read8(uint32_t address)
 {

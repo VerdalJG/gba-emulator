@@ -1,13 +1,15 @@
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_Memory_Helpers.hpp"
 
+
 #include "Utils/Logger.hpp"
 
 //#include "SDLUtils.hpp"
 
-EmulatorCore::EmulatorCore(Logger* logger) : memory(this), cpu(this), 
-    hle(this), logger(logger), ppu(this), apu(this), timerController(this), 
-    interruptController(this), dmaController(this), io(this, &ppu, &apu, &dmaController, &timerController, &interruptController)
+EmulatorCore::EmulatorCore(Logger* logger) : logger(logger), hle(this), cpu(this), 
+    ppu(this), apu(this), timerController(this), interruptController(this), dmaController(this), 
+    io(this, &ppu, &apu, &dmaController, &timerController, &interruptController), rom(this),
+    memory(this, rom, io)
 {
     if (logger)
     {
@@ -66,7 +68,9 @@ bool EmulatorCore::LoadROM(const std::vector<uint8_t>& romData)
         return false;
     }
 
+    rom.LoadROM(romData);
     memory.LoadROM(romData);
+
     return true;
 }
 

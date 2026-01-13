@@ -33,6 +33,6 @@ private:
     GBA_APU* apu;
     GBA_DMAController* dma;
     GBA_TimerController* timers;
-    GBA_InterruptController* interrupt;
+    GBA_InterruptController* interrupts;
     GBA_Keypad* keypad;
 };

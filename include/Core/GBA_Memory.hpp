@@ -6,18 +6,19 @@
 #include <variant>
 #include <memory>
 
-#include "Core/GBA_ROM.hpp"
 #include "Core/GBA_Memory_Helpers.hpp"
 
 #include "Utils/Logger.hpp"
 
 class EmulatorCore;
+class GBA_ROM;
+class GBA_IO;
 
 class GBA_Memory 
 {
 public:
     GBA_Memory() = delete;
-    explicit GBA_Memory(EmulatorCore* core);
+    explicit GBA_Memory(EmulatorCore* core, GBA_ROM& rom, GBA_IO& io);
     ~GBA_Memory() = default;
     GBA_Memory(const GBA_Memory&) = delete; // Disable copy constructor
  
@@ -55,33 +56,32 @@ public:
     
 private:
     // General internal memory
-    MemoryRegion bios = MemoryRegion(Permissions::ReadOnly, BIOS_START, BIOS_SIZE, RegionType::BIOS);
-    MemoryRegion ewram = MemoryRegion(Permissions::ReadWrite, EWRAM_START, EWRAM_SIZE, RegionType::EWRAM); // External work RAM
-    MemoryRegion iwram = MemoryRegion(Permissions::ReadWrite, IWRAM_START, IWRAM_SIZE, RegionType::IWRAM); // Internal work RAM
-    MemoryRegion ioRegisters = MemoryRegion(Permissions::Varies, IOREGISTERS_START, IOREGISTERS_SIZE, RegionType::IORegisters);
+    MemoryRegion bios = MemoryRegion::BIOS();
+    MemoryRegion ewram = MemoryRegion::EWRAM(); // External work RAM
+    MemoryRegion iwram = MemoryRegion::IWRAM(); // Internal work RAM
+    MemoryRegion ioRegisters = MemoryRegion::IORegisters();
 
     // Internal display memory
-    MemoryRegion paletteRam = MemoryRegion(Permissions::ReadWrite, PALETTE_RAM_START, PALETTE_RAM_SIZE, RegionType::PaletteRAM);
-    MemoryRegion vram = MemoryRegion(Permissions::ReadWrite, VRAM_START, VRAM_SIZE, RegionType::VRAM); // Video RAM
-    MemoryRegion oam = MemoryRegion(Permissions::ReadWrite, OAM_START, OAM_SIZE, RegionType::OAM); // Object-Attribute RAM
+    MemoryRegion paletteRam = MemoryRegion::Palette_RAM();
+    MemoryRegion vram = MemoryRegion::VRAM(); // Video RAM
+    MemoryRegion oam = MemoryRegion::OAM(); // Object-Attribute RAM
     
     // External memory (cartridge)
 
     // ROM0/ROM1/ROM2 all point to the same ROM data but differ by waitstate timing.
     // ROM1 and ROM2 are mirrors of ROM0 at different addresses (for access timing differences).
 
-    MemoryRegion rom0 = MemoryRegion(Permissions::ReadOnly, ROM0_START, RegionType::ROM0);
-    MemoryRegion rom1 = MemoryRegion(Permissions::ReadOnly, ROM1_START, RegionType::ROM1);
-    MemoryRegion rom2 = MemoryRegion(Permissions::ReadOnly, ROM2_START, RegionType::ROM2);
-    MemoryRegion sram = MemoryRegion(Permissions::ReadWrite, SRAM_START, SRAM_SIZE, RegionType::SRAM);
+    MemoryRegion rom0 = MemoryRegion::ROM0();
+    MemoryRegion rom1 = MemoryRegion::ROM1();
+    MemoryRegion rom2 = MemoryRegion::ROM2();
+    MemoryRegion sram = MemoryRegion::SRAM();
 
     // The GBA has unused memory area after the SRAM, which goes from 0x10000000 to 0xFFFFFFFF
-
     LastBusAccess lastBusAccess; // For open-bus emulation
 
-    std::unique_ptr<GBA_ROM> rom;
-    std::unique_ptr<GBA_ROM> rom;
-    EmulatorCore* core; 
+    EmulatorCore* core;
+    GBA_ROM& rom;
+    GBA_IO& io;
     GBA_WaitstateController waitstateController;
 
     void Log(const std::string& message, LogType logType, const char* functionName = "") const;

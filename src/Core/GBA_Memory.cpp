@@ -1,15 +1,15 @@
 #include "Core/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_ROM.hpp"
+#include "Core/GBA_IO.hpp"
 
 #include <stdexcept>
 #include <assert.h>
 
 
-GBA_Memory::GBA_Memory(EmulatorCore *core) : core(core)
-{
-    rom = std::make_unique<GBA_ROM>(core);
-}
+GBA_Memory::GBA_Memory(EmulatorCore *core, GBA_ROM& rom, GBA_IO& io)
+    : core(core), rom(rom), io(io)
+{}
 
 const MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) const
 {
@@ -95,15 +95,11 @@ void GBA_Memory::Write32(uint32_t address, uint32_t value)
 
 void GBA_Memory::LoadROM(const std::vector<uint8_t>& romData)
 {
-    assert(rom && "ROM object is null in GBA_Memory::LoadROM()");
+    rom0.data = rom.GetROMData();
+    rom1.data = rom.GetROMData();
+    rom2.data = rom.GetROMData();
 
-    rom->LoadROM(romData);
-
-    rom0.data = rom->GetROMData();
-    rom1.data = rom->GetROMData();
-    rom2.data = rom->GetROMData();
-
-    rom->PrintROMInfo();
+    rom.PrintROMInfo();
 }
 
 void GBA_Memory::LoadBIOS(const std::vector<uint8_t>& biosData)
@@ -144,8 +140,8 @@ void GBA_Memory::ClearAddressRange(uint32_t startAddress, uint32_t endAddress)
 
     assert(region == GetRegionFromAddress(endAddress) && "Start address and end address must pertain to the same region");
 
-    uint32_t startOffset = startAddress - region->startAddress;
-    uint32_t endOffset = endAddress - region->startAddress;
+    uint32_t startOffset = startAddress - region->start;
+    uint32_t endOffset = endAddress - region->start;
 
     assert(endOffset < region->data->size() && startOffset <= endOffset && "Attempting to clear more than one region");
 

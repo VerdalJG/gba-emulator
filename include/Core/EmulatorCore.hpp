@@ -9,6 +9,7 @@
 #include "Core/GBA_TimerController.hpp"
 #include "Core/GBA_DMAController.hpp"
 #include "Core/GBA_APU.hpp"
+#include "Core/GBA_ROM.hpp"
 #include "Core/GBA_IO.hpp"
 
 #include <string>
@@ -37,7 +38,6 @@ public:
     GBA_HLE& GetHLE() { return hle; }
     void SetPostStatusCallback(std::function<void(const std::string&)> callback);
 
-
     void Step();
     void Tick();
     void Render();
@@ -53,7 +53,6 @@ protected:
 
     // Core Components:
     GBA_HLE hle;
-    GBA_Memory memory;
     GBA_CPU cpu;
     GBA_PPU ppu; // For video
     GBA_APU apu; // For audio
@@ -61,14 +60,7 @@ protected:
     GBA_TimerController timerController;
     GBA_InterruptController interruptController;
     GBA_IO io;
+    GBA_ROM rom;
+    GBA_Memory memory;
     //InputHandler inputHandler; // For input handling
-
-
-//     SDL_Window* window = nullptr;
-//     SDL_Renderer* renderer = nullptr;
-//     bool isRunning = true;
-
-//     Timer timer;
-
-
 };

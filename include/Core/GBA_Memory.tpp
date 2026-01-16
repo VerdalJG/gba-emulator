@@ -1,16 +1,13 @@
 template <typename T>
-T GBA_Memory::Read(uint32_t address, AccessSize size) 
+T GBA_Memory::Read(uint32_t address, BusAccessSize size) 
 {
     // Align if needed  
     if (sizeof(T) > 1) address &= ~(sizeof(T) - 1u);
 
-    const MemoryRegion* region = GetRegionFromAddress(address);
+    const GBA_MemoryRegion* region = GetRegionFromAddress(address);
 
     if (!region || !region->data)
     {
-        const std::string message = "Read in invalid region at: " + std::to_string(address);
-        Log(message, LogType::Warning);
-        
         return GetLastBusValue<T>();
     }
 
@@ -42,7 +39,7 @@ void GBA_Memory::Write(uint32_t address, T value)
     // Align if needed
     if (sizeof(T) > 1) address &= ~(sizeof(T) - 1u);
 
-    const MemoryRegion* region = GetRegionFromAddress(address);
+    const GBA_MemoryRegion* region = GetRegionFromAddress(address);
 
     if (!region || !region->data)
     {

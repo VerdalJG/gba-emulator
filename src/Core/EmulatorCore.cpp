@@ -9,7 +9,7 @@
 EmulatorCore::EmulatorCore(Logger* logger) : logger(logger), hle(this), cpu(this), 
     ppu(this), apu(this), timerController(this), interruptController(this), dmaController(this), 
     io(this, &ppu, &apu, &dmaController, &timerController, &interruptController), rom(this),
-    memory(this, rom, io)
+    memory(this, rom, io), bus(this, memory)
 {
     if (logger)
     {

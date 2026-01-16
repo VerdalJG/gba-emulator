@@ -31,7 +31,7 @@ void GBA_WaitstateController::SetWaitstateConfig(uint16_t waitcnt)
 }
 
 
-int GBA_WaitstateController::GetCycles(uint32_t address, AccessSize size, bool isSequential) const
+int GBA_WaitstateController::GetCycles(uint32_t address, BusAccessSize size, bool isSequential) const
 {
     if (address >= SRAM_START) return 1 + sram_cycles;
     if (address >= ROM0_START)
@@ -41,7 +41,7 @@ int GBA_WaitstateController::GetCycles(uint32_t address, AccessSize size, bool i
         else if (address >= ROM1_START) romRegion = 1;
         else if (address >= ROM0_START) romRegion = 0;
 
-        if (size == AccessSize::Word)
+        if (size == BusAccessSize::Word)
         {
             return 1 + sequentialAccess[romRegion] + nonSequentialAccess[romRegion];
         }
@@ -56,8 +56,8 @@ int GBA_WaitstateController::GetCycles(uint32_t address, AccessSize size, bool i
     {
         switch (size)
         {
-            case AccessSize::Byte: case AccessSize::Halfword: return 3;
-            case AccessSize::Word: return 6;
+            case BusAccessSize::Byte: case BusAccessSize::Halfword: return 3;
+            case BusAccessSize::Word: return 6;
         }
     }
     

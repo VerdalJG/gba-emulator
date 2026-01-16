@@ -201,7 +201,7 @@ void GBA_CPU::Log(const std::string& message, LogType logType, const char *funct
 uint8_t GBA_CPU::Read8FromMemory(uint32_t address, bool isSequential)
 {
     GBA_Memory& memory = GetMemorySystem();
-    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Byte, isSequential);
+    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, BusAccessSize::Byte, isSequential);
     AddCycles(cycles);
     return memory.Read8(address);
 }
@@ -209,7 +209,7 @@ uint8_t GBA_CPU::Read8FromMemory(uint32_t address, bool isSequential)
 uint16_t GBA_CPU::Read16FromMemory(uint32_t address, bool isSequential)
 {
     GBA_Memory& memory = GetMemorySystem();
-    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Halfword, isSequential);
+    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, BusAccessSize::Halfword, isSequential);
     AddCycles(cycles);
     return memory.Read16(address);
 }
@@ -217,7 +217,7 @@ uint16_t GBA_CPU::Read16FromMemory(uint32_t address, bool isSequential)
 uint32_t GBA_CPU::Read32FromMemory(uint32_t address, bool isSequential)
 {
     GBA_Memory& memory = GetMemorySystem();
-    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Word, isSequential);
+    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, BusAccessSize::Word, isSequential);
     AddCycles(cycles);
     return memory.Read32(address);
 }
@@ -225,7 +225,7 @@ uint32_t GBA_CPU::Read32FromMemory(uint32_t address, bool isSequential)
 void GBA_CPU::Write8ToMemory(uint32_t address, uint8_t value, bool isSequential)
 {
     GBA_Memory& memory = GetMemorySystem();
-    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Byte, isSequential);
+    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, BusAccessSize::Byte, isSequential);
     AddCycles(cycles);
     memory.Write8(address, value);
 }
@@ -233,7 +233,7 @@ void GBA_CPU::Write8ToMemory(uint32_t address, uint8_t value, bool isSequential)
 void GBA_CPU::Write16ToMemory(uint32_t address, uint16_t value, bool isSequential)
 {
     GBA_Memory& memory = GetMemorySystem();
-    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Halfword, isSequential);
+    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, BusAccessSize::Halfword, isSequential);
     AddCycles(cycles);
     memory.Write16(address, value);
 }
@@ -241,7 +241,7 @@ void GBA_CPU::Write16ToMemory(uint32_t address, uint16_t value, bool isSequentia
 void GBA_CPU::Write32ToMemory(uint32_t address, uint32_t value, bool isSequential)
 {
     GBA_Memory& memory = GetMemorySystem();
-    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, AccessSize::Word, isSequential);
+    uint32_t cycles = memory.GetWaitstateController().GetCycles(address, BusAccessSize::Word, isSequential);
     AddCycles(cycles);
     memory.Write32(address, value);
 }

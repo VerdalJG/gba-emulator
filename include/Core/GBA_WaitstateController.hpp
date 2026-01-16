@@ -11,13 +11,13 @@ public:
 
     // Returns total cycles (1 + waitstates) for this access.
     // isSequential is whether the access is sequential (S) or non-sequential (N).
-    int GetCycles(uint32_t address, AccessSize size, bool isSequential) const;
+    int GetCycles(uint32_t address, BusAccessSize size, bool isSequential) const;
 
     bool IsPrefetchEnabled() const { return prefetchEnabled; }
 
 private:
     int nonSequentialAccess[3]  = {4,4,4};
     int sequentialAccess[3] = {2,4,8}; // From GBATEK defaults
-    int sram_cycles = 8;
+    int sram_cycles = 5;
     bool prefetchEnabled = true;
 };

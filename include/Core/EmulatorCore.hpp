@@ -43,7 +43,7 @@ public:
     void Render();
     void HandleSDLEvents();
     void PostStatus(const std::string& message);
-    void Log(const std::string& message, LogType logType, const char* functionName);
+    void Log(const std::string& message, LogType logType, const char* functionName = "");
 
 
 protected:
@@ -62,5 +62,6 @@ protected:
     GBA_IO io;
     GBA_ROM rom;
     GBA_Memory memory;
+    GBA_Bus bus;
     //InputHandler inputHandler; // For input handling
 };

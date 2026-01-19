@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
-
-
+#include "Core/GBA_Memory_Helpers.hpp"
 
 class GBA_WaitstateController
 {

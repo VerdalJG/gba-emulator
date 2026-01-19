@@ -1,4 +1,4 @@
-#include "Core/GBA_CPU.hpp"
+#include "Core/CPU/Instructions/Decoder.hpp"
 #include "Core/CPU/Instructions/Shifts.hpp"
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 #include "Core/CPU/Instructions/DataProcessing.hpp"
@@ -6,6 +6,30 @@
 #include "Core/CPU/Instructions/LoadStore.hpp"
 #include "Core/CPU/Instructions/Exceptions.hpp"
 #include "Core/CPU/Instructions/Branches.hpp"
+#include "Core/GBA_CPU.hpp"
+
+InstructionFunction DecodeInstruction(uint32_t instruction, GBA_CPU& cpu)
+{
+    InstructionPattern pattern = static_cast<InstructionPattern>((instruction >> 26) & 0b11);
+    switch (pattern)
+    {
+        case PATTERN_00: // Data processing and misc
+        return DecodePattern00(instruction, cpu);
+
+        case PATTERN_01: // Single Data Transfer or Undefined (bit 4 decides)
+        return DecodePattern01(instruction, cpu); 
+
+        case PATTERN_10: // Block Data Transfer (LDM/STM) or Branch
+        return DecodePattern10(instruction, cpu);
+
+        case PATTERN_11: // Coprocessor or Software Interrupt
+        return DecodePattern11(instruction, cpu);
+
+        default: // In theory is unreachable
+        //HandleUndefinedBehavior(instruction, *this); - Normally something like this would be called
+        return nullptr;
+    }
+}
 
 InstructionFunction DecodePattern00(uint32_t instruction, GBA_CPU& cpu)
 {

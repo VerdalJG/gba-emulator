@@ -5,17 +5,13 @@
 #include "Core/GBA_WaitstateController.hpp"
 #include "Core/CPU/CPU_Timings.hpp"
 #include "Core/GBA_Bus.hpp"
+#include "Core/CPU/Instructions/Conditions.hpp"
 
 #include <assert.h>
 
 GBA_CPU::GBA_CPU(EmulatorCore* core, GBA_Bus& bus) : core(core), bus(bus)
 {
     assert(core && "CPU must have valid EmulatorCore object");
-}
-
-GBA_CPU::~GBA_CPU()
-{
-
 }
 
 void GBA_CPU::Reset()
@@ -63,28 +59,7 @@ void GBA_CPU::SaveCPSRIntoSPSR(int exceptionModeIndex)
     spsr[exceptionModeIndex] = cpsr;
 }
 
-InstructionFunction GBA_CPU::DecodeInstruction(uint32_t instruction)
-{
-    InstructionPattern pattern = static_cast<InstructionPattern>((instruction >> 26) & 0b11);
-    switch (pattern)
-    {
-        case PATTERN_00: // Data processing and misc
-        return DecodePattern00(instruction, *this);
 
-        case PATTERN_01: // Single Data Transfer or Undefined (bit 4 decides)
-        return DecodePattern01(instruction, *this); 
-
-        case PATTERN_10: // Block Data Transfer (LDM/STM) or Branch
-        return DecodePattern10(instruction, *this);
-
-        case PATTERN_11: // Coprocessor or Software Interrupt
-        return DecodePattern11(instruction, *this);
-
-        default: // In theory is unreachable
-        //HandleUndefinedBehavior(instruction, *this); - Normally something like this would be called
-        return nullptr;
-    }
-}
 
 void GBA_CPU::HandleUndefinedBehavior(uint32_t instruction)
 {
@@ -123,7 +98,7 @@ void GBA_CPU::FlushPipeline()
 void GBA_CPU::Fetch()
 {
     Instruction newInstruction;
-    newInstruction.rawInstruction = Read32FromMemory(visibleRegisters[PC_INDEX], nextInstructionFetchIsSequential);
+    newInstruction.rawInstruction = Read32FromMemory(visibleRegisters[PC_INDEX]);
     newInstruction.valid = true;
     instructionPipeline[0] = newInstruction;
     nextInstructionFetchIsSequential = true;
@@ -152,7 +127,7 @@ void GBA_CPU::Decode()
 
         if (ConditionPassed(condition, *this))
         {
-            functionToExecute = DecodeInstruction(instructionPipeline[1].rawInstruction);
+            functionToExecute = DecodeInstruction(instructionPipeline[1].rawInstruction, *this);
         }
     }
 
@@ -193,7 +168,7 @@ void GBA_CPU::Log(const std::string& message, LogType logType, const char *funct
     }
 }
 
-uint8_t GBA_CPU::Read8FromMemory(uint32_t address, bool isSequential)
+uint8_t GBA_CPU::Read8FromMemory(uint32_t address)
 {
     uint32_t cycles = 0;
     uint8_t readValue = bus.Read8(address, cycles);
@@ -201,7 +176,7 @@ uint8_t GBA_CPU::Read8FromMemory(uint32_t address, bool isSequential)
     return readValue;
 }
 
-uint16_t GBA_CPU::Read16FromMemory(uint32_t address, bool isSequential)
+uint16_t GBA_CPU::Read16FromMemory(uint32_t address)
 {
     uint32_t cycles = 0;
     uint16_t readValue = bus.Read16(address, cycles);
@@ -209,7 +184,7 @@ uint16_t GBA_CPU::Read16FromMemory(uint32_t address, bool isSequential)
     return readValue;
 }
 
-uint32_t GBA_CPU::Read32FromMemory(uint32_t address, bool isSequential)
+uint32_t GBA_CPU::Read32FromMemory(uint32_t address)
 {
     uint32_t cycles = 0;
     uint32_t readValue = bus.Read32(address, cycles);
@@ -217,23 +192,28 @@ uint32_t GBA_CPU::Read32FromMemory(uint32_t address, bool isSequential)
     return readValue;
 }
 
-void GBA_CPU::Write8ToMemory(uint32_t address, uint8_t value, bool isSequential)
+void GBA_CPU::Write8ToMemory(uint32_t address, uint8_t value)
 {
     uint32_t cycles = 0;
     bus.Write8(address, value, cycles);
     AddCycles(cycles);
 }
 
-void GBA_CPU::Write16ToMemory(uint32_t address, uint16_t value, bool isSequential)
+void GBA_CPU::Write16ToMemory(uint32_t address, uint16_t value)
 {
     uint32_t cycles = 0;
     bus.Write16(address, value, cycles);
     AddCycles(cycles);
 }
 
-void GBA_CPU::Write32ToMemory(uint32_t address, uint32_t value, bool isSequential)
+void GBA_CPU::Write32ToMemory(uint32_t address, uint32_t value)
 {
     uint32_t cycles = 0;
     bus.Write32(address, value, cycles);
     AddCycles(cycles);
+}
+
+void GBA_CPU::InvalidateSequentiality() 
+{
+    bus.InvalidateSequentiality();
 }

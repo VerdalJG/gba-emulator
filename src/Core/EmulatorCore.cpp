@@ -6,10 +6,10 @@
 
 //#include "SDLUtils.hpp"
 
-EmulatorCore::EmulatorCore(Logger* logger) : logger(logger), hle(this), cpu(this), 
-    ppu(this), apu(this), timerController(this), interruptController(this), dmaController(this), 
-    io(this, &ppu, &apu, &dmaController, &timerController, &interruptController), rom(this),
-    memory(this, rom, io), bus(this, memory)
+EmulatorCore::EmulatorCore(Logger* logger) : logger(logger), 
+    ppu(this), apu(this), dmaController(this), timerController(this), interruptController(this), 
+    rom(this), io(this, &ppu, &apu, &dmaController, &timerController, &interruptController),
+    memory(this, rom, io), hle(this, memory, io), bus(this, memory), cpu(this, bus)
 {
     if (logger)
     {

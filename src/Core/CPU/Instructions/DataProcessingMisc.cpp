@@ -162,20 +162,65 @@ void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu)
 
     if (values.bFlag) // SWPB
     {
-        temp = cpu.Read8FromMemory(rn, false);
+        temp = cpu.Read8FromMemory(rn);
         uint8_t byteToWrite = rm & 0xFF;
-        cpu.Write8ToMemory(rn, byteToWrite, false);
+        cpu.Write8ToMemory(rn, byteToWrite);
     }
     else // SWP
     {
         uint32_t rotatedBytes = (rn & 0b11);
         uint32_t rotatedBits = rotatedBytes * 8; // Rotate by byte size
-        temp = RotateRight(cpu.Read32FromMemory(rn, false), rotatedBits); // Normally rotate right is only used for unaligned addresses
-        cpu.Write32ToMemory(rn, rm, false); 
+        temp = RotateRight(cpu.Read32FromMemory(rn), rotatedBits); // Normally rotate right is only used for unaligned addresses
+        cpu.Write32ToMemory(rn, rm); 
     }
 
     cpu.SetValueAtRegister(values.rdIndex, temp); 
     cpu.AddCycles(CPU_Timings::SWAP_BASE_COST);
+}
+
+Multiply_Decoded Multiply_Decode(uint32_t instruction)
+{
+    Multiply_Decoded result;
+
+    result.condition = GetConditionType(instruction);
+    result.accumulateFlag = (instruction >> 21) & 1;
+    result.setCPSRFlag = (instruction >> 20) & 1;
+
+    result.rdIndex = (instruction >> 16) & 0xF;
+    result.rsIndex = (instruction >> 8) & 0xF;
+    result.rmIndex = instruction & 0xF;
+
+    return result;
+}
+
+MultiplyLong_Decoded MultiplyLong_Decode(uint32_t instruction)
+{
+    MultiplyLong_Decoded result;
+
+    result.condition = GetConditionType(instruction);
+    result.signedFlag = (instruction >> 22) & 1;
+    result.accumulateFlag = (instruction >> 21) & 1;
+    result.setCPSRFlag = (instruction >> 20) & 1;
+
+    result.rdHiIndex = (instruction >> 16) & 0xF;
+    result.rdLoIndex = (instruction >> 12) & 0xF;
+    result.rsIndex = (instruction >> 8) & 0xF;
+    result.rmIndex = instruction & 0xF;
+
+    return result;
+}
+
+SingleDataSwap_Decoded SingleDataSwap_Decode(uint32_t instruction)
+{
+    SingleDataSwap_Decoded result;
+
+    result.condition = GetConditionType(instruction);
+    result.bFlag = (instruction >> 24) & 1;
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.rdIndex = (instruction >> 12) & 0xF;
+    result.rmIndex = instruction & 0xF;
+
+    return result;
 }
 
 

@@ -1,5 +1,6 @@
 #include "Core/CPU/Instructions/DataProcessing.hpp"
 #include "Core/CPU/Instructions/AddressingMode1.hpp"
+#include "Core/CPU/Instructions/InstructionHelpers.hpp"
 #include "Core/CPU/CPU_Timings.hpp"
 
 void DataProcessing(uint32_t instruction, GBA_CPU &cpu)
@@ -11,6 +12,22 @@ void DataProcessing(uint32_t instruction, GBA_CPU &cpu)
 
     // Execute operation
     alu(values, op2, cpu);
+}
+
+DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction)
+{
+    DataProcessing_Decoded result;
+
+    result.condition = GetConditionType(instruction);
+    result.immediateFlag = (instruction >> 25) & 1;
+    result.opcode = GetDataProcessingOpcode(instruction);
+    result.setCPSRFlag = (instruction >> 20) & 1;
+
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.rdIndex = (instruction >> 12) & 0xF;
+
+    result.shifterOperandBits = instruction & 0xFFF;
+    return result;
 }
 
 bool IsReverseOpcode(DataProcessingOpcode opcode)

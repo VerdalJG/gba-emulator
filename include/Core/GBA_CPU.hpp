@@ -66,15 +66,15 @@ public:
     EmulatorCore* GetEmulatorCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
-    uint8_t Read8FromMemory(uint32_t address, bool isSequential);
-    uint16_t Read16FromMemory(uint32_t address, bool isSequential);
-    uint32_t Read32FromMemory(uint32_t address, bool isSequential);
+    uint8_t Read8FromMemory(uint32_t address);
+    uint16_t Read16FromMemory(uint32_t address);
+    uint32_t Read32FromMemory(uint32_t address);
 
-    void Write8ToMemory(uint32_t address, uint8_t value, bool isSequential);
-    void Write16ToMemory(uint32_t address, uint16_t value, bool isSequential);
-    void Write32ToMemory(uint32_t address, uint32_t value, bool isSequential);
+    void Write8ToMemory(uint32_t address, uint8_t value);
+    void Write16ToMemory(uint32_t address, uint16_t value);
+    void Write32ToMemory(uint32_t address, uint32_t value);
 
-    void SetNextFetchSequential(bool isSequential) { nextInstructionFetchIsSequential = isSequential; } 
+    void InvalidateSequentiality(); 
 
     static const int SP_INDEX = 13;
     static const int LR_INDEX = 14;
@@ -99,7 +99,7 @@ protected:
 
     void AdvanceInstructionPipeline(); 
     void FlushPipeline();
-    InstructionFunction DecodeInstruction(uint32_t instruction);
+
     void HandleUndefinedBehavior(uint32_t instruction);
 
     void HandleHalt();
@@ -126,10 +126,6 @@ private:
 - Fix cpu.read/write function signatures
 - Ensure cycles are added correctly and handled
 - Start working on IO and PPU
-
-
-- Move decode instruction to CPU_Decoder
-- Potentially move specific instruction structs to their specific hpp's to not clutter InstructionHelpers.hpp/cpp
 - Thumb instruction set (surely fast)
 
 

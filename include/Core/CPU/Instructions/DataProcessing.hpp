@@ -2,14 +2,23 @@
 #include <cstdint>
 #include <array>
 #include "Core/GBA_CPU.hpp"
-#include "Core/CPU/Instructions/InstructionHelpers.hpp"
+#include "Core/CPU/Instructions/Conditions.hpp"
 
+struct DataProcessing_Decoded
+{
+    Condition condition;
+    uint8_t rnIndex, rdIndex;
+    uint16_t shifterOperandBits;
+    DataProcessingOpcode opcode;
+    bool setCPSRFlag, immediateFlag;
+};
 
 using DataProcessingInstruction = void (*)(DataProcessing_Decoded, ShifterOperand, GBA_CPU&); // Data processing operation function pointers
 
 static const int DATA_PROCESSING_OPCODE_COUNT = 16;
 
 void DataProcessing(uint32_t instruction, GBA_CPU& cpu);
+DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction);
 
 // In order of opcodes 0-15
 void LogicalAND(DataProcessing_Decoded values, ShifterOperand shifterOperand, GBA_CPU& cpu);

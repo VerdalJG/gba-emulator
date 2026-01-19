@@ -7,7 +7,6 @@
 
 #include "Core/CPU/CPU_Timings.hpp"
 #include "Core/GBA_CPU.hpp"
-#include "Core/GBA_Memory.hpp"
 
 #include <assert.h>
 #include <bit>
@@ -35,7 +34,7 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         if (!isHalfword)
         {
             // LDRSB
-            uint8_t loadedByte = cpu.Read8FromMemory(effectiveAddress, false);
+            uint8_t loadedByte = cpu.Read8FromMemory(effectiveAddress);
             uint32_t valueToLoad = SignExtendTo32(loadedByte);
             cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
         }
@@ -44,7 +43,7 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
             // Account for misaligned halfword
             bool misaligned = effectiveAddress & 1; // First bit must be 0 to be divisible by 2 (halfword)
             uint32_t alignedAddress = effectiveAddress & ~1;
-            uint16_t loadedHalfword = cpu.Read16FromMemory(effectiveAddress, false);
+            uint16_t loadedHalfword = cpu.Read16FromMemory(effectiveAddress);
             if (misaligned)
             {
                 loadedHalfword = RotateRight(loadedHalfword, 8);
@@ -69,14 +68,14 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         bool misaligned = effectiveAddress & 1;
         if (misaligned)
         {
-            cpu.Write8ToMemory(effectiveAddress, valueToStore & 0xFF, false); // Lowest 8 bits
-            cpu.Write8ToMemory(effectiveAddress + 1, valueToStore >> 8, true); // Shift higher bits
+            cpu.Write8ToMemory(effectiveAddress, valueToStore & 0xFF); // Lowest 8 bits
+            cpu.Write8ToMemory(effectiveAddress + 1, valueToStore >> 8); // Shift higher bits
         }
         else
         {  
-            cpu.Write16ToMemory(effectiveAddress, valueToStore, false);
+            cpu.Write16ToMemory(effectiveAddress, valueToStore);
         }
-        cpu.SetNextFetchSequential(false);
+        cpu.InvalidateSequentiality();
     }
 
     // Only post-index case updates here
@@ -110,7 +109,7 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         if (isByte)
         {
             // LDRB
-            uint8_t loadedByte = cpu.Read8FromMemory(effectiveAddress, false);
+            uint8_t loadedByte = cpu.Read8FromMemory(effectiveAddress);
             valueToLoad = ZeroExtendTo32(loadedByte);
         }
         else
@@ -118,7 +117,7 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
             // LDR
             // First and second bit must be 0 to be divisible by 4 (word)
             bool misaligned = effectiveAddress & 3; 
-            valueToLoad = cpu.Read32FromMemory(effectiveAddress, false);
+            valueToLoad = cpu.Read32FromMemory(effectiveAddress);
             if (misaligned)
             {
                 // Rotate by how many bytes it is misaligned by
@@ -147,14 +146,14 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         {
             // STRB
             uint8_t byte = rd & 0xFF;
-            cpu.Write8ToMemory(effectiveAddress, byte, false);
+            cpu.Write8ToMemory(effectiveAddress, byte);
         }
         else
         {
             // STR
-            cpu.Write32ToMemory(effectiveAddress, rd, false);
+            cpu.Write32ToMemory(effectiveAddress, rd);
         }
-        cpu.SetNextFetchSequential(false);
+        cpu.InvalidateSequentiality();
     }
 
     // Post-indexed update
@@ -209,7 +208,7 @@ void BlockDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         {
             STM(values, cpu);
         }
-        cpu.SetNextFetchSequential(false);
+        cpu.InvalidateSequentiality();
     }
 }
 
@@ -224,8 +223,7 @@ void LDM(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex) continue;
 
-        bool sequential = i != 0;
-        uint32_t loaded = cpu.Read32FromMemory(address, sequential);
+        uint32_t loaded = cpu.Read32FromMemory(address);
 
         if (i == GBA_CPU::PC_INDEX)
         {
@@ -259,8 +257,7 @@ void LDMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex) continue;
 
-        bool sequential = i != 0;
-        uint32_t loaded = cpu.Read32FromMemory(address, sequential);
+        uint32_t loaded = cpu.Read32FromMemory(address);
 
         cpu.SetValueAtRegister(i, loaded);
 
@@ -272,7 +269,7 @@ void LDMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex) continue;
 
-        uint32_t loaded = cpu.Read32FromMemory(address, true);
+        uint32_t loaded = cpu.Read32FromMemory(address);
 
         if (cpu.GetCurrentOperatingMode() == OperatingMode::FIQ)
         {
@@ -306,8 +303,7 @@ void LDMRestoreCPSR(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex) continue;
 
-        bool sequential = i != 0;
-        uint32_t loaded = cpu.Read32FromMemory(address, sequential);
+        uint32_t loaded = cpu.Read32FromMemory(address);
         cpu.SetValueAtRegister(i, loaded);
 
         address += 4;
@@ -316,7 +312,7 @@ void LDMRestoreCPSR(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     int bank = BankIndex(cpu.GetCurrentOperatingMode());
     cpu.RestoreCPSRFromSPSR(bank);
 
-    uint32_t loaded = cpu.Read32FromMemory(address, true);
+    uint32_t loaded = cpu.Read32FromMemory(address);
     uint32_t pcValue = cpu.IsThumbMode() ? loaded & 0xFFFFFFFE : loaded & 0xFFFFFFFC;
 
     cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, pcValue); // Ignore bits [1:0]
@@ -335,7 +331,7 @@ void LDMEmptyRegisterList(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
     uint32_t address = addressing4.startAddress;
 
-    uint32_t loaded = cpu.Read32FromMemory(address, false);
+    uint32_t loaded = cpu.Read32FromMemory(address);
     cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, loaded);
 
     assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
@@ -354,7 +350,7 @@ void STM(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         uint32_t toStore = cpu.GetValueAtRegister(i);
 
         bool sequential = i != 0;
-        cpu.Write32ToMemory(address, toStore, sequential);
+        cpu.Write32ToMemory(address, toStore);
 
         address += 4;
     }
@@ -380,7 +376,7 @@ void STMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         uint32_t toStore = cpu.GetValueAtRegister(i);
 
         bool sequential = i != 0;
-        cpu.Write32ToMemory(address, toStore, sequential);
+        cpu.Write32ToMemory(address, toStore);
 
         address += 4;
     }
@@ -401,7 +397,7 @@ void STMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         }
 
         bool sequential = i != 0;
-        cpu.Write32ToMemory(address, toStore, sequential);
+        cpu.Write32ToMemory(address, toStore);
 
         address += 4;
     }
@@ -422,7 +418,62 @@ void STMEmptyRegisterList(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     uint32_t address = addressing4.startAddress;
 
     uint32_t toStore = cpu.GetValueAtRegister(GBA_CPU::PC_INDEX);
-    cpu.Write32ToMemory(address, toStore, false);
+    cpu.Write32ToMemory(address, toStore);
 
     assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
+}
+
+HalfwordDataTransfer_Decoded HalfwordDataTransfer_Decode(uint32_t instruction)
+{
+    HalfwordDataTransfer_Decoded result;
+
+    result.condition = GetConditionType(instruction);
+    result.pFlag = (instruction >> 24) & 1;
+    result.uFlag = (instruction >> 23) & 1;
+    result.wFlag = (instruction >> 21) & 1;
+    result.lFlag = (instruction >> 20) & 1;
+
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.rdIndex = (instruction >> 12) & 0xF;
+
+    result.sFlag = (instruction >> 6) & 1;
+    result.hFlag = (instruction >> 5) & 1;
+
+    result.offsetBits = instruction & 0xF0F;
+    return result;
+}
+
+SingleDataTransfer_Decoded SingleDataTransfer_Decode(uint32_t instruction)
+{
+    SingleDataTransfer_Decoded result;
+
+    result.condition = GetConditionType(instruction);
+    result.iFlag = (instruction >> 25) & 1;
+    result.pFlag = (instruction >> 24) & 1;
+    result.uFlag = (instruction >> 23) & 1;
+    result.bFlag = (instruction >> 22) & 1;
+    result.wFlag = (instruction >> 21) & 1;
+    result.lFlag = (instruction >> 20) & 1;
+
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.rdIndex = (instruction >> 12) & 0xF;
+    result.offsetBits = instruction & 0xFFF;
+    return result;
+}
+
+BlockDataTransfer_Decoded BlockDataTransfer_Decode(uint32_t instruction)
+{
+    BlockDataTransfer_Decoded result;
+
+    result.condition = GetConditionType(instruction);
+
+    result.pFlag = (instruction >> 24) & 1;
+    result.uFlag = (instruction >> 23) & 1;
+    result.sFlag = (instruction >> 22) & 1;
+    result.wFlag = (instruction >> 21) & 1;
+    result.lFlag = (instruction >> 20) & 1;
+
+    result.rnIndex = (instruction >> 16) & 0xF;
+    result.registerList = instruction & 0xFFFF;
+    return result;
 }

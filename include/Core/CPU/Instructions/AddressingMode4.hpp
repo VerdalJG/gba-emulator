@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "Core/CPU/Instructions/InstructionHelpers.hpp"
+#include "Core/CPU/Instructions/LoadStore.hpp"
 
 class GBA_CPU;
 

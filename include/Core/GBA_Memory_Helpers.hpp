@@ -4,8 +4,6 @@
 #include <vector>
 #include <cmath>
 
-#include "Core/GBA_Bus.hpp"
-
 // Memory map locations for GBA (inclusive ranges)
 constexpr uint32_t BIOS_START = 0x00000000;
 constexpr uint32_t BIOS_END = 0x00003FFF;

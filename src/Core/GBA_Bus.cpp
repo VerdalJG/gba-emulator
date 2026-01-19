@@ -20,7 +20,7 @@ uint8_t GBA_Bus::Read8(uint32_t address, uint32_t& cycles)
 
     if (region && region->IsValidAccess(address, AccessType::Read, BusAccessSize::Byte))
     {
-        readValue = memory.Read8(address);
+        readValue = memory.Read8(address, regionType);
 
         // Update last value
         uint32_t merged = lastValue;
@@ -49,7 +49,7 @@ uint16_t GBA_Bus::Read16(uint32_t address, uint32_t& cycles)
 
     if (region && region->IsValidAccess(address, AccessType::Read, BusAccessSize::Halfword))
     {
-        readValue = memory.Read16(address);
+        readValue = memory.Read16(address, regionType);
 
         // Update last value
         uint32_t merged = lastValue;
@@ -92,7 +92,7 @@ uint32_t GBA_Bus::Read32(uint32_t address, uint32_t& cycles)
         bool sequential = IsSequential(address, BusAccessSize::Word, regionType);
         cycles = waitstateController.GetCycles(regionType, sequential);
 
-        readValue = memory.Read32(address);
+        readValue = memory.Read32(address, regionType);
         lastValue = readValue;
 
         UpdateLatestAccessValues(address, regionType, BusAccessSize::Word, true);
@@ -106,7 +106,7 @@ uint32_t GBA_Bus::Read32(uint32_t address, uint32_t& cycles)
         bool sequential = IsSequential(address, BusAccessSize::Halfword, regionType);
         cycles += waitstateController.GetCycles(regionType, sequential);
 
-        uint16_t low = memory.Read16(address);
+        uint16_t low = memory.Read16(address, regionType);
         readValue |= low;
 
         lastValue = (lastValue & 0xFFFF0000u) | low;
@@ -130,7 +130,7 @@ uint32_t GBA_Bus::Read32(uint32_t address, uint32_t& cycles)
 
         cycles += waitstateController.GetCycles(regionType, sequential);
 
-        uint16_t high = memory.Read16(address2);
+        uint16_t high = memory.Read16(address2, regionType);
         readValue |= static_cast<uint32_t>(high) << 16;
 
         lastValue = (lastValue & 0x0000FFFFu) | (static_cast<uint32_t>(high) << 16);
@@ -153,7 +153,7 @@ void GBA_Bus::Write8(uint32_t address, uint8_t value, uint32_t& cycles)
 
     if (region && region->IsValidAccess(address, AccessType::Write, BusAccessSize::Byte))
     {
-        memory.Write8(address, value);
+        memory.Write8(address, value, regionType);
     }
 
     UpdateLatestAccessValues(address, regionType, BusAccessSize::Byte, true);
@@ -171,7 +171,7 @@ void GBA_Bus::Write16(uint32_t address, uint16_t value, uint32_t& cycles)
 
     if (region && region->IsValidAccess(address, AccessType::Write, BusAccessSize::Halfword))
     {
-        memory.Write16(address, value);
+        memory.Write16(address, value, regionType);
     }
 
     UpdateLatestAccessValues(address, regionType, BusAccessSize::Halfword, true);
@@ -199,7 +199,7 @@ void GBA_Bus::Write32(uint32_t address, uint32_t value, uint32_t& cycles)
         cycles = waitstateController.GetCycles(regionType, sequential);
 
         lastValue = value;
-        memory.Write32(address, value);
+        memory.Write32(address, value, regionType);
 
         UpdateLatestAccessValues(address, regionType, BusAccessSize::Word, true);
         return;
@@ -214,7 +214,7 @@ void GBA_Bus::Write32(uint32_t address, uint32_t value, uint32_t& cycles)
         uint16_t low = value & 0xFFFF;
         lastValue = (lastValue & 0xFFFF0000u) | low;
 
-        memory.Write16(address, low);
+        memory.Write16(address, low, regionType);
         UpdateLatestAccessValues(address, regionType, BusAccessSize::Halfword, true);
     }
 
@@ -232,7 +232,7 @@ void GBA_Bus::Write32(uint32_t address, uint32_t value, uint32_t& cycles)
         uint16_t high = value >> 16;
         lastValue = (lastValue & 0x0000FFFFu) | (static_cast<uint32_t>(high) << 16);
 
-        memory.Write16(address2, high);
+        memory.Write16(address2, high, regionType);
         UpdateLatestAccessValues(address2, regionType, BusAccessSize::Halfword, true);
     }
 }
@@ -260,8 +260,22 @@ bool GBA_Bus::IsSequential(uint32_t address, BusAccessSize size, GBA_MemoryRegio
     if (address != lastAccess.address + static_cast<size_t>(size))
         return false;
 
+        // --- Game Pak ROM 128 KB boundary rule ---
+    if (GetBusDomain(region) == BusDomain::GamePakROM)
+    {
+        constexpr uint32_t BLOCK_MASK = ~0x1FFFFu; // 128 KB
+        if ((address & BLOCK_MASK) != (lastAccess.address & BLOCK_MASK))
+            return false;
+    }
+
     return true;
 }
+
+void GBA_Bus::InvalidateSequentiality() 
+{
+    lastAccess.valid = false;
+}
+
 
 BusDomain GBA_Bus::GetBusDomain(GBA_MemoryRegionType region) const
 {

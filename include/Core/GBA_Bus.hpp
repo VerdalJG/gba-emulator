@@ -32,6 +32,15 @@ public:
     void UpdateLatestAccessValues(uint32_t address, GBA_MemoryRegionType regionType, BusAccessSize accessSize, bool isValid);
     bool IsSequential(uint32_t address, BusAccessSize size, GBA_MemoryRegionType region);
 
+    /* Sequentiality is only invalidated upon:
+    1. Pipeline refill
+    2. Branch taken
+    3. Exception entry
+    4. Mode change that refills the pipeline
+    5. Any other event that breaks linear bus flow
+    */ 
+    void InvalidateSequentiality();
+
 private:
     // This is done because ROM0 uses the same bus as ROM1 and ROM2, preventing adjacent accesses
     // across the two waitstate regions from being treated as non-sequential

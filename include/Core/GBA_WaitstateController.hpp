@@ -11,7 +11,7 @@ public:
 
     // Returns total cycles (1 + waitstates) for this access.
     // isSequential is whether the access is sequential (S) or non-sequential (N).
-    int GetCycles(uint32_t address, BusAccessSize size, bool isSequential) const;
+    int GetCycles(GBA_MemoryRegionType region, bool isSequential) const;
 
     bool IsPrefetchEnabled() const { return prefetchEnabled; }
 

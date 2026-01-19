@@ -74,36 +74,142 @@ const GBA_MemoryRegion* GBA_Memory::GetRegionFromType(GBA_MemoryRegionType type)
     }
 }
 
-uint8_t GBA_Memory::Read8(uint32_t address)
+const GBA_MemoryRegionType GBA_Memory::GetRegionTypeFromAddress(uint32_t address) const 
 {
-    
+    switch (address >> 24)
+    {
+        case 0x00: return GBA_MemoryRegionType::BIOS;
+        case 0x02: return GBA_MemoryRegionType::EWRAM;
+        case 0x03: return GBA_MemoryRegionType::IWRAM;
+        case 0x04: return GBA_MemoryRegionType::IO;
+        case 0x05: return GBA_MemoryRegionType::PaletteRAM;
+        case 0x06: return GBA_MemoryRegionType::VRAM;
+        case 0x07: return GBA_MemoryRegionType::OAM;
+        case 0x08: case 0x09: return GBA_MemoryRegionType::ROM0;
+        case 0x0A: case 0x0B: return GBA_MemoryRegionType::ROM1;
+        case 0x0C: case 0x0D: return GBA_MemoryRegionType::ROM2;
+        case 0x0E: return GBA_MemoryRegionType::SRAM;
 
-    return Read<uint8_t>(address, BusAccessSize::Byte);
+        default: return GBA_MemoryRegionType::Invalid;
+    }
 }
 
-uint16_t GBA_Memory::Read16(uint32_t address)
+std::span<const uint8_t> GBA_Memory::GetRegionData(GBA_MemoryRegionType type) const 
 {
-    return Read<uint16_t>(address, BusAccessSize::Halfword);
+    switch (type)
+    {
+        case GBA_MemoryRegionType::BIOS: return *bios;
+        case GBA_MemoryRegionType::EWRAM: return *ewram;
+        case GBA_MemoryRegionType::IWRAM: return *iwram;
+        case GBA_MemoryRegionType::PaletteRAM: return *paletteRam;
+        case GBA_MemoryRegionType::VRAM: return *vram;
+        case GBA_MemoryRegionType::OAM: return *oam;
+        case GBA_MemoryRegionType::ROM0: return *rom0;
+        case GBA_MemoryRegionType::ROM1: return *rom1;
+        case GBA_MemoryRegionType::ROM2: return *rom2;
+        case GBA_MemoryRegionType::SRAM: return *sram;
+
+        default: return {}; // Empty span
+    }
 }
 
-uint32_t GBA_Memory::Read32(uint32_t address)
+std::span<uint8_t> GBA_Memory::GetRegionDataMutable(GBA_MemoryRegionType type) 
 {
-    return Read<uint32_t>(address, BusAccessSize::Word);
+    switch (type)
+    {
+        case GBA_MemoryRegionType::BIOS: return *bios;
+        case GBA_MemoryRegionType::EWRAM: return *ewram;
+        case GBA_MemoryRegionType::IWRAM: return *iwram;
+        case GBA_MemoryRegionType::PaletteRAM: return *paletteRam;
+        case GBA_MemoryRegionType::VRAM: return *vram;
+        case GBA_MemoryRegionType::OAM: return *oam;
+        case GBA_MemoryRegionType::ROM0: return *rom0;
+        case GBA_MemoryRegionType::ROM1: return *rom1;
+        case GBA_MemoryRegionType::ROM2: return *rom2;
+        case GBA_MemoryRegionType::SRAM: return *sram;
+
+        default: return {}; // Empty span
+    }
+}
+
+// Defensive checks are performed at the bus level, 
+// the function assumes the access is valid at this point
+uint8_t GBA_Memory::Read8(uint32_t address, GBA_MemoryRegionType regionType)
+{
+    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    uint32_t offset = address - region->start;
+
+    std::span<const uint8_t> regionData = GetRegionData(regionType);
+    return regionData[offset];
+}
+
+// Defensive checks are performed at the bus level, 
+// the function assumes the access is valid at this point
+uint16_t GBA_Memory::Read16(uint32_t address, GBA_MemoryRegionType regionType)
+{
+    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    uint32_t offset = address - region->start;
+
+    std::span<const uint8_t> regionData = GetRegionData(regionType);
+    uint16_t readValue = 
+        static_cast<uint16_t>(regionData[offset]) | 
+        static_cast<uint16_t>(regionData[offset + 1]) << 8;
+
+    return readValue;
+}
+
+// Defensive checks are performed at the bus level, 
+// the function assumes the access is valid at this point
+uint32_t GBA_Memory::Read32(uint32_t address, GBA_MemoryRegionType regionType)
+{
+    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    uint32_t offset = address - region->start;
+
+    std::span<const uint8_t> regionData = GetRegionData(regionType);
+    uint32_t readValue = 
+        static_cast<uint16_t>(regionData[offset]) |
+        static_cast<uint16_t>(regionData[offset + 1]) << 8  |
+        static_cast<uint16_t>(regionData[offset + 2]) << 16 |
+        static_cast<uint16_t>(regionData[offset + 3]) << 24;
+
+    return readValue;
 }   
 
-void GBA_Memory::Write8(uint32_t address, uint8_t value)
+// Defensive checks are performed at the bus level, 
+// the function assumes the access is valid at this point
+void GBA_Memory::Write8(uint32_t address, uint8_t value, GBA_MemoryRegionType regionType)
 {
-    Write<uint8_t>(address, value);
+    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    uint32_t offset = address - region->start;
+
+    std::span<uint8_t> regionData = GetRegionDataMutable(regionType);
+    regionData[offset] = value;
 }
 
-void GBA_Memory::Write16(uint32_t address, uint16_t value)
+// Defensive checks are performed at the bus level, 
+// the function assumes the access is valid at this point
+void GBA_Memory::Write16(uint32_t address, uint16_t value, GBA_MemoryRegionType regionType)
 {
-    Write<uint16_t>(address, value);
+    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    uint32_t offset = address - region->start;
+
+    std::span<uint8_t> regionData = GetRegionDataMutable(regionType);
+    regionData[offset] = static_cast<uint8_t>(value & 0xFF);
+    regionData[offset + 1] = static_cast<uint8_t>(value >> 8);
 }
 
-void GBA_Memory::Write32(uint32_t address, uint32_t value)
+// Defensive checks are performed at the bus level, 
+// the function assumes the access is valid at this point
+void GBA_Memory::Write32(uint32_t address, uint32_t value, GBA_MemoryRegionType regionType)
 {
-    Write<uint32_t>(address, value);
+    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    uint32_t offset = address - region->start;
+
+    std::span<uint8_t> regionData = GetRegionDataMutable(regionType);
+    regionData[offset] = static_cast<uint8_t>(value & 0xFF);
+    regionData[offset + 1] = static_cast<uint8_t>((value >> 8) & 0xFF);
+    regionData[offset + 2] = static_cast<uint8_t>((value >> 16) & 0xFF);
+    regionData[offset + 3] = static_cast<uint8_t>((value >> 24) & 0xFF);
 }
 
 void GBA_Memory::LoadROM(const std::vector<uint8_t>& romData)
@@ -128,23 +234,26 @@ void GBA_Memory::LoadBIOS(const std::vector<uint8_t>& biosData)
 
 void GBA_Memory::ClearRegion(GBA_MemoryRegionType type)
 {
-    std::span<uint8_t> regionData = GetRegionData(type); 
+    std::span<uint8_t> regionData = GetRegionDataMutable(type); 
     std::fill(regionData.begin(), regionData.end(), 0);
 }
 
 void GBA_Memory::Clear8(uint32_t address)
 {
-    Write8(address, 0);
+    GBA_MemoryRegionType region = GetRegionTypeFromAddress(address);
+    Write8(address, 0, region);
 }
 
 void GBA_Memory::Clear16(uint32_t address)
 {
-    Write16(address, 0);
+    GBA_MemoryRegionType region = GetRegionTypeFromAddress(address);
+    Write16(address, 0, region);
 }
 
 void GBA_Memory::Clear32(uint32_t address)
 {
-    Write32(address, 0);
+    GBA_MemoryRegionType region = GetRegionTypeFromAddress(address);
+    Write32(address, 0, region);
 }
 
 void GBA_Memory::ClearAddressRange(uint32_t startAddress, uint32_t endAddress)
@@ -159,7 +268,7 @@ void GBA_Memory::ClearAddressRange(uint32_t startAddress, uint32_t endAddress)
     if (region->writeMask == RNONE) return;
     if (region->type == GBA_MemoryRegionType::IO) return;
 
-    std::span<uint8_t> regionData = GetRegionData(region->type); 
+    std::span<uint8_t> regionData = GetRegionDataMutable(region->type); 
 
     uint32_t startOffset = startAddress - region->start;
     uint32_t endOffset = endAddress - region->start;
@@ -169,64 +278,4 @@ void GBA_Memory::ClearAddressRange(uint32_t startAddress, uint32_t endAddress)
     std::fill(regionData.begin() + startOffset, regionData.begin() + endOffset + 1, 0); 
 }
 
-void GBA_Memory::ResetSIORegisters()
-{
-    Write16(0x04000128, 0x8000); // RCNT, uses 0x8000 as reset value
-    Clear16(0x0400012A); // JOYCNT
-    Clear32(0x04000130); // JOY_RECV
-    Clear32(0x04000134); // JOY_TRANS
-    Clear32(0x04000138); // JOYSTAT
-}
 
-void GBA_Memory::ResetSoundRegisters()
-{
-    Clear16(0x04000060); // SOUND1CNT_L
-    Clear16(0x04000062); // SOUND1CNT_H
-    Clear32(0x04000064); // SOUND1CNT_X
-
-    Clear32(0x04000068); // SOUND2CNT_L
-    Clear32(0x0400006C); // SOUND2CNT_H
-
-    Clear16(0x04000070); // SOUND3CNT_L
-    Clear16(0x04000072); // SOUND3CNT_H
-    Clear32(0x04000074); // SOUND3CNT_X
-
-    Clear32(0x04000078); // SOUND4CNT_L
-    Clear32(0x0400007C); // SOUND4CNT_H
-
-    Clear16(0x04000080); // SOUNDCNT_L
-    Clear16(0x04000082); // SOUNDCNT_H
-    Clear32(0x04000084); // SOUNDCNT_X
-
-    Write16(0x04000088, 0x0200); // SOUNDBIAS
-
-    Clear32(0x040000A0); // FIFO_A_L
-    Clear32(0x040000A4); // FIFO_B_L
-}
-
-void GBA_Memory::ResetOtherIORegisters()
-{
-    // --- Display ---
-    Write16(0x04000000, 0x0080);                // DISPCNT: forced blank enabled
-    Clear16(0x04000004);                        // DISPSTAT
-    
-    // skip VCOUNT (0x04000006) – read-only
-    ClearAddressRange(0x04000008, 0x04000034);  // BGxCNT/HOFS/VOFS, WIN, MOSAIC, BLDCNT, BLDALPHA, BLDY
-
-    // --- DMA 0–3 ---
-    ClearAddressRange(0x040000B0, 0x040000DE);
-
-    // --- Timers 0–3 ---
-    ClearAddressRange(0x04000100, 0x0400010E);
-
-    // --- Keypad ---
-    Clear16(0x04000130);                        // KEYCNT
-
-    // --- Interrupts & system control ---
-    ClearAddressRange(0x04000200, 0x04000208);  // IE, IF, WAITCNT, IME
-}
-
-void GBA_Memory::Log(const std::string &message, LogType logType, const char* functionName) const
-{
-    core->Log(message, logType, functionName);
-}

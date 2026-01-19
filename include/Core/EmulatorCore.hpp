@@ -52,16 +52,16 @@ protected:
     Logger* logger;
 
     // Core Components:
-    GBA_HLE hle;
-    GBA_CPU cpu;
     GBA_PPU ppu; // For video
     GBA_APU apu; // For audio
     GBA_DMAController dmaController; 
     GBA_TimerController timerController;
     GBA_InterruptController interruptController;
-    GBA_IO io;
     GBA_ROM rom;
+    GBA_IO io;
     GBA_Memory memory;
+    GBA_HLE hle;
     GBA_Bus bus;
+    GBA_CPU cpu;
     //InputHandler inputHandler; // For input handling
 };

@@ -31,28 +31,83 @@ void GBA_WaitstateController::SetWaitstateConfig(uint16_t waitcnt)
 }
 
 
-int GBA_WaitstateController::GetCycles(uint32_t address, BusAccessSize size, bool isSequential) const
+int GBA_WaitstateController::GetCycles(GBA_MemoryRegionType region, bool isSequential) const
 {
-    if (address >= SRAM_START) return 1 + sram_cycles;
-    if (address >= ROM0_START)
+    switch (region)
     {
-        int romRegion;
-        if (address >= ROM2_START) romRegion = 2;
-        else if (address >= ROM1_START) romRegion = 1;
-        else if (address >= ROM0_START) romRegion = 0;
+        case GBA_MemoryRegionType::SRAM:
+            return 1 + sram_cycles;
 
+        case GBA_MemoryRegionType::ROM0:
+            return 1 + (isSequential ? sequentialAccess[0] : nonSequentialAccess[0]);
+
+        case GBA_MemoryRegionType::ROM1:
+            return 1 + (isSequential ? sequentialAccess[1] : nonSequentialAccess[1]);
+
+        case GBA_MemoryRegionType::ROM2:
+            return 1 + (isSequential ? sequentialAccess[2] : nonSequentialAccess[2]);
+
+        case GBA_MemoryRegionType::EWRAM:
+            return 3;
+
+        case GBA_MemoryRegionType::OAM:
+        case GBA_MemoryRegionType::VRAM:
+        case GBA_MemoryRegionType::PaletteRAM:
+            return 1; // TODO: Add +1 cycle if GBA accesses video memory at the same time
+
+        case GBA_MemoryRegionType::Invalid:
+            return 0;
+
+        default:
+            return 1;
+    }
+}
+
+/*
+
+TODO: Prefetch behavior:
+
+What ROM prefetch actually does (hardware reality)
+
+When WAITCNT.PREFETCH = 1:
+The cartridge bus continues fetching sequential 16-bit halfwords
+These halfwords are placed into a small prefetch buffer (effectively a FIFO)
+Instruction fetches can be satisfied from this buffer without incurring ROM waitstates
+
+Critical properties:
+1. Prefetch only applies to ROM
+2. Prefetch only applies to instruction fetches
+3. Prefetch only works for sequential addresses
+4. Any non-ROM access flushes the buffer
+5. Any non-sequential ROM access flushes the buffer
+
+May have to add access type (instruction fetch vs data access)
+*/
+
+/*
+
+Different version of GetCycle():
+
+
+if (region == GBA_MemoryRegionType::SRAM) return 1 + sram_cycles;
+
+    bool isRomRegion =  region == GBA_MemoryRegionType::ROM0 ||
+                        region == GBA_MemoryRegionType::ROM1 || 
+                        region == GBA_MemoryRegionType::ROM2;
+    if (isRomRegion)
+    {
+        uint32_t romRegion = static_cast<uint32_t>(region) - static_cast<uint32_t>(GBA_MemoryRegionType::ROM0);
         if (size == BusAccessSize::Word)
         {
             return 1 + sequentialAccess[romRegion] + nonSequentialAccess[romRegion];
         }
         else
         {
-            int cycles = isSequential ? sequentialAccess[romRegion] : nonSequentialAccess[romRegion];
-            return 1 + cycles;
+            return 1 + (isSequential ? sequentialAccess[romRegion] : nonSequentialAccess[romRegion]);
         }
     }
 
-    if (address >= EWRAM_START && address < IWRAM_START) 
+    if (region == GBA_MemoryRegionType::EWRAM)
     {
         switch (size)
         {
@@ -60,8 +115,17 @@ int GBA_WaitstateController::GetCycles(uint32_t address, BusAccessSize size, boo
             case BusAccessSize::Word: return 6;
         }
     }
-    
-    // Fast internal regions default to 1 cycle (1 + 0 waitstates)
+
+    if (region == GBA_MemoryRegionType::PaletteRAM || region == GBA_MemoryRegionType::VRAM)
+    {
+        switch (size)
+        {
+            case BusAccessSize::Byte: case BusAccessSize::Halfword: return 1;
+            case BusAccessSize::Word: return 2;
+        }
+    }
+
     return 1;
-}
+
+*/
 

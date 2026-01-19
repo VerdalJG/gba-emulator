@@ -25,15 +25,17 @@ public:
  
     const GBA_MemoryRegion* GetRegionFromAddress(uint32_t address) const;
     const GBA_MemoryRegion* GetRegionFromType(GBA_MemoryRegionType type) const;
-    const std::span<uint8_t> GetRegionData(GBA_MemoryRegionType type) const;
+    const GBA_MemoryRegionType GetRegionTypeFromAddress(uint32_t address) const;
+    std::span<const uint8_t> GetRegionData(GBA_MemoryRegionType type) const;
+    std::span<uint8_t> GetRegionDataMutable(GBA_MemoryRegionType type);
     
-    uint8_t Read8(uint32_t address);
-    uint16_t Read16(uint32_t address);
-    uint32_t Read32(uint32_t address);
+    uint8_t Read8(uint32_t address, GBA_MemoryRegionType regionType);
+    uint16_t Read16(uint32_t address, GBA_MemoryRegionType regionType);
+    uint32_t Read32(uint32_t address, GBA_MemoryRegionType regionType);
 
-    void Write8(uint32_t address, uint8_t value);
-    void Write16(uint32_t address, uint16_t value);
-    void Write32(uint32_t address, uint32_t value);
+    void Write8(uint32_t address, uint8_t value, GBA_MemoryRegionType regionType);
+    void Write16(uint32_t address, uint16_t value, GBA_MemoryRegionType regionType);
+    void Write32(uint32_t address, uint32_t value, GBA_MemoryRegionType regionType);
 
     void ClearRegion(GBA_MemoryRegionType type);
     void Clear8(uint32_t address);
@@ -43,19 +45,6 @@ public:
 
     void LoadROM(const std::vector<uint8_t>& romData);
     void LoadBIOS(const std::vector<uint8_t>& biosData);
-
-    void ResetSIORegisters();
-    void ResetSoundRegisters();
-    void ResetOtherIORegisters();
-
-    template <typename T>
-    T GetLastBusValue() const
-    {
-        return static_cast<T>(lastBusAccess.value)
-    }
-    
-    const GBA_WaitstateController& GetWaitstateController() const { return waitstateController; } 
-    void Log(const std::string& message, LogType logType, const char* functionName = "") const;
     
 private:
     std::unique_ptr<std::vector<uint8_t>> bios;
@@ -97,16 +86,6 @@ private:
     EmulatorCore* core;
     GBA_ROM& rom;
     GBA_IO& io;
-    GBA_WaitstateController waitstateController;
-
-    template <typename T>
-    T Read(uint32_t address, BusAccessSize size);
-
-    template <typename T>
-    void Write(uint32_t address, T value);
-
 };
-
-#include "GBA_Memory.tpp"
 
 // https://problemkaputt.de/gbatek-gba-memory-map.htm REFERENCE

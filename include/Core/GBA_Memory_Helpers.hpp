@@ -4,7 +4,6 @@
 #include <vector>
 #include <cmath>
 
-#include "Core/GBA_WaitstateController.hpp"
 #include "Core/GBA_Bus.hpp"
 
 // Memory map locations for GBA (inclusive ranges)
@@ -72,6 +71,20 @@ enum class GBA_MemoryRegionType
     ROM2,
     SRAM,
     Invalid
+};
+
+enum class BusAccessSize
+{
+    Byte = 1,
+    Halfword = 2,
+    Word = 4,
+    Invalid = 0
+};
+
+enum class BusDomain
+{
+    GamePakROM,
+    Other
 };
 
 // Access masks

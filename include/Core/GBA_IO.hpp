@@ -27,6 +27,10 @@ public:
     void Write16(uint32_t address, uint16_t value);
     void Write32(uint32_t address, uint32_t value);
 
+    // void ResetSIORegisters();
+    // void ResetSoundRegisters();
+    // void ResetOtherIORegisters();
+
 private:
     EmulatorCore* core;
     GBA_PPU* ppu;

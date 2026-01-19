@@ -6,15 +6,15 @@
 #include "Core/CPU/Instructions/InstructionHelpers.hpp"
 #include "Utils/Logger.hpp"
 
-class GBA_Memory;
+class GBA_Bus;
 class EmulatorCore;
 
 // Emulates the ARM7TDMI, ARMv4t core
 class GBA_CPU 
 {
 public:
-    GBA_CPU(EmulatorCore* core);
-    ~GBA_CPU();
+    GBA_CPU(EmulatorCore* core, GBA_Bus& bus);
+    ~GBA_CPU() = default;
 
     void Reset();            // Reset to CPU initial state
     void Step();             // Fetch, decode, and execute loop
@@ -63,7 +63,6 @@ public:
     uint32_t GetCurrentInstructionCycles() { return currentInstructionCycles; }
     uint32_t GetCurrentFrameCycles() { return currentFrameCycles; }
 
-    GBA_Memory& GetMemorySystem();
     EmulatorCore* GetEmulatorCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
@@ -107,6 +106,8 @@ protected:
 
 private:
     EmulatorCore* core;
+    GBA_Bus& bus;
+
     uint32_t totalCycles;
     uint32_t currentInstructionCycles;
     uint32_t currentFrameCycles;
@@ -121,13 +122,12 @@ private:
 
 /* TODO NEXT:
 
-- Refactor Halfword data transfer - done
-- Finish Single data transfer and Addressing mode 2 - done
-- Revise these vs GBATEK - done
-- Move onto decoding the last 2 patterns - done
+- Ensure any sort of read/writes are properly called/handled.
+- Fix cpu.read/write function signatures
+- Ensure cycles are added correctly and handled
+- Start working on IO and PPU
 
-- Setup proper Step() function - done
-- Setup real pipeline for instructions - done
+
 - Move decode instruction to CPU_Decoder
 - Potentially move specific instruction structs to their specific hpp's to not clutter InstructionHelpers.hpp/cpp
 - Thumb instruction set (surely fast)

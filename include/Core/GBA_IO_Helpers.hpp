@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 #include <string>
 #include "Core/GBA_Memory_Helpers.hpp"

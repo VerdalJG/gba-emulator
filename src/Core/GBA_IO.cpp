@@ -25,6 +25,7 @@ MemReadResult<uint8_t> GBA_IO::Read8(uint32_t address)
 {
     //uint16_t halfword = Read16(address & ~1u);
     //return (address & 1) ? (halfword >> 8) : (halfword & 0xFF);
+    return {0, false};
 }
 
 MemReadResult<uint16_t> GBA_IO::Read16(uint32_t address)
@@ -59,6 +60,7 @@ MemReadResult<uint32_t> GBA_IO::Read32(uint32_t address)
     //uint16_t low = Read16(address);
     //uint16_t high = Read16(address + 2);
     //return static_cast<uint32_t>(low) | (static_cast<uint32_t>(high) << 16);
+    return {0, false};
 }
 
 void GBA_IO::Write8(uint32_t address, uint8_t value) 

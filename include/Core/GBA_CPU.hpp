@@ -122,7 +122,7 @@ private:
 
 /* TODO NEXT:
 
-- Ensure any sort of read/writes are properly called/handled.
+- Ensure any sort of read/writes are properly called/handled. (at call sites)
 - Fix cpu.read/write function signatures
 - Ensure cycles are added correctly and handled
 - Start working on IO and PPU

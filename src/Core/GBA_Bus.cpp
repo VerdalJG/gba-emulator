@@ -11,67 +11,89 @@ GBA_Bus::GBA_Bus(EmulatorCore* core, GBA_Memory& memory) : core(core), memory(me
 
 uint8_t GBA_Bus::Read8(uint32_t address, uint32_t& cycles) 
 {
+    // Get the region
     GBA_MemoryRegionType regionType = memory.GetRegionTypeFromAddress(address);
     const GBA_MemoryRegion* region = memory.GetRegionFromType(regionType);
-    uint8_t readValue = 0;
 
+    // Cycle calculation
     bool isSequential = IsSequential(address, BusAccessSize::Byte, regionType);
     cycles = waitstateController.GetCycles(regionType, isSequential);
 
-    if (region && region->IsValidAccess(address, AccessType::Read, BusAccessSize::Byte))
-    {
-        readValue = memory.Read8(address, regionType);
-
-        // Update last value
-        uint32_t merged = lastValue;
-        merged = (merged & ~0xFFu) | readValue;
-        lastValue = merged;
-    }
-    else // Open-bus access
+    // Open-bus access
+    if (!region || !region->IsValidAccess(address, AccessType::Read, BusAccessSize::Byte))
     {
         const std::string message = "Invalid Read8 at address: " + std::to_string(address);
         core->Log(message, LogType::Warning);
-        readValue = lastValue & 0xFF; // Return the low 8 bits
+        
+        UpdateLatestAccessValues(address, regionType, BusAccessSize::Byte, false);
+        return lastValue & 0xFF; // Return the low 8 bits
     }
-    
-    UpdateLatestAccessValues(address, regionType, BusAccessSize::Byte, true);
-    return readValue;
+
+    // Perform read
+    MemReadResult<uint8_t> readResult = memory.Read8(address, regionType);
+    uint8_t finalValue = 0;
+
+    if (readResult.valid)
+    {
+        // Update last value
+        lastValue = (lastValue & ~0xFFu) | readResult.value;
+        finalValue = readResult.value;
+    }
+    else // Unused address detected
+    {
+        // Open-bus
+        finalValue = lastValue & 0xFF;
+    }
+
+    UpdateLatestAccessValues(address, regionType, BusAccessSize::Byte, readResult.valid);
+    return finalValue;
 }
 
 uint16_t GBA_Bus::Read16(uint32_t address, uint32_t& cycles) 
 { 
+    // Get the region
     GBA_MemoryRegionType regionType = memory.GetRegionTypeFromAddress(address);
     const GBA_MemoryRegion* region = memory.GetRegionFromType(regionType);
-    uint16_t readValue = 0;
 
+    // Cycle calculation
     bool isSequential = IsSequential(address, BusAccessSize::Halfword, regionType);
     cycles = waitstateController.GetCycles(regionType, isSequential);
 
-    if (region && region->IsValidAccess(address, AccessType::Read, BusAccessSize::Halfword))
-    {
-        readValue = memory.Read16(address, regionType);
-
-        // Update last value
-        uint32_t merged = lastValue;
-        merged = (merged & ~0xFFFFu) | readValue;
-        lastValue = merged;
-    }
-    else // Open-bus access
+    // Open-bus access
+    if (!region || !region->IsValidAccess(address, AccessType::Read, BusAccessSize::Halfword))
     {
         const std::string message = "Invalid Read16 at address: " + std::to_string(address);
         core->Log(message, LogType::Warning);
-        readValue = lastValue & 0xFFFF; // Return the low 16 bits
+        
+        UpdateLatestAccessValues(address, regionType, BusAccessSize::Halfword, false);
+        return lastValue & 0xFFFF; // Return the low 16 bits
     }
-    
-    UpdateLatestAccessValues(address, regionType, BusAccessSize::Halfword, true);
-    return readValue;
+
+    // Perform read
+    MemReadResult<uint16_t> readResult = memory.Read16(address, regionType);
+    uint16_t finalValue = 0;
+
+    if (readResult.valid)
+    {
+        // Update last value
+        lastValue = (lastValue & ~0xFFFFu) | readResult.value;
+        finalValue = readResult.value;
+    }
+    else // Unused address detected
+    {
+        // Open-bus
+        finalValue = lastValue & 0xFFFF;
+    }
+
+    UpdateLatestAccessValues(address, regionType, BusAccessSize::Halfword, readResult.valid);
+    return finalValue;
 }
 
 uint32_t GBA_Bus::Read32(uint32_t address, uint32_t& cycles) 
 { 
+    // Get the region
     GBA_MemoryRegionType regionType = memory.GetRegionTypeFromAddress(address);
     const GBA_MemoryRegion* region = memory.GetRegionFromType(regionType);
-    uint32_t readValue = 0;
 
     // Open-bus access
     if (!region || !region->IsValidAccess(address, AccessType::Read, BusAccessSize::Word))
@@ -79,65 +101,93 @@ uint32_t GBA_Bus::Read32(uint32_t address, uint32_t& cycles)
         const std::string message = "Invalid Read32 at address: " + std::to_string(address);
         core->Log(message, LogType::Warning);
 
+        // Cycle calculation
         cycles = waitstateController.GetCycles(regionType, false);
-        UpdateLatestAccessValues(address, regionType, BusAccessSize::Halfword, false);
+        UpdateLatestAccessValues(address, regionType, BusAccessSize::Word, false);
         return lastValue; // Return the full value
     }
 
+    // Some regions have a 16-bit bus and need 2 accesses to perform a 32 bit read
     int accesses = region->AccessesRequired(BusAccessSize::Word);
 
     // -------- Case A: native 32-bit bus --------
     if (accesses == 1)
     {
+        // Cycle calculation
         bool sequential = IsSequential(address, BusAccessSize::Word, regionType);
         cycles = waitstateController.GetCycles(regionType, sequential);
 
-        readValue = memory.Read32(address, regionType);
-        lastValue = readValue;
+        MemReadResult<uint32_t> readResult = memory.Read32(address, regionType);
+        uint32_t finalValue = 0;
 
-        UpdateLatestAccessValues(address, regionType, BusAccessSize::Word, true);
-        return readValue;
+        if (readResult.valid)
+        {
+            // Update last value
+            lastValue = readResult.value;
+            finalValue = readResult.value;
+        }
+        else // Unused address detected
+        {
+            // Open-bus
+            finalValue = lastValue;
+        }
+
+        UpdateLatestAccessValues(address, regionType, BusAccessSize::Word, readResult.valid);
+        return finalValue;
     }
 
     // -------- Case B: 16-bit bus --------
+    uint32_t finalValue = 0;
 
     // First halfword
     {
         bool sequential = IsSequential(address, BusAccessSize::Halfword, regionType);
         cycles += waitstateController.GetCycles(regionType, sequential);
 
-        uint16_t low = memory.Read16(address, regionType);
-        readValue |= low;
+        MemReadResult<uint16_t> lowReadResult = memory.Read16(address, regionType);
+        uint16_t low = 0;
 
-        lastValue = (lastValue & 0xFFFF0000u) | low;
-        UpdateLatestAccessValues(address, regionType, BusAccessSize::Halfword, true);
+        if (lowReadResult.valid)
+        {
+            // Update last value
+            lastValue = (lastValue & 0xFFFF0000u) | lowReadResult.value;
+            low = lowReadResult.value;
+        }
+        else // Unused address detected
+        {
+            // Open-bus
+            low = lastValue & 0xFFFF;
+        }
+        finalValue |= low;
+        UpdateLatestAccessValues(address, regionType, BusAccessSize::Halfword, lowReadResult.valid);
     }
 
     // Second halfword
     {
         uint32_t address2 = address + 2;
 
-        bool sequential;
-        if (GetBusDomain(regionType) == BusDomain::GamePakROM)
-        {
-            // ROM regions rule: always sequential
-            sequential = true;
-        }
-        else
-        {
-            sequential = IsSequential(address2, BusAccessSize::Halfword, regionType);
-        }
-
+        bool sequential = IsSequential(address2, BusAccessSize::Halfword, regionType);
         cycles += waitstateController.GetCycles(regionType, sequential);
 
-        uint16_t high = memory.Read16(address2, regionType);
-        readValue |= static_cast<uint32_t>(high) << 16;
+        MemReadResult<uint16_t> highReadResult = memory.Read16(address2, regionType);
+        uint16_t high = 0;
 
-        lastValue = (lastValue & 0x0000FFFFu) | (static_cast<uint32_t>(high) << 16);
-        UpdateLatestAccessValues(address2, regionType, BusAccessSize::Halfword, true);
+        if (highReadResult.valid)
+        {
+            // Update last value
+            lastValue = (lastValue & 0x0000FFFFu) | (static_cast<uint32_t>(highReadResult.value) << 16);
+            high = highReadResult.value;
+        }
+        else // Unused address detected
+        {
+            // Open-bus
+            high = static_cast<uint16_t>((lastValue >> 16) & 0xFFFF);
+        }
+        finalValue |= static_cast<uint32_t>(high) << 16;
+        UpdateLatestAccessValues(address2, regionType, BusAccessSize::Halfword, highReadResult.valid);
     }
 
-    return readValue;
+    return finalValue;
 }
 
 void GBA_Bus::Write8(uint32_t address, uint8_t value, uint32_t& cycles) 
@@ -167,6 +217,7 @@ void GBA_Bus::Write16(uint32_t address, uint16_t value, uint32_t& cycles)
     bool sequential = IsSequential(address, BusAccessSize::Halfword, regionType);
     cycles = waitstateController.GetCycles(regionType, sequential);
 
+    // Drive the bus
     lastValue = (lastValue & ~0xFFFFu) | value;
 
     if (region && region->IsValidAccess(address, AccessType::Write, BusAccessSize::Halfword))
@@ -184,13 +235,15 @@ void GBA_Bus::Write32(uint32_t address, uint32_t value, uint32_t& cycles)
 
     if (!region || !region->IsValidAccess(address, AccessType::Write, BusAccessSize::Word))
     {
-        cycles = waitstateController.GetCycles(regionType, false);
+        bool sequential = IsSequential(address, BusAccessSize::Word, regionType);
+        cycles = waitstateController.GetCycles(regionType, sequential);
         lastValue = value;
-        UpdateLatestAccessValues(address, regionType, BusAccessSize::Word, false);
+        UpdateLatestAccessValues(address, regionType, BusAccessSize::Word, true);
         return;
     }
 
     int accesses = region->AccessesRequired(BusAccessSize::Word);
+    cycles = 0;
 
     // -------- Case A: native 32-bit bus --------
     if (accesses == 1)
@@ -222,11 +275,7 @@ void GBA_Bus::Write32(uint32_t address, uint32_t value, uint32_t& cycles)
     {
         uint32_t address2 = address + 2;
 
-        bool sequential =
-            (GetBusDomain(regionType) == BusDomain::GamePakROM)
-                ? true
-                : IsSequential(address2, BusAccessSize::Halfword, regionType);
-
+        bool sequential = IsSequential(address2, BusAccessSize::Halfword, regionType);
         cycles += waitstateController.GetCycles(regionType, sequential);
 
         uint16_t high = value >> 16;
@@ -243,12 +292,12 @@ void GBA_Bus::UpdateLatestAccessValues(uint32_t address,
     lastAccess.address = address;
     lastAccess.region = region;
     lastAccess.size = accessSize;
-    lastAccess.valid = isValid;
+    lastAccess.advancesBus = isValid;
 }
 
 bool GBA_Bus::IsSequential(uint32_t address, BusAccessSize size, GBA_MemoryRegionType region) 
 { 
-    if (!lastAccess.valid)
+    if (!lastAccess.advancesBus)
         return false;
 
     if (GetBusDomain(lastAccess.region) != GetBusDomain(region))
@@ -273,9 +322,8 @@ bool GBA_Bus::IsSequential(uint32_t address, BusAccessSize size, GBA_MemoryRegio
 
 void GBA_Bus::InvalidateSequentiality() 
 {
-    lastAccess.valid = false;
+    lastAccess.advancesBus = false;
 }
-
 
 BusDomain GBA_Bus::GetBusDomain(GBA_MemoryRegionType region) const
 {

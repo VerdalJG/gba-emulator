@@ -134,19 +134,29 @@ std::span<uint8_t> GBA_Memory::GetRegionDataMutable(GBA_MemoryRegionType type)
 
 // Defensive checks are performed at the bus level, 
 // the function assumes the access is valid at this point
-uint8_t GBA_Memory::Read8(uint32_t address, GBA_MemoryRegionType regionType)
+MemReadResult<uint8_t> GBA_Memory::Read8(uint32_t address, GBA_MemoryRegionType regionType)
 {
+    if (regionType == GBA_MemoryRegionType::IO)
+    {
+        return io.Read8(address);
+    }
+
     const GBA_MemoryRegion* region = GetRegionFromType(regionType);
     uint32_t offset = address - region->start;
 
     std::span<const uint8_t> regionData = GetRegionData(regionType);
-    return regionData[offset];
+    return { regionData[offset], true };
 }
 
 // Defensive checks are performed at the bus level, 
 // the function assumes the access is valid at this point
-uint16_t GBA_Memory::Read16(uint32_t address, GBA_MemoryRegionType regionType)
+MemReadResult<uint16_t> GBA_Memory::Read16(uint32_t address, GBA_MemoryRegionType regionType)
 {
+    if (regionType == GBA_MemoryRegionType::IO)
+    {
+        return io.Read16(address);
+    }
+    
     const GBA_MemoryRegion* region = GetRegionFromType(regionType);
     uint32_t offset = address - region->start;
 
@@ -155,13 +165,18 @@ uint16_t GBA_Memory::Read16(uint32_t address, GBA_MemoryRegionType regionType)
         static_cast<uint16_t>(regionData[offset]) | 
         static_cast<uint16_t>(regionData[offset + 1]) << 8;
 
-    return readValue;
+    return { readValue, true };
 }
 
 // Defensive checks are performed at the bus level, 
 // the function assumes the access is valid at this point
-uint32_t GBA_Memory::Read32(uint32_t address, GBA_MemoryRegionType regionType)
+MemReadResult<uint32_t> GBA_Memory::Read32(uint32_t address, GBA_MemoryRegionType regionType)
 {
+    if (regionType == GBA_MemoryRegionType::IO)
+    {
+        return io.Read32(address);
+    }
+
     const GBA_MemoryRegion* region = GetRegionFromType(regionType);
     uint32_t offset = address - region->start;
 
@@ -172,13 +187,18 @@ uint32_t GBA_Memory::Read32(uint32_t address, GBA_MemoryRegionType regionType)
         static_cast<uint16_t>(regionData[offset + 2]) << 16 |
         static_cast<uint16_t>(regionData[offset + 3]) << 24;
 
-    return readValue;
+    return { readValue, true };
 }   
 
 // Defensive checks are performed at the bus level, 
 // the function assumes the access is valid at this point
 void GBA_Memory::Write8(uint32_t address, uint8_t value, GBA_MemoryRegionType regionType)
 {
+    if (regionType == GBA_MemoryRegionType::IO)
+    {
+        return io.Write8(address, value);
+    }
+
     const GBA_MemoryRegion* region = GetRegionFromType(regionType);
     uint32_t offset = address - region->start;
 
@@ -190,6 +210,11 @@ void GBA_Memory::Write8(uint32_t address, uint8_t value, GBA_MemoryRegionType re
 // the function assumes the access is valid at this point
 void GBA_Memory::Write16(uint32_t address, uint16_t value, GBA_MemoryRegionType regionType)
 {
+    if (regionType == GBA_MemoryRegionType::IO)
+    {
+        return io.Write16(address, value);
+    }
+
     const GBA_MemoryRegion* region = GetRegionFromType(regionType);
     uint32_t offset = address - region->start;
 
@@ -202,6 +227,11 @@ void GBA_Memory::Write16(uint32_t address, uint16_t value, GBA_MemoryRegionType 
 // the function assumes the access is valid at this point
 void GBA_Memory::Write32(uint32_t address, uint32_t value, GBA_MemoryRegionType regionType)
 {
+    if (regionType == GBA_MemoryRegionType::IO)
+    {
+        return io.Write32(address, value);
+    }
+
     const GBA_MemoryRegion* region = GetRegionFromType(regionType);
     uint32_t offset = address - region->start;
 

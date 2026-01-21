@@ -3,7 +3,8 @@
 
 #include <assert.h>
 
-GBA_TimerController::GBA_TimerController(EmulatorCore *core) : core(core)
+GBA_TimerController::GBA_TimerController(EmulatorCore *core, IO_TimerRegisters& timerRegisters) : 
+    core(core), timerRegisters(timerRegisters)
 {
     assert(core != nullptr && "TimerController must have valid EmulatorCore object");
 }

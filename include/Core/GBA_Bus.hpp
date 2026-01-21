@@ -9,7 +9,7 @@ struct LastBusAccess
     uint32_t address = 0;
     GBA_MemoryRegionType region = GBA_MemoryRegionType::Invalid;
     BusAccessSize size = BusAccessSize::Invalid;
-    bool valid = false;
+    bool advancesBus = false;
 };
 
 class GBA_Memory;
@@ -40,6 +40,8 @@ public:
     5. Any other event that breaks linear bus flow
     */ 
     void InvalidateSequentiality();
+
+    GBA_WaitstateController& GetWaitstateController() { return waitstateController; }
 
 private:
     // This is done because ROM0 uses the same bus as ROM1 and ROM2, preventing adjacent accesses

@@ -1,14 +1,16 @@
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_Memory_Helpers.hpp"
-
+#include "Core/GBA_Bus.hpp"
 
 #include "Utils/Logger.hpp"
 
-//#include "SDLUtils.hpp"
-
-EmulatorCore::EmulatorCore(Logger* logger) : logger(logger), 
-    ppu(this), apu(this), dmaController(this), timerController(this), interruptController(this), 
-    rom(this), io(this, &ppu, &apu, &dmaController, &timerController, &interruptController),
+EmulatorCore::EmulatorCore(Logger* logger) : logger(logger), io(this), rom(this),
+    ppu(this, io.GetLCDRegisters()),
+    apu(this, io.GetSoundRegisters()), 
+    dmaController(this, io.GetDMARegisters()), 
+    timerController(this, io.GetTimerRegisters()), 
+    interruptController(this, io.GetInterruptRegisters()), 
+    keypad(this, io.GetKeypadRegisters()),  
     memory(this, rom, io), hle(this, memory, io), bus(this, memory), cpu(this, bus)
 {
     if (logger)
@@ -16,6 +18,16 @@ EmulatorCore::EmulatorCore(Logger* logger) : logger(logger),
         // Logging file
         logger->Log("Emulator started", LogType::Info);
     }
+
+    io.AttachSubsystems(
+        &ppu, 
+        &apu, 
+        &dmaController, 
+        &timerController, 
+        &interruptController, 
+        &keypad, 
+        &bus.GetWaitstateController()
+    );
 }
 
 bool EmulatorCore::InitializeCPU()

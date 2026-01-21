@@ -12,6 +12,7 @@
 #include "Core/GBA_APU.hpp"
 #include "Core/GBA_ROM.hpp"
 #include "Core/GBA_IO.hpp"
+#include "Core/GBA_Keypad.hpp"
 
 #include <string>
 #include <vector>
@@ -53,16 +54,16 @@ protected:
     Logger* logger;
 
     // Core Components:
+    GBA_IO io;
+    GBA_ROM rom;
     GBA_PPU ppu; // For video
     GBA_APU apu; // For audio
     GBA_DMAController dmaController; 
     GBA_TimerController timerController;
     GBA_InterruptController interruptController;
-    GBA_ROM rom;
-    GBA_IO io;
+    GBA_Keypad keypad;
     GBA_Memory memory;
     GBA_HLE hle;
     GBA_Bus bus;
     GBA_CPU cpu;
-    //InputHandler inputHandler; // For input handling
 };

@@ -1,7 +1,8 @@
 #include "Core/GBA_PPU.hpp"
 #include <assert.h>
 
-GBA_PPU::GBA_PPU(EmulatorCore *core) : core(core)
+GBA_PPU::GBA_PPU(EmulatorCore *core, IO_LCDRegisters& lcdRegisters) : core(core), 
+    lcdRegisters(lcdRegisters)
 {
     assert(core != nullptr && "PPU must have valid EmulatorCore object");
 }

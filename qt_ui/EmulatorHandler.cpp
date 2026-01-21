@@ -28,6 +28,11 @@ EmulatorHandler::EmulatorHandler() :
     emulatorCore->SetPostStatusCallback(statusUICallback);
 }
 
+EmulatorHandler::~EmulatorHandler() 
+{
+    delete emulatorCore;
+}
+
 void EmulatorHandler::SaveStateToSlot(int slot)
 {
 }

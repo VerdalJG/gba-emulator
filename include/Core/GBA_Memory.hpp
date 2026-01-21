@@ -29,9 +29,9 @@ public:
     std::span<const uint8_t> GetRegionData(GBA_MemoryRegionType type) const;
     std::span<uint8_t> GetRegionDataMutable(GBA_MemoryRegionType type);
     
-    uint8_t Read8(uint32_t address, GBA_MemoryRegionType regionType);
-    uint16_t Read16(uint32_t address, GBA_MemoryRegionType regionType);
-    uint32_t Read32(uint32_t address, GBA_MemoryRegionType regionType);
+    MemReadResult<uint8_t> Read8(uint32_t address, GBA_MemoryRegionType regionType);
+    MemReadResult<uint16_t> Read16(uint32_t address, GBA_MemoryRegionType regionType);
+    MemReadResult<uint32_t> Read32(uint32_t address, GBA_MemoryRegionType regionType);
 
     void Write8(uint32_t address, uint8_t value, GBA_MemoryRegionType regionType);
     void Write16(uint32_t address, uint16_t value, GBA_MemoryRegionType regionType);

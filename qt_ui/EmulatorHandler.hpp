@@ -12,7 +12,7 @@ class EmulatorHandler : public QObject
 
 public:
     EmulatorHandler();
-    ~EmulatorHandler() = default;
+    ~EmulatorHandler();
     int GetSaveStateSlots() const { return saveStateSlots; }
     void SaveStateToSlot(int slot);
     void LoadStateFromSlot(int slot);

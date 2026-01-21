@@ -1,7 +1,8 @@
 #include "Core/GBA_InterruptController.hpp"
 #include <assert.h>
 
-GBA_InterruptController::GBA_InterruptController(EmulatorCore *core) : core(core)
+GBA_InterruptController::GBA_InterruptController(EmulatorCore *core, 
+    IO_InterruptRegisters& interruptRegisters) : core(core), interruptRegisters(interruptRegisters)
 {
     assert(core != nullptr && "APU must have valid EmulatorCore object");
 }

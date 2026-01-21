@@ -1,24 +1,36 @@
 #include "Core/GBA_IO.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_IO_Helpers.hpp"
+#include "Core/GBA_WaitstateController.hpp"
 
-GBA_IO::GBA_IO(EmulatorCore* core, GBA_PPU* ppu, GBA_APU* apu, 
-    GBA_DMAController* dma, GBA_TimerController* timers, 
-    GBA_InterruptController* interrupts) : core(core), ppu(ppu), apu(apu), 
-    dma(dma), timers(timers), 
-    interrupts(interrupts)
-{}
-
-uint8_t GBA_IO::Read8(uint32_t address)
+GBA_IO::GBA_IO(EmulatorCore* core) : core(core)
 {
-    uint16_t halfword = Read16(address & ~1u);
-    return (address & 1) ? (halfword >> 8) : (halfword & 0xFF);
+
 }
 
-uint16_t GBA_IO::Read16(uint32_t address)
+void GBA_IO::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, 
+    GBA_TimerController* timers, GBA_InterruptController* interrupts, GBA_Keypad* keypad, 
+    GBA_WaitstateController* waitstates)
+{
+    this->ppu = ppu;
+    this->apu = apu;
+    this->dma = dma;
+    this->timers = timers;
+    this->interrupts = interrupts;
+    this->keypad = keypad;
+    this->waitstates = waitstates;
+}
+
+MemReadResult<uint8_t> GBA_IO::Read8(uint32_t address) 
+{
+    //uint16_t halfword = Read16(address & ~1u);
+    //return (address & 1) ? (halfword >> 8) : (halfword & 0xFF);
+}
+
+MemReadResult<uint16_t> GBA_IO::Read16(uint32_t address)
 {
     if (address < LCD_END)
-        return ppu->Read16(address);
+        //return ppu->Read16(address);
 
     if (address < SOUND_END)
         //return apu->Read16(address);
@@ -38,15 +50,15 @@ uint16_t GBA_IO::Read16(uint32_t address)
     if (address < IRQ_END)
         //return interrupt->Read16(address);   
 
-    return 0; // For now, should return open bus 
+    return {0, false}; // For now, should return open bus 
 }
 
-uint32_t GBA_IO::Read32(uint32_t address) 
+MemReadResult<uint32_t> GBA_IO::Read32(uint32_t address) 
 {
-    address &= ~3u;
-    uint16_t low = Read16(address);
-    uint16_t high = Read16(address + 2);
-    return static_cast<uint32_t>(low) | (static_cast<uint32_t>(high) << 16);
+    //address &= ~3u;
+    //uint16_t low = Read16(address);
+    //uint16_t high = Read16(address + 2);
+    //return static_cast<uint32_t>(low) | (static_cast<uint32_t>(high) << 16);
 }
 
 void GBA_IO::Write8(uint32_t address, uint8_t value) 

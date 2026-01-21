@@ -85,6 +85,13 @@ enum class BusDomain
     Other
 };
 
+template<typename T>
+struct MemReadResult 
+{
+    T value;
+    bool valid;
+};
+
 // Access masks
 constexpr uint8_t R8 = static_cast<uint8_t>(BusAccessSize::Byte);
 constexpr uint8_t R16 = static_cast<uint8_t>(BusAccessSize::Halfword);

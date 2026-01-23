@@ -146,35 +146,42 @@ void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu)
 {
     SingleDataSwap_Decoded values = SingleDataSwap_Decode(instruction);
 
+        // Check for UNPREDICTABLE conditions
+    if (values.rnIndex == 15 || values.rmIndex == 15 || values.rdIndex == 15)
+    return; // UNPREDICTABLE
+
+    if (values.rdIndex == values.rmIndex || values.rdIndex == values.rnIndex)
+    return; // UNPREDICTABLE
+
     uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
     uint32_t rm = cpu.GetValueAtRegister(values.rmIndex);
     uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
 
-    // Check for UNPREDICTABLE conditions
-    bool usingPC = values.rnIndex == 15 || values.rmIndex == 15 || values.rdIndex == 15;
-    bool allDistinct = values.rnIndex != values.rmIndex &&
-                       values.rnIndex != values.rdIndex &&
-                       values.rmIndex != values.rdIndex;
-
-    if (usingPC || !allDistinct) return; // UNPREDICTABLE
-
-    uint32_t temp;
+    uint32_t readValue;
 
     if (values.bFlag) // SWPB
     {
-        temp = cpu.Read8FromMemory(rn);
-        uint8_t byteToWrite = rm & 0xFF;
-        cpu.Write8ToMemory(rn, byteToWrite);
+        readValue = cpu.Read8FromMemory(rn);
+        cpu.Write8ToMemory(rn, rm & 0xFF);
     }
     else // SWP
     {
-        uint32_t rotatedBytes = (rn & 0b11);
-        uint32_t rotatedBits = rotatedBytes * 8; // Rotate by byte size
-        temp = RotateRight(cpu.Read32FromMemory(rn), rotatedBits); // Normally rotate right is only used for unaligned addresses
-        cpu.Write32ToMemory(rn, rm); 
+        uint32_t alignedAddress = rn & ~3u;
+        uint32_t misalignment = rn & 3u;
+
+        readValue = cpu.Read32FromMemory(alignedAddress);
+
+        // Rotate if misaligned
+        if (misalignment)
+        {
+            readValue = RotateRight(readValue, misalignment * 8);
+        }
+
+        // Aligned write, unrotated
+        cpu.Write32ToMemory(alignedAddress, rm);
     }
 
-    cpu.SetValueAtRegister(values.rdIndex, temp); 
+    cpu.SetValueAtRegister(values.rdIndex, readValue); 
     cpu.AddCycles(CPU_Timings::SWAP_BASE_COST);
 }
 

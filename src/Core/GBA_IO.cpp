@@ -5,12 +5,15 @@
 
 GBA_IO::GBA_IO(EmulatorCore* core) : core(core)
 {
-
+    PopulateIORegistersMap();
+    SetupCallbacks();
 }
 
+
+
 void GBA_IO::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, 
-    GBA_TimerController* timers, GBA_InterruptController* interrupts, GBA_Keypad* keypad, 
-    GBA_WaitstateController* waitstates)
+    GBA_TimerController* timers, GBA_InterruptController* interrupts, GBA_Keypad* keypad,
+    GBA_WaitstateController* waitstates) 
 {
     this->ppu = ppu;
     this->apu = apu;
@@ -23,80 +26,379 @@ void GBA_IO::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma
 
 MemReadResult<uint8_t> GBA_IO::Read8(uint32_t address) 
 {
-    //uint16_t halfword = Read16(address & ~1u);
-    //return (address & 1) ? (halfword >> 8) : (halfword & 0xFF);
-    return {0, false};
+    IORegister* reg = ioMap[address];
+    if (!reg || !reg->readable) return OPENBUS;
+
+    uint32_t shift = (address - reg->address) * sizeof(uint8_t); // Accounting for little-endianess
+    uint8_t read = static_cast<uint8_t>((reg->value >> shift) & 0xFF);
+
+    reg->onRead(address);
+    return { read, true };
 }
 
 MemReadResult<uint16_t> GBA_IO::Read16(uint32_t address)
 {
-    if (address < LCD_END)
-        //return ppu->Read16(address);
+    IORegister* reg = ioMap[address];
+    if (!reg || !reg->readable) return OPENBUS;
 
-    if (address < SOUND_END)
-        //return apu->Read16(address);
+    uint32_t shift = (address - reg->address) * sizeof(uint8_t); 
+    uint16_t read = static_cast<uint16_t>((reg->value >> shift) & 0xFFFF);
 
-    if (address < DMA_END)
-        //return dma->Read16(address);
-
-    if (address < TIMER_END)
-        //return timers->Read16(address);
-
-    if (address < SIO_END)
-        //return sio->Read16(address);
-
-    if (address < KEYPAD_END)
-        //return keypad->Read16(address);   
-    
-    if (address < IRQ_END)
-        //return interrupt->Read16(address);   
-
-    return {0, false}; // For now, should return open bus 
+    reg->onRead(address);
+    return { read, true };
 }
 
 MemReadResult<uint32_t> GBA_IO::Read32(uint32_t address) 
 {
-    //address &= ~3u;
-    //uint16_t low = Read16(address);
-    //uint16_t high = Read16(address + 2);
-    //return static_cast<uint32_t>(low) | (static_cast<uint32_t>(high) << 16);
-    return {0, false};
+    IORegister* reg = ioMap[address];
+    if (!reg || !reg->readable) return OPENBUS;
+
+    uint32_t read = reg->value;
+
+    reg->onRead(address);
+    return { read, true };
 }
 
 void GBA_IO::Write8(uint32_t address, uint8_t value) 
 {
-    
+    IORegister* reg = ioMap[address];
+    if (!reg || !reg->readable) return;
+
+    uint32_t shift = (address - reg->address) * sizeof(uint8_t);
+    reg->value &= ~(0xFFu << shift); // clear the target byte
+    reg->value |= (value << shift); // set the new byte
+
+    reg->onWrite(address, reg->value);
 }
 
 void GBA_IO::Write16(uint32_t address, uint16_t value) 
 {
-    if (address < LCD_END)
-        return ppu->Write16(address, value);
+    IORegister* reg = ioMap[address];
+    if (!reg || !reg->readable) return;
 
-    if (address < SOUND_END)
-        //return apu->Write16(address, value);
+    uint32_t shift = (address - reg->address) * sizeof(uint8_t);
+    reg->value &= ~(0xFFFFu << shift); // clear the target halfword
+    reg->value |= (value << shift); // set the new halfword
 
-    if (address < DMA_END)
-        //return dma->Write16(address, value);
-
-    if (address < TIMER_END)
-        //return timers->Write16(address, value);
-
-    if (address < SIO_END)
-        //return sio->Write16(address, value);
-
-    if (address < KEYPAD_END)
-        //return keypad->Write16(address, value);  
-    
-    if (address < IRQ_END)
-        //return interrupt->Write16(address, value);
-    
-    return; // for compilation error
+    reg->onWrite(address, reg->value);
 }
 
 void GBA_IO::Write32(uint32_t address, uint32_t value) 
 {
+    IORegister* reg = ioMap[address];
+    if (!reg || !reg->readable) return;
 
+    reg->value = value;
+
+    reg->onWrite(address, reg->value);
+}
+
+void GBA_IO::PopulateIORegistersMap()
+{
+    ioMap.clear();
+
+    auto addRegister = [this](IORegister reg) -> void 
+    {
+        for (int i = 0; i < static_cast<size_t>(reg.width); i++)
+        {
+            ioMap[reg.address + i] = &reg;
+        }
+    };
+
+    // ===============================
+    // LCD Registers
+    // ===============================
+    addRegister(lcdRegisters.DISPCNT);
+    addRegister(lcdRegisters.GREENSWAP);
+    addRegister(lcdRegisters.DISPSTAT);
+    addRegister(lcdRegisters.VCOUNT);
+
+    addRegister(lcdRegisters.BG0CNT);
+    addRegister(lcdRegisters.BG1CNT);
+    addRegister(lcdRegisters.BG2CNT);
+    addRegister(lcdRegisters.BG3CNT);
+
+    addRegister(lcdRegisters.BG0HOFS);
+    addRegister(lcdRegisters.BG0VOFS);
+    addRegister(lcdRegisters.BG1HOFS);
+    addRegister(lcdRegisters.BG1VOFS);
+    addRegister(lcdRegisters.BG2HOFS);
+    addRegister(lcdRegisters.BG2VOFS);
+    addRegister(lcdRegisters.BG3HOFS);
+    addRegister(lcdRegisters.BG3VOFS);
+
+    addRegister(lcdRegisters.BG2PA);
+    addRegister(lcdRegisters.BG2PB);
+    addRegister(lcdRegisters.BG2PC);
+    addRegister(lcdRegisters.BG2PD);
+
+    addRegister(lcdRegisters.BG2X);
+    addRegister(lcdRegisters.BG2Y);
+
+    addRegister(lcdRegisters.BG3PA);
+    addRegister(lcdRegisters.BG3PB);
+    addRegister(lcdRegisters.BG3PC);
+    addRegister(lcdRegisters.BG3PD);
+
+    addRegister(lcdRegisters.BG3X);
+    addRegister(lcdRegisters.BG3Y);
+
+    addRegister(lcdRegisters.WIN0H);
+    addRegister(lcdRegisters.WIN1H);
+    addRegister(lcdRegisters.WIN0V);
+    addRegister(lcdRegisters.WIN1V);
+
+    addRegister(lcdRegisters.WININ);
+    addRegister(lcdRegisters.WINOUT);
+
+    addRegister(lcdRegisters.MOSAIC);
+
+    addRegister(lcdRegisters.BLDCNT);
+    addRegister(lcdRegisters.BLDALPHA);
+    addRegister(lcdRegisters.BLDY);
+
+    // ===============================
+    // Sound Registers
+    // ===============================
+    addRegister(soundRegisters.SOUND1CNT_L);
+    addRegister(soundRegisters.SOUND1CNT_H);
+    addRegister(soundRegisters.SOUND1CNT_X);
+
+    addRegister(soundRegisters.SOUND2CNT_L);
+    addRegister(soundRegisters.SOUND2CNT_H);
+
+    addRegister(soundRegisters.SOUND3CNT_L);
+    addRegister(soundRegisters.SOUND3CNT_H);
+    addRegister(soundRegisters.SOUND3CNT_X);
+
+    addRegister(soundRegisters.SOUND4CNT_L);
+    addRegister(soundRegisters.SOUND4CNT_H);
+
+    addRegister(soundRegisters.SOUNDCNT_L);
+    addRegister(soundRegisters.SOUNDCNT_H);
+    addRegister(soundRegisters.SOUNDCNT_X);
+
+    addRegister(soundRegisters.SOUNDBIAS);
+    addRegister(soundRegisters.WAVE_RAM);
+
+    addRegister(soundRegisters.FIFO_A);
+    addRegister(soundRegisters.FIFO_B);
+
+    // ===============================
+    // DMA Registers
+    // ===============================
+    addRegister(dmaRegisters.DMA0SAD);
+    addRegister(dmaRegisters.DMA0DAD);
+    addRegister(dmaRegisters.DMA0CNT_L);
+    addRegister(dmaRegisters.DMA0CNT_H);
+
+    addRegister(dmaRegisters.DMA1SAD);
+    addRegister(dmaRegisters.DMA1DAD);
+    addRegister(dmaRegisters.DMA1CNT_L);
+    addRegister(dmaRegisters.DMA1CNT_H);
+
+    addRegister(dmaRegisters.DMA2SAD);
+    addRegister(dmaRegisters.DMA2DAD);
+    addRegister(dmaRegisters.DMA2CNT_L);
+    addRegister(dmaRegisters.DMA2CNT_H);
+
+    addRegister(dmaRegisters.DMA3SAD);
+    addRegister(dmaRegisters.DMA3DAD);
+    addRegister(dmaRegisters.DMA3CNT_L);
+    addRegister(dmaRegisters.DMA3CNT_H);
+
+    // ===============================
+    // Timer Registers
+    // ===============================
+    addRegister(timerRegisters.TM0CNT_L);
+    addRegister(timerRegisters.TM0CNT_H);
+    addRegister(timerRegisters.TM1CNT_L);
+    addRegister(timerRegisters.TM1CNT_H);
+    addRegister(timerRegisters.TM2CNT_L);
+    addRegister(timerRegisters.TM2CNT_H);
+    addRegister(timerRegisters.TM3CNT_L);
+    addRegister(timerRegisters.TM3CNT_H);
+
+    // ===============================
+    // Serial Registers
+    // ===============================
+    addRegister(serialRegisters.SIODATA32);
+    addRegister(serialRegisters.SIOMULTI0);
+    addRegister(serialRegisters.SIOMULTI1);
+    addRegister(serialRegisters.SIOMULTI2);
+    addRegister(serialRegisters.SIOMULTI3);
+    addRegister(serialRegisters.SIOCNT);
+    addRegister(serialRegisters.SIOMLT_SEND);
+    addRegister(serialRegisters.SIODATA8);
+    addRegister(serialRegisters.RCNT);
+    addRegister(serialRegisters.IR);
+    addRegister(serialRegisters.JOYCNT);
+    addRegister(serialRegisters.JOY_RECV);
+    addRegister(serialRegisters.JOY_TRANS);
+    addRegister(serialRegisters.JOYSTAT);
+
+    // ===============================
+    // Keypad Registers
+    // ===============================
+    addRegister(keypadRegisters.KEYINPUT);
+    addRegister(keypadRegisters.KEYCNT);
+
+    // ===============================
+    // Interrupt Registers
+    // ===============================
+    addRegister(interruptRegisters.IE);
+    addRegister(interruptRegisters.IF);
+    addRegister(interruptRegisters.IME);
+
+    // ===============================
+    // Misc Registers
+    // ===============================
+    addRegister(miscRegisters.WAITCNT);
+    addRegister(miscRegisters.POSTFLG);
+    addRegister(miscRegisters.HALTCNT);
+}
+
+void GBA_IO::SetupCallbacks() 
+{
+    SetupLCDReadCallbacks();
+    SetupLCDWriteCallbacks();
+
+    // SetupTimerReadCallbacks();
+    // SetupTimerWriteCallbacks();
+
+    // SetupDMAReadCallbacks();
+    // SetupDMAWriteCallbacks();
+
+    // SetupSoundReadCallbacks();
+    // SetupSoundWriteCallbacks();
+
+    // SetupInterruptCallbacks();
+}
+
+void GBA_IO::SetupLCDReadCallbacks() 
+{
+    // DISPCNT — readable, static
+    // No callback needed (direct storage)
+
+    // DISPSTAT — readable, contains live flags (VBlank/HBlank/VCount)
+    lcdRegisters.DISPSTAT.onRead =
+        [this](uint32_t address) -> uint32_t
+        {
+            // TODO: Replace with real PPU state
+            // Bits 0-2 are status flags, rest is writable configuration
+            return lcdRegisters.DISPSTAT.value;
+        };
+
+    // VCOUNT — live scanline counter
+    lcdRegisters.VCOUNT.onRead =
+        [this](uint32_t address) -> uint32_t
+        {
+            // TODO: Hook to PPU current scanline
+            return lcdRegisters.VCOUNT.value;
+        };
+
+    // BGxCNT — readable, static
+    // No callback needed
+
+    // BGxHOFS / BGxVOFS — readable, static
+    // No callback needed
+
+    // BGxPA/B/C/D — readable, affine params
+    // No callback needed
+
+    // BGxX / BGxY — readable, latched affine reference
+    // Some emulators return internal latched value here
+    // For now, stored value is acceptable
+
+    // WININ / WINOUT — readable
+    // No callback needed
+
+    // MOSAIC — readable
+    // No callback needed
+
+    // BLDCNT / BLDALPHA / BLDY — readable
+    // No callback needed
+}
+
+void GBA_IO::SetupLCDWriteCallbacks() 
+{
+    // DISPCNT — controls display
+    lcdRegisters.DISPCNT.onWrite =
+        [this](uint32_t address, uint32_t value)
+        {
+            // TODO: Update PPU display control
+            // ppu.SetDisplayControl(value);
+        };
+
+    // GREENSWAP — undocumented green swap
+    lcdRegisters.GREENSWAP.onWrite =
+        [this](uint32_t address, uint32_t value)
+        {
+            // TODO: Apply green swap effect in PPU
+            // ppu.SetGreenSwap(value);
+        };
+
+    // DISPSTAT — interrupt and scanline control
+    lcdRegisters.DISPSTAT.onWrite =
+        [this](uint32_t address, uint32_t value)
+        {
+            // TODO: Update HBlank/VBlank/LYC interrupt enables
+            // ppu.SetDispStatInterrupts(value);
+        };
+
+    // VCOUNT — read-only in hardware, write ignored
+    lcdRegisters.VCOUNT.onWrite =
+        [](uint32_t, uint32_t) { /* ignored */ };
+
+    // BGxCNT — background control
+    lcdRegisters.BG0CNT.onWrite =
+        [this](uint32_t, uint32_t value)
+        {
+            // TODO: ppu.SetBGControl(0, value);
+        };
+    lcdRegisters.BG1CNT.onWrite =
+        [this](uint32_t, uint32_t value)
+        {
+            // TODO: ppu.SetBGControl(1, value);
+        };
+    lcdRegisters.BG2CNT.onWrite =
+        [this](uint32_t, uint32_t value)
+        {
+            // TODO: ppu.SetBGControl(2, value);
+        };
+    lcdRegisters.BG3CNT.onWrite =
+        [this](uint32_t, uint32_t value)
+        {
+            // TODO: ppu.SetBGControl(3, value);
+        };
+
+    // BGxHOFS / BGxVOFS — background offsets
+    lcdRegisters.BG0HOFS.onWrite = 
+        [this](uint32_t, uint32_t value)
+        {
+            // TODO: ppu.SetBGOffset(0, value, lcdRegisters.BG0VOFS.value);
+        };
+    lcdRegisters.BG0VOFS.onWrite = 
+        [this](uint32_t, uint32_t value)
+        {
+            // TODO: ppu.SetBGOffset(0, lcdRegisters.BG0HOFS.value, value);
+        };
+
+    // …and similarly for BG1HOFS/VOFS, BG2HOFS/VOFS, BG3HOFS/VOFS
+
+    // WIN0H / WIN1H / WIN0V / WIN1V — window dimensions
+    lcdRegisters.WIN0H.onWrite =
+        [this](uint32_t, uint32_t value)
+        {
+            // TODO: ppu.SetWindow0H(value);
+        };
+
+    // BLDCNT / BLDALPHA / BLDY — blending control
+    lcdRegisters.BLDCNT.onWrite =
+        [this](uint32_t, uint32_t value)
+        {
+            // TODO: ppu.SetBlending(value);
+        };
 }
 
 // void GBA_Memory::ResetSIORegisters()

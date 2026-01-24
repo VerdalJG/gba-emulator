@@ -15,10 +15,6 @@ public:
 
     void Step(uint32_t cycles);
 
-    uint16_t Read16(uint32_t address);
-
-    void Write16(uint32_t address, uint16_t value);
-
 private:
     EmulatorCore* core;
     IO_LCDRegisters& lcdRegisters;

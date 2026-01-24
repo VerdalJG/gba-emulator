@@ -27,7 +27,7 @@ void GBA_IO::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma
 MemReadResult<uint8_t> GBA_IO::Read8(uint32_t address) 
 {
     IORegister* reg = ioMap[address];
-    if (!reg || !reg->readable) return OPENBUS;
+    if (!reg || !reg->readable) return OPEN_BUS;
 
     uint32_t shift = (address - reg->address) * sizeof(uint8_t); // Accounting for little-endianess
     uint8_t read = static_cast<uint8_t>((reg->value >> shift) & 0xFF);
@@ -39,7 +39,7 @@ MemReadResult<uint8_t> GBA_IO::Read8(uint32_t address)
 MemReadResult<uint16_t> GBA_IO::Read16(uint32_t address)
 {
     IORegister* reg = ioMap[address];
-    if (!reg || !reg->readable) return OPENBUS;
+    if (!reg || !reg->readable) return OPEN_BUS;
 
     uint32_t shift = (address - reg->address) * sizeof(uint8_t); 
     uint16_t read = static_cast<uint16_t>((reg->value >> shift) & 0xFFFF);
@@ -51,7 +51,7 @@ MemReadResult<uint16_t> GBA_IO::Read16(uint32_t address)
 MemReadResult<uint32_t> GBA_IO::Read32(uint32_t address) 
 {
     IORegister* reg = ioMap[address];
-    if (!reg || !reg->readable) return OPENBUS;
+    if (!reg || !reg->readable) return OPEN_BUS;
 
     uint32_t read = reg->value;
 

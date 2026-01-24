@@ -16,12 +16,3 @@ void GBA_PPU::Step(uint32_t cycles)
 {
 }
 
-uint16_t GBA_PPU::Read16(uint32_t address) 
-{ 
-    return 0; 
-}
-
-void GBA_PPU::Write16(uint32_t address, uint16_t value) 
-{ 
-    return; 
-}

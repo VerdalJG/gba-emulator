@@ -12,13 +12,8 @@ GBA_ROM::GBA_ROM(EmulatorCore *core) : core(core)
 void GBA_ROM::LoadROM(const std::vector<uint8_t>& romData)
 {
     this->romData = std::make_shared<std::vector<uint8_t>>(romData);
-
-    // Ensure rom data is at least 32 MB - 
-    // NOT CORRECT MIRRORING BEHAVIOR BUT should be simple and stable
-    if (this->romData->size() < ROM_BANK_SIZE)
-    {
-        this->romData->resize(ROM_BANK_SIZE, 0xFF);
-    }
+    ParseHeader();
+    PrintROMInfo();
 }
 
 void GBA_ROM::PrintROMInfo()

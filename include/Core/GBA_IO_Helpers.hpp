@@ -4,7 +4,7 @@
 #include <functional>
 #include "Core/GBA_Memory_Helpers.hpp"
 
-#define OPEN_BUS {0, false}
+
 
 // TODO: probably not needed
 // constexpr uint32_t LCD_END     = 0x04000060;

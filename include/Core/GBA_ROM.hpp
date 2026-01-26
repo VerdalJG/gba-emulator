@@ -42,13 +42,13 @@ public:
     void LoadROM(const std::vector<uint8_t>& romData);
 
     // ROM info
-    std::shared_ptr<std::vector<uint8_t>> GetROMData() const { return romData; }
+    std::shared_ptr<const std::vector<uint8_t>> GetROMData() const { return romData; }
     size_t GetSize() const { return romData->size(); }
     const ROM_Header& GetHeader() const { return header; }
     void PrintROMInfo();
 
 private:
-    std::shared_ptr<std::vector<uint8_t>> romData;
+    std::shared_ptr<const std::vector<uint8_t>> romData;
     ROM_Header header;
     EmulatorCore* core;
     bool valid;

@@ -19,3 +19,7 @@ private:
     EmulatorCore* core;
     IO_LCDRegisters& lcdRegisters;
 };
+
+
+// Documentation: 
+// https://www.reddit.com/r/EmuDev/comments/116nrtf/cycleaccurate_ppu_emulation_in_nanoboyadvance_my/

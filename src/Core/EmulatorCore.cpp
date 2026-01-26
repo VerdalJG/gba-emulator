@@ -81,7 +81,7 @@ bool EmulatorCore::LoadROM(const std::vector<uint8_t>& romData)
     }
 
     rom.LoadROM(romData);
-    memory.LoadROM(romData);
+    memory.InitROMBanks();
 
     return true;
 }

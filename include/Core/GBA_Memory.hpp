@@ -28,6 +28,7 @@ public:
     const GBA_MemoryRegionType GetRegionTypeFromAddress(uint32_t address) const;
     std::span<const uint8_t> GetRegionData(GBA_MemoryRegionType type) const;
     std::span<uint8_t> GetRegionDataMutable(GBA_MemoryRegionType type);
+    uint32_t ComputeAccessOffset(uint32_t address, GBA_MemoryRegionType regionType);
     
     MemReadResult<uint8_t> Read8(uint32_t address, GBA_MemoryRegionType regionType);
     MemReadResult<uint16_t> Read16(uint32_t address, GBA_MemoryRegionType regionType);
@@ -43,7 +44,7 @@ public:
     void Clear32(uint32_t address);
     void ClearAddressRange(uint32_t startAddress, uint32_t endAddress);
 
-    void LoadROM(const std::vector<uint8_t>& romData);
+    void InitROMBanks();
     void LoadBIOS(const std::vector<uint8_t>& biosData);
     
 private:
@@ -53,31 +54,31 @@ private:
     std::unique_ptr<std::vector<uint8_t>> paletteRam;
     std::unique_ptr<std::vector<uint8_t>> vram;
     std::unique_ptr<std::vector<uint8_t>> oam;
-    std::unique_ptr<std::vector<uint8_t>> rom0;
-    std::unique_ptr<std::vector<uint8_t>> rom1;
-    std::unique_ptr<std::vector<uint8_t>> rom2;
+    std::span<const uint8_t> rom0View;
+    std::span<const uint8_t> rom1View;
+    std::span<const uint8_t> rom2View;
     std::unique_ptr<std::vector<uint8_t>> sram;
     
     // General internal memory
-    GBA_MemoryRegion biosRegion = GBA_MemoryRegion(BIOS_START, BIOS_END, BusAccessSize::Word, RALL, RNONE, GBA_MemoryRegionType::BIOS);
-    GBA_MemoryRegion ewramRegion = GBA_MemoryRegion(EWRAM_START, EWRAM_END, BusAccessSize::Halfword, RALL, RALL, GBA_MemoryRegionType::EWRAM); // External work RAM
-    GBA_MemoryRegion iwramRegion = GBA_MemoryRegion(IWRAM_START, IWRAM_END, BusAccessSize::Word, RALL, RALL, GBA_MemoryRegionType::IWRAM); // Internal work RAM
-    GBA_MemoryRegion ioRegion = GBA_MemoryRegion(IO_START, IO_END, BusAccessSize::Word, RALL, RALL, GBA_MemoryRegionType::IO);
+    GBA_MemoryRegion biosRegion = GBA_MemoryRegion(BIOS_START, BIOS_END, BIOS_SIZE, BusAccessSize::Word, RALL, RNONE, GBA_MemoryRegionType::BIOS, Mirroring::NoMirror);
+    GBA_MemoryRegion ewramRegion = GBA_MemoryRegion(EWRAM_START, EWRAM_END, EWRAM_SIZE, BusAccessSize::Halfword, RALL, RALL, GBA_MemoryRegionType::EWRAM, Mirroring::Mirror); // External work RAM
+    GBA_MemoryRegion iwramRegion = GBA_MemoryRegion(IWRAM_START, IWRAM_END, IWRAM_SIZE, BusAccessSize::Word, RALL, RALL, GBA_MemoryRegionType::IWRAM, Mirroring::Mirror); // Internal work RAM
+    GBA_MemoryRegion ioRegion = GBA_MemoryRegion(IO_START, IO_END, IO_SIZE, BusAccessSize::Word, RALL, RALL, GBA_MemoryRegionType::IO, Mirroring::SpecialMirror);
 
     // Internal display memory (+ 1 cycle if GBA accesses video memory at the same time)
-    GBA_MemoryRegion paletteRamRegion = GBA_MemoryRegion(PALETTE_RAM_START, PALETTE_RAM_END, BusAccessSize::Halfword, RALL, R16_32, GBA_MemoryRegionType::PaletteRAM);
-    GBA_MemoryRegion vramRegion = GBA_MemoryRegion(VRAM_START, VRAM_END, BusAccessSize::Halfword, RALL, R16_32, GBA_MemoryRegionType::VRAM); // Video RAM
-    GBA_MemoryRegion oamRegion = GBA_MemoryRegion(OAM_START, OAM_END, BusAccessSize::Word, RALL, R16_32, GBA_MemoryRegionType::OAM) ; // Object-Attribute RAM
+    GBA_MemoryRegion paletteRamRegion = GBA_MemoryRegion(PALETTE_RAM_START, PALETTE_RAM_END, PALETTE_RAM_SIZE, BusAccessSize::Halfword, RALL, R16_32, GBA_MemoryRegionType::PaletteRAM, Mirroring::Mirror);
+    GBA_MemoryRegion vramRegion = GBA_MemoryRegion(VRAM_START, VRAM_END, VRAM_TOTAL_SIZE, BusAccessSize::Halfword, RALL, R16_32, GBA_MemoryRegionType::VRAM, Mirroring::SpecialMirror); // Video RAM
+    GBA_MemoryRegion oamRegion = GBA_MemoryRegion(OAM_START, OAM_END, OAM_SIZE, BusAccessSize::Word, RALL, R16_32, GBA_MemoryRegionType::OAM, Mirroring::Mirror); // Object-Attribute RAM
     
     // External memory (cartridge)
 
     // ROM0/ROM1/ROM2 all point to the same ROM data but differ by waitstate timing.
     // ROM1 and ROM2 are mirrors of ROM0 at different addresses (for access timing differences).
 
-    GBA_MemoryRegion rom0Region = GBA_MemoryRegion(ROM0_START, ROM0_END, BusAccessSize::Halfword, RALL, RNONE, GBA_MemoryRegionType::ROM0);
-    GBA_MemoryRegion rom1Region = GBA_MemoryRegion(ROM1_START, ROM1_END, BusAccessSize::Halfword, RALL, RNONE, GBA_MemoryRegionType::ROM1);
-    GBA_MemoryRegion rom2Region = GBA_MemoryRegion(ROM2_START, ROM2_END, BusAccessSize::Halfword, RALL, RNONE, GBA_MemoryRegionType::ROM2);
-    GBA_MemoryRegion sramRegion = GBA_MemoryRegion(SRAM_START, SRAM_END, BusAccessSize::Byte, R8, R8, GBA_MemoryRegionType::SRAM);
+    GBA_MemoryRegion rom0Region = GBA_MemoryRegion(ROM0_START, ROM0_END, ROM_BANK_SIZE, BusAccessSize::Halfword, RALL, RNONE, GBA_MemoryRegionType::ROM0, Mirroring::NoMirror);
+    GBA_MemoryRegion rom1Region = GBA_MemoryRegion(ROM1_START, ROM1_END, ROM_BANK_SIZE, BusAccessSize::Halfword, RALL, RNONE, GBA_MemoryRegionType::ROM1, Mirroring::NoMirror);
+    GBA_MemoryRegion rom2Region = GBA_MemoryRegion(ROM2_START, ROM2_END, ROM_BANK_SIZE, BusAccessSize::Halfword, RALL, RNONE, GBA_MemoryRegionType::ROM2, Mirroring::NoMirror);
+    GBA_MemoryRegion sramRegion = GBA_MemoryRegion(SRAM_START, SRAM_END, SRAM_SIZE, BusAccessSize::Byte, R8, R8, GBA_MemoryRegionType::SRAM, Mirroring::SpecialMirror);
 
     // All memory (except GamePak SRAM) can be accessed by 16bit and 32bit DMA.
 

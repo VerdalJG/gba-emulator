@@ -1,21 +1,21 @@
 #include "SDLUtils.hpp"
 
-void AddInitFlag(SDL_InitFlags &flags, int flagToAdd)
+void AddInitFlag(SDL_InitFlags& flags, int flagToAdd)
 {
     flags |= flagToAdd;
 }
 
-void RemoveInitFlag(SDL_InitFlags &flags, int flagToRemove)
+void RemoveInitFlag(SDL_InitFlags& flags, int flagToRemove)
 {
     flags &= ~flagToRemove;
 }
 
-void AddWindowFlag(SDL_WindowFlags &flags, int flagToAdd)
+void AddWindowFlag(SDL_WindowFlags& flags, int flagToAdd)
 {
     flags |= flagToAdd;
 }
 
-void RemoveWindowFlag(SDL_WindowFlags &flags, int flagToRemove)
+void RemoveWindowFlag(SDL_WindowFlags& flags, int flagToRemove)
 {
     flags &= ~flagToRemove;
 }
@@ -30,7 +30,7 @@ bool InitSDL(SDL_InitFlags flags)
     return true;
 }
 
-bool CreateWindow(SDL_Window *&window, SDL_WindowFlags flags, const char *title, int width, int height)
+bool CreateWindow_SDL(SDL_Window*& window, SDL_WindowFlags flags, const char *title, int width, int height)
 {
     window = SDL_CreateWindow(title, width, height, flags);
     if (!window)
@@ -42,7 +42,7 @@ bool CreateWindow(SDL_Window *&window, SDL_WindowFlags flags, const char *title,
     return true;
 }
 
-bool CreateRenderer(SDL_Renderer *&renderer, SDL_Window *window, const char *driverName)
+bool CreateRenderer_SDL(SDL_Renderer*& renderer, SDL_Window *window, const char *driverName)
 {
    renderer = SDL_CreateRenderer(window, NULL); // NULL makes SDL choose the best available renderer
     if (!renderer)

@@ -18,7 +18,7 @@ endif()
 # FetchContent inclusion - required for googletest
 include(FetchContent)
 
-#Find SDL3 package
+# Find SDL3 package
 if(NOT DEFINED ENV{SDL3_DIR})
   message(FATAL_ERROR "Please set SDL3_DIR environment variable")
 endif()
@@ -26,7 +26,7 @@ endif()
 set(CMAKE_PREFIX_PATH "$ENV{SDL3_DIR}" CACHE PATH "SDL3 path")
 find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3-shared)
 
-#Find Qt package
+# Find Qt package
 if(NOT DEFINED ENV{Qt_DIR})
   message(FATAL_ERROR "Please set Qt_DIR environment variable")
 endif()
@@ -45,6 +45,22 @@ target_include_directories(GBA-Emulator PUBLIC ${PROJECT_SOURCE_DIR}/include)
 # Link to Qt and SDL3
 target_link_libraries(GBA-Emulator PRIVATE 
     GBAQtUI
+)
+
+# Copy SDL3 runtime (DLL) next to executable
+add_custom_command(TARGET GBA-Emulator POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:SDL3::SDL3-shared>
+        $<TARGET_FILE_DIR:GBA-Emulator>
+)
+
+# Copy BIOS next to executable
+add_custom_command(TARGET GBA-Emulator POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+        $<TARGET_FILE_DIR:GBA-Emulator>/bios
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/bios/gba_bios.bin
+        $<TARGET_FILE_DIR:GBA-Emulator>/bios/gba_bios.bin
 )
 
 # Google test

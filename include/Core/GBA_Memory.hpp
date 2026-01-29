@@ -81,7 +81,6 @@ private:
     GBA_MemoryRegion sramRegion = GBA_MemoryRegion(SRAM_START, SRAM_END, SRAM_SIZE, BusAccessSize::Byte, R8, R8, GBA_MemoryRegionType::SRAM, Mirroring::SpecialMirror);
 
     // All memory (except GamePak SRAM) can be accessed by 16bit and 32bit DMA.
-
     // The GBA has unused memory area after the SRAM, which goes from 0x10000000 to 0xFFFFFFFF
 
     EmulatorCore* core;

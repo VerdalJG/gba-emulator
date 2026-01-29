@@ -152,4 +152,30 @@ struct GBA_MemoryRegion
 
         return (access + bus - 1) / bus;
     }
+
+    /*
+    VRAM, OAM, and Palette RAM Access
+    - These memory regions can be accessed during H-Blank or V-Blank only 
+    (unless display is disabled by Forced Blank bit in DISPCNT register).
+    
+    - There is an additional restriction for OAM memory: Accesses during H-Blank are allowed only if 
+    'H-Blank Interval Free' in DISPCNT is set (which'd reduce number of display-able OBJs though).
+    
+    - The CPU appears to be able to access VRAM/OAM/Palette at any time, a waitstate (one clock cycle) 
+    being inserted automatically in case that the display controller was accessing memory simultaneously. 
+    (Ie. unlike as in old 8bit gameboy, the data will not get lost.)
+    */
+    bool IsVideoMemory() const
+    {       
+        return  type == GBA_MemoryRegionType::PaletteRAM ||
+                type == GBA_MemoryRegionType::VRAM ||
+                type == GBA_MemoryRegionType::OAM;
+    }
+    
+    bool IsROMRegion() const
+    {
+        return  type == GBA_MemoryRegionType::ROM0 ||
+                type == GBA_MemoryRegionType::ROM1 ||
+                type == GBA_MemoryRegionType::ROM2;
+    }
 };

@@ -66,13 +66,13 @@ public:
     EmulatorCore* GetEmulatorCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
-    uint8_t Read8FromMemory(uint32_t address);
-    uint16_t Read16FromMemory(uint32_t address);
-    uint32_t Read32FromMemory(uint32_t address);
+    uint8_t Read8_Bus(uint32_t address);
+    uint16_t Read16_Bus(uint32_t address);
+    uint32_t Read32_Bus(uint32_t address);
 
-    void Write8ToMemory(uint32_t address, uint8_t value);
-    void Write16ToMemory(uint32_t address, uint16_t value);
-    void Write32ToMemory(uint32_t address, uint32_t value);
+    void Write8_Bus(uint32_t address, uint8_t value);
+    void Write16_Bus(uint32_t address, uint16_t value);
+    void Write32_Bus(uint32_t address, uint32_t value);
 
     void InvalidateSequentiality(); 
 

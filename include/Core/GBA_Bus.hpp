@@ -12,21 +12,34 @@ struct LastBusAccess
     bool advancesBus = false;
 };
 
-class GBA_Memory;
+enum class BusRequester
+{
+    CPU,
+    PPU,
+    APU,
+    DMA
+};
+
 class EmulatorCore;
+class GBA_Memory;
+class GBA_PPU;
+class GBA_APU;
+class GBA_DMAController;
 
 class GBA_Bus
 {
 public:
     GBA_Bus(EmulatorCore* core, GBA_Memory& memory);
 
-    uint8_t Read8(uint32_t address, uint32_t& cycles);
-    uint16_t Read16(uint32_t address, uint32_t& cycles);
-    uint32_t Read32(uint32_t address, uint32_t& cycles);
+    void AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma);
+
+    uint8_t Read8(uint32_t address, BusRequester requester, uint32_t* cycles);
+    uint16_t Read16(uint32_t address, BusRequester requester, uint32_t* cycles);
+    uint32_t Read32(uint32_t address, BusRequester requester, uint32_t* cycles);
     
-    void Write8(uint32_t address, uint8_t value, uint32_t& cycles);
-    void Write16(uint32_t address, uint16_t value, uint32_t& cycles);
-    void Write32(uint32_t address, uint32_t value, uint32_t& cycles);
+    void Write8(uint32_t address, uint8_t value, BusRequester requester, uint32_t* cycles);
+    void Write16(uint32_t address, uint16_t value, BusRequester requester, uint32_t* cycles);
+    void Write32(uint32_t address, uint32_t value, BusRequester requester, uint32_t* cycles);
 
     // Open bus tracking
     void UpdateLatestAccessValues(uint32_t address, GBA_MemoryRegionType regionType, BusAccessSize accessSize, bool isValid);
@@ -53,6 +66,9 @@ private:
     LastBusAccess lastAccess;
     
     EmulatorCore* core;
+    GBA_PPU* ppu;
+    GBA_APU* apu;
+    GBA_DMAController* dma;
     GBA_Memory& memory;
     GBA_WaitstateController waitstateController;
 };

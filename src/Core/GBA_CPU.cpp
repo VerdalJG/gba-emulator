@@ -98,7 +98,7 @@ void GBA_CPU::FlushPipeline()
 void GBA_CPU::Fetch()
 {
     Instruction newInstruction;
-    newInstruction.rawInstruction = Read32FromMemory(visibleRegisters[PC_INDEX]);
+    newInstruction.rawInstruction = Read32_Bus(visibleRegisters[PC_INDEX]);
     newInstruction.valid = true;
     instructionPipeline[0] = newInstruction;
     nextInstructionFetchIsSequential = true;
@@ -168,48 +168,48 @@ void GBA_CPU::Log(const std::string& message, LogType logType, const char *funct
     }
 }
 
-uint8_t GBA_CPU::Read8FromMemory(uint32_t address)
+uint8_t GBA_CPU::Read8_Bus(uint32_t address)
 {
     uint32_t cycles = 0;
-    uint8_t readValue = bus.Read8(address, cycles);
+    uint8_t readValue = bus.Read8(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
 
-uint16_t GBA_CPU::Read16FromMemory(uint32_t address)
+uint16_t GBA_CPU::Read16_Bus(uint32_t address)
 {
     uint32_t cycles = 0;
-    uint16_t readValue = bus.Read16(address, cycles);
+    uint16_t readValue = bus.Read16(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
 
-uint32_t GBA_CPU::Read32FromMemory(uint32_t address)
+uint32_t GBA_CPU::Read32_Bus(uint32_t address)
 {
     uint32_t cycles = 0;
-    uint32_t readValue = bus.Read32(address, cycles);
+    uint32_t readValue = bus.Read32(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
 
-void GBA_CPU::Write8ToMemory(uint32_t address, uint8_t value)
+void GBA_CPU::Write8_Bus(uint32_t address, uint8_t value)
 {
     uint32_t cycles = 0;
-    bus.Write8(address, value, cycles);
+    bus.Write8(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
-void GBA_CPU::Write16ToMemory(uint32_t address, uint16_t value)
+void GBA_CPU::Write16_Bus(uint32_t address, uint16_t value)
 {
     uint32_t cycles = 0;
-    bus.Write16(address, value, cycles);
+    bus.Write16(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
-void GBA_CPU::Write32ToMemory(uint32_t address, uint32_t value)
+void GBA_CPU::Write32_Bus(uint32_t address, uint32_t value)
 {
     uint32_t cycles = 0;
-    bus.Write32(address, value, cycles);
+    bus.Write32(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 

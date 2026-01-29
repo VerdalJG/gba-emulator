@@ -3,6 +3,7 @@
 
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_Memory.hpp"
+#include "Core/GBA_PPU.hpp"
 
 #include "Utils/Logger.hpp"
 
@@ -10,11 +11,14 @@
 #include <fstream>
 #include <cstdint>
 #include <vector>
+#include <iostream>
+#include <filesystem>
 
 // QT includes
 #include <QThread>
 #include <QMessageBox>
 #include <QDebug>
+#include <QCoreApplication>
 
 EmulatorHandler::EmulatorHandler() :
     logger(),
@@ -46,7 +50,14 @@ void EmulatorHandler::Startup()
     if (shouldLoadRealBios)
     {
         std::vector<uint8_t> biosData;
-        std::string biosPath = "bios/gba_bios.bin";
+        // std::cout << "CWD: " << std::filesystem::current_path() << "\n";
+        // std::string biosPath = "bios/gba_bios.bin";
+
+        std::string biosPath = 
+            QCoreApplication::applicationDirPath().toStdString() + "/bios/gba_bios.bin";
+            
+        std::string biosPathMessage = "AppDir = '" + biosPath;    
+        logger.Log(biosPathMessage, LogType::Info);
         bool loadedBios = LoadFile(biosPath, biosData);
 
         Q_ASSERT(emulatorCore && "EmulatorCore is null in Startup()");
@@ -111,7 +122,7 @@ void EmulatorHandler::RunLoop()
     while (isRunning)
     {
         emulatorCore->Step();
-        emit FrameReady();
+        RenderFrame();
         QThread::msleep(16); // This is practically Vsync
     }
 }
@@ -131,10 +142,15 @@ void EmulatorHandler::LoadROMRequest(const QString& path)
     }
 }
 
-void EmulatorHandler::PostStatus(const QString& message, int seconds)
+void EmulatorHandler::RenderFrame() 
 {
-    emit StatusMessage(message, seconds);
-    qDebug() << message;
+    const uint32_t* frameBuffer = emulatorCore->GetPPU().GetFrameBuffer();
+    emit FrameReady(frameBuffer);
+}
+
+void EmulatorHandler::PostStatus(const QString& message, int seconds) {
+  emit StatusMessage(message, seconds);
+  qDebug() << message;
 }
 
 void EmulatorHandler::OnROMLoaded()

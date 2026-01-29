@@ -11,5 +11,15 @@ public:
     SDLWidget(QWidget* parent = nullptr);
     ~SDLWidget();
 
-    void Render();
+    void Render(const uint32_t* frameBuffer);
+
+    
+protected:
+    void showEvent(QShowEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+
+private:
+    SDL_Window* sdlWindow = nullptr;
+    SDL_Renderer* sdlRenderer = nullptr;
+    SDL_Texture* sdlTexture = nullptr;
 };

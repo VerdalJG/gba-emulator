@@ -32,7 +32,7 @@ MemReadResult<uint8_t> GBA_IO::Read8(uint32_t address)
     uint32_t shift = (address - reg->address) * sizeof(uint8_t); // Accounting for little-endianess
     uint8_t read = static_cast<uint8_t>((reg->value >> shift) & 0xFF);
 
-    reg->onRead(address);
+    if (reg->onRead) reg->onRead(address);
     return { read, true };
 }
 
@@ -44,7 +44,7 @@ MemReadResult<uint16_t> GBA_IO::Read16(uint32_t address)
     uint32_t shift = (address - reg->address) * sizeof(uint8_t); 
     uint16_t read = static_cast<uint16_t>((reg->value >> shift) & 0xFFFF);
 
-    reg->onRead(address);
+    if (reg->onRead) reg->onRead(address);
     return { read, true };
 }
 
@@ -55,42 +55,42 @@ MemReadResult<uint32_t> GBA_IO::Read32(uint32_t address)
 
     uint32_t read = reg->value;
 
-    reg->onRead(address);
+    if (reg->onRead) reg->onRead(address);
     return { read, true };
 }
 
 void GBA_IO::Write8(uint32_t address, uint8_t value) 
 {
     IORegister* reg = ioMap[address];
-    if (!reg || !reg->readable) return;
+    if (!reg || !reg->writeable) return;
 
     uint32_t shift = (address - reg->address) * sizeof(uint8_t);
     reg->value &= ~(0xFFu << shift); // clear the target byte
     reg->value |= (value << shift); // set the new byte
 
-    reg->onWrite(address, reg->value);
+    if (reg->onWrite) reg->onWrite(address, reg->value);
 }
 
 void GBA_IO::Write16(uint32_t address, uint16_t value) 
 {
     IORegister* reg = ioMap[address];
-    if (!reg || !reg->readable) return;
+    if (!reg || !reg->writeable) return;
 
     uint32_t shift = (address - reg->address) * sizeof(uint8_t);
     reg->value &= ~(0xFFFFu << shift); // clear the target halfword
     reg->value |= (value << shift); // set the new halfword
 
-    reg->onWrite(address, reg->value);
+    if (reg->onWrite) reg->onWrite(address, reg->value);
 }
 
 void GBA_IO::Write32(uint32_t address, uint32_t value) 
 {
     IORegister* reg = ioMap[address];
-    if (!reg || !reg->readable) return;
+    if (!reg || !reg->writeable) return;
 
     reg->value = value;
 
-    reg->onWrite(address, reg->value);
+    if (reg->onWrite) reg->onWrite(address, reg->value);
 }
 
 void GBA_IO::PopulateIORegistersMap()
@@ -327,6 +327,7 @@ void GBA_IO::SetupLCDWriteCallbacks()
         [this](uint32_t address, uint32_t value)
         {
             // TODO: Update PPU display control
+            printf("DISPCNT changed to: %u", value);
             // ppu.SetDisplayControl(value);
         };
 

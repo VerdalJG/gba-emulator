@@ -30,7 +30,7 @@ set(CMAKE_AUTOUIC_VERBOSE OFF)
 # Link to Qt and SDL3
 target_link_libraries(GBAQtUI PUBLIC 
     EmulatorCore
-    SDL3::SDL3
+    SDL3::SDL3-shared
     Qt6::Core
     Qt6::Widgets
     Qt6::Gui
@@ -38,6 +38,8 @@ target_link_libraries(GBAQtUI PUBLIC
     Qt6::Quick
     Qt6::QuickControls2
 )
+
+
 
 # Add this directory to includes
 target_include_directories(GBAQtUI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

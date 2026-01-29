@@ -7,5 +7,5 @@ void AddWindowFlag(SDL_WindowFlags& flags, int flagToAdd);
 void RemoveWindowFlag(SDL_WindowFlags& flags, int flagToRemove);
 
 bool InitSDL(SDL_InitFlags flags = SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-bool CreateWindow(SDL_Window*& window, SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE, const char* title = "GBAEmu", int width = 960, int height = 540);
-bool CreateRenderer(SDL_Renderer*& renderer, SDL_Window* window, const char* driverName = NULL);
+bool CreateWindow_SDL(SDL_Window*& window, SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE, const char* title = "GBAEmu", int width = 960, int height = 540);
+bool CreateRenderer_SDL(SDL_Renderer*& renderer, SDL_Window* window, const char* driverName = NULL);

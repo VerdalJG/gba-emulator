@@ -1,8 +1,21 @@
 #include "Utils/Logger.hpp"
+#include <filesystem>
+#include <iostream>
 
 Logger::Logger(const std::string& filename)
-: file(filename, std::ios::out | std::ios::trunc)
 {
+    try {
+        // Make an absolute path relative to the executable
+        std::filesystem::path exePath = std::filesystem::current_path();
+        std::filesystem::path logPath = exePath / filename;
+
+        file.open(logPath, std::ios::out | std::ios::trunc);
+        if (!file.is_open()) {
+            throw std::runtime_error("Failed to open log file: " + logPath.string());
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Logger failed: " << e.what() << std::endl;
+    }
 }
 
 Logger::~Logger()
@@ -14,8 +27,14 @@ void Logger::Log(const std::string& message, LogType logType, const std::string 
 {
     if (file.is_open()) 
     {
-        std::string fullMessage = logTypeStrings[logType] + message + " at: " + funcName;
+        std::string fullMessage = logTypeStrings[logType] + message;
 
-        file << fullMessage << '\n';
+        if (!funcName.empty()) fullMessage += " at: " + funcName;
+
+        file << fullMessage << std::endl;
+    }
+    else
+    {
+        throw std::runtime_error("Failed to open log file");
     }
 }

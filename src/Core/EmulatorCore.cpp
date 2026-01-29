@@ -4,14 +4,20 @@
 
 #include "Utils/Logger.hpp"
 
-EmulatorCore::EmulatorCore(Logger* logger) : logger(logger), io(this), rom(this),
-    ppu(this, io.GetLCDRegisters()),
-    apu(this, io.GetSoundRegisters()), 
-    dmaController(this, io.GetDMARegisters()), 
+EmulatorCore::EmulatorCore(Logger* logger) : 
+    logger(logger), 
+    io(this), 
+    rom(this), 
+    memory(this, rom, io),
+    bus(this, memory),
+    ppu(this, bus, io.GetLCDRegisters()),
+    apu(this, bus, io.GetSoundRegisters()), 
+    dmaController(this, bus, io.GetDMARegisters()), 
     timerController(this, io.GetTimerRegisters()), 
     interruptController(this, io.GetInterruptRegisters()), 
     keypad(this, io.GetKeypadRegisters()),  
-    memory(this, rom, io), hle(this, memory, io), bus(this, memory), cpu(this, bus)
+    hle(this, memory, io), 
+    cpu(this, bus)
 {
     if (logger)
     {
@@ -28,12 +34,17 @@ EmulatorCore::EmulatorCore(Logger* logger) : logger(logger), io(this), rom(this)
         &keypad, 
         &bus.GetWaitstateController()
     );
+
+    bus.AttachSubsystems(
+        &ppu,
+        &apu,
+        &dmaController
+    );
 }
 
 bool EmulatorCore::InitializeCPU()
 {
-    // TODO: For now skip bios
-    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, ROM0_START);
+    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, 0);
 
     // SDL_SetAppMetadata("GBAEmu", "Version 0.1", "GBAEmulator");
 
@@ -120,6 +131,8 @@ void EmulatorCore::Step()
         ppu.Step(cycles);
         apu.Step(cycles);
     }
+
+    // add Render() here?
 }
 
 void EmulatorCore::Tick()

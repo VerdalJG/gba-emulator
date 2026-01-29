@@ -38,6 +38,7 @@ public:
     GBA_CPU& GetCPU() { return cpu; }
     GBA_Memory& GetMemory() { return memory; }
     GBA_HLE& GetHLE() { return hle; }
+    GBA_PPU& GetPPU() { return ppu; }
     void SetPostStatusCallback(std::function<void(const std::string&)> callback);
 
     void Step();
@@ -54,16 +55,20 @@ protected:
     Logger* logger;
 
     // Core Components:
+
+    // Memory-related components
     GBA_IO io;
     GBA_ROM rom;
+    GBA_Memory memory;
+    GBA_Bus bus;
+
+    // Hardware components
     GBA_PPU ppu; // For video
     GBA_APU apu; // For audio
     GBA_DMAController dmaController; 
     GBA_TimerController timerController;
     GBA_InterruptController interruptController;
     GBA_Keypad keypad;
-    GBA_Memory memory;
     GBA_HLE hle;
-    GBA_Bus bus;
     GBA_CPU cpu;
 };

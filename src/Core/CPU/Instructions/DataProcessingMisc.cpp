@@ -161,15 +161,15 @@ void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu)
 
     if (values.bFlag) // SWPB
     {
-        readValue = cpu.Read8FromMemory(rn);
-        cpu.Write8ToMemory(rn, rm & 0xFF);
+        readValue = cpu.Read8_Bus(rn);
+        cpu.Write8_Bus(rn, rm & 0xFF);
     }
     else // SWP
     {
         uint32_t alignedAddress = rn & ~3u;
         uint32_t misalignment = rn & 3u;
 
-        readValue = cpu.Read32FromMemory(alignedAddress);
+        readValue = cpu.Read32_Bus(alignedAddress);
 
         // Rotate if misaligned
         if (misalignment)
@@ -178,7 +178,7 @@ void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu)
         }
 
         // Aligned write, unrotated
-        cpu.Write32ToMemory(alignedAddress, rm);
+        cpu.Write32_Bus(alignedAddress, rm);
     }
 
     cpu.SetValueAtRegister(values.rdIndex, readValue); 

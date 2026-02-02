@@ -1,11 +1,11 @@
 #include "Core/GBA_CPU.hpp"
-#include "Core/CPU/Instructions/Decoder.hpp"
+#include "Core/CPU/Instructions/ARM/Decoder.hpp"
 #include "Core/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_WaitstateController.hpp"
 #include "Core/CPU/CPU_Timings.hpp"
 #include "Core/GBA_Bus.hpp"
-#include "Core/CPU/Instructions/Conditions.hpp"
+#include "Core/CPU/Instructions/ARM/Conditions.hpp"
 
 #include <assert.h>
 
@@ -98,7 +98,15 @@ void GBA_CPU::FlushPipeline()
 void GBA_CPU::Fetch()
 {
     Instruction newInstruction;
-    newInstruction.rawInstruction = Read32_Bus(visibleRegisters[PC_INDEX]);
+
+    if (IsThumbMode())
+    {
+        newInstruction.rawInstruction = Read16_Bus(visibleRegisters[PC_INDEX]);
+    }
+    else
+    {
+        newInstruction.rawInstruction = Read32_Bus(visibleRegisters[PC_INDEX]);
+    }
     newInstruction.valid = true;
     instructionPipeline[0] = newInstruction;
     nextInstructionFetchIsSequential = true;

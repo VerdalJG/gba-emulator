@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "Core/CPU/Instructions/Conditions.hpp"
+#include "Core/CPU/Instructions/ARM/Conditions.hpp"
 
 class GBA_CPU;
 

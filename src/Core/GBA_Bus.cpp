@@ -5,7 +5,6 @@
 #include "Core/GBA_APU.hpp"
 #include "Core/GBA_DMAController.hpp"
 #include "Core/EmulatorCore.hpp"
-#include "Core/EmulatorCore.hpp"
 
 
 GBA_Bus::GBA_Bus(EmulatorCore* core, GBA_Memory& memory) : core(core), memory(memory)

@@ -3,8 +3,9 @@
 #include <cstdint>
 #include <array>
 #include "Core/CPU/CPU_Modes.hpp"
-#include "Core/CPU/Instructions/InstructionHelpers.hpp"
+#include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
 #include "Utils/Logger.hpp"
+#include "Utils/Integer.hpp"
 
 class GBA_Bus;
 class EmulatorCore;
@@ -80,6 +81,9 @@ public:
     static const int LR_INDEX = 14;
     static const int PC_INDEX = 15;
 
+    using Handler_ARM = void (GBA_CPU::*)(u32);
+    using Handler_Thumb = void (GBA_CPU::*)(u16);
+
 protected:
     std::array<uint32_t, 16> visibleRegisters{};    // R0 - R14 contain data, R15 contains address of next instruction (PC)
     uint32_t cpsr = 0;                              // Current Program Status Register
@@ -105,6 +109,7 @@ protected:
     void HandleHalt();
 
 private:
+    friend struct TableGenerator;
     EmulatorCore* core;
     GBA_Bus& bus;
 
@@ -113,6 +118,13 @@ private:
     uint32_t currentFrameCycles;
     bool nextInstructionFetchIsSequential = false;
     bool nextDataAccessIsSequential = false;
+
+    //#include "CPU/Instructions/ARM/Handler.hpp"
+    #include "CPU/Instructions/Thumb/Instructions.inl"
+
+    static std::array<bool, 256> conditionTable; // Condition lookup table, precomputed
+    static std::array<Handler_ARM, 4096> armInstructionTable; // ARM instruction lookup table, precomputed
+    static std::array<Handler_Thumb, 4096> thumbInstructionTable; // ARM instruction lookup table, precomputed
 };
 
 

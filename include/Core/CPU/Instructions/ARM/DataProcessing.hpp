@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <array>
 #include "Core/GBA_CPU.hpp"
-#include "Core/CPU/Instructions/Conditions.hpp"
+#include "Core/CPU/Instructions/ARM/Conditions.hpp"
 
 struct DataProcessing_Decoded
 {

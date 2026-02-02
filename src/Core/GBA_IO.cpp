@@ -9,8 +9,6 @@ GBA_IO::GBA_IO(EmulatorCore* core) : core(core)
     SetupCallbacks();
 }
 
-
-
 void GBA_IO::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, 
     GBA_TimerController* timers, GBA_InterruptController* interrupts, GBA_Keypad* keypad,
     GBA_WaitstateController* waitstates) 

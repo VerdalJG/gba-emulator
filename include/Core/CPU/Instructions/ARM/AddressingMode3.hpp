@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "Core/GBA_CPU.hpp"
-#include "Core/CPU/Instructions/LoadStore.hpp"
+#include "Core/CPU/Instructions/ARM/LoadStore.hpp"
 
 uint32_t CalculateAddress_AddressingMode3(HalfwordDataTransfer_Decoded values, GBA_CPU& cpu);
 

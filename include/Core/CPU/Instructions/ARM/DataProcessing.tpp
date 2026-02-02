@@ -1,4 +1,4 @@
-#include "Core/CPU/Instructions/InstructionHelpers.hpp"
+#include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
 #include "Core/CPU/CPU_CPSR.hpp"
 
 template <typename Func>

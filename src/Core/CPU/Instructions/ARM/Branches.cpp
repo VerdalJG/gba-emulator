@@ -1,5 +1,5 @@
-#include "Core/CPU/Instructions/Branches.hpp"
-#include "Core/CPU/Instructions/Shifts.hpp"
+#include "Core/CPU/Instructions/ARM/Branches.hpp"
+#include "Core/CPU/Instructions/ARM/Shifts.hpp"
 #include "Core/GBA_CPU.hpp"
 
 

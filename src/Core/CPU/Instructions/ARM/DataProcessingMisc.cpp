@@ -1,10 +1,10 @@
-#include "Core/CPU/Instructions/DataProcessingMisc.hpp"
+#include "Core/CPU/Instructions/ARM/DataProcessingMisc.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/GBA_Memory.hpp"
 #include "Core/CPU/CPU_CPSR.hpp"
-#include "Core/CPU/Instructions/Shifts.hpp"
+#include "Core/CPU/Instructions/ARM/Shifts.hpp"
 #include "Core/CPU/CPU_Timings.hpp"
-#include "Core/CPU/Instructions/InstructionHelpers.hpp"
+#include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
 
 void Multiply(uint32_t instruction, GBA_CPU& cpu)
 {

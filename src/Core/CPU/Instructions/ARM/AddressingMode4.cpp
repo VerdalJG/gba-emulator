@@ -1,5 +1,5 @@
-#include "Core/CPU/Instructions/AddressingMode4.hpp"
-#include "Core/CPU/Instructions/InstructionHelpers.hpp"
+#include "Core/CPU/Instructions/ARM/AddressingMode4.hpp"
+#include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
 
 #include "Core/GBA_CPU.hpp"
 

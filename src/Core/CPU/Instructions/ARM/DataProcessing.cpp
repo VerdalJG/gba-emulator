@@ -1,6 +1,6 @@
-#include "Core/CPU/Instructions/DataProcessing.hpp"
-#include "Core/CPU/Instructions/AddressingMode1.hpp"
-#include "Core/CPU/Instructions/InstructionHelpers.hpp"
+#include "Core/CPU/Instructions/ARM/DataProcessing.hpp"
+#include "Core/CPU/Instructions/ARM/AddressingMode1.hpp"
+#include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
 #include "Core/CPU/CPU_Timings.hpp"
 
 void DataProcessing(uint32_t instruction, GBA_CPU &cpu)

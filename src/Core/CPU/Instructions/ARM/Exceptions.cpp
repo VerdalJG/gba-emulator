@@ -1,4 +1,4 @@
-#include "Core/CPU/Instructions/Exceptions.hpp"
+#include "Core/CPU/Instructions/ARM/Exceptions.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_HLE.hpp"

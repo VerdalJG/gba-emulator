@@ -1,5 +1,5 @@
-#include "Core/CPU/Instructions/AddressingMode3.hpp"
-#include "Core/CPU/Instructions/InstructionHelpers.hpp"
+#include "Core/CPU/Instructions/ARM/AddressingMode3.hpp"
+#include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
 #include <assert.h>
 
 uint32_t CalculateAddress_AddressingMode3(HalfwordDataTransfer_Decoded values, GBA_CPU &cpu)

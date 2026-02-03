@@ -1,4 +1,4 @@
-#include "Core/CPU/Instructions/DataProcessing.hpp"
+#include "Core/CPU/Instructions/ARM/DataProcessing.hpp"
 
 void Add(DataProcessing_Decoded values, ShifterOperand op2, GBA_CPU& cpu) // ADD Rd, Rn Op2
 {   

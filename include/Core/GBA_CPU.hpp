@@ -81,7 +81,7 @@ public:
     static const int LR_INDEX = 14;
     static const int PC_INDEX = 15;
 
-    using Handler_ARM = void (GBA_CPU::*)(u32);
+    using Handler_ARM = void (GBA_CPU::*)(u32); 
     using Handler_Thumb = void (GBA_CPU::*)(u16);
 
 protected:

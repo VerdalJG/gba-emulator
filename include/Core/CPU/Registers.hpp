@@ -48,15 +48,15 @@ union StatusRegister
     struct 
     {
         Mode mode : 5;
-        unsigned int thumb : 1;
-        unsigned int fiq_disable : 1;
-        unsigned int irq_disable : 1;
-        unsigned int reserved : 19;
-        unsigned int q : 1; // Sticky overflow
-        unsigned int v : 1; // Signed overflow
-        unsigned int c : 1; // Carry / borrow
-        unsigned int z : 1; // Zero
-        unsigned int n : 1; // Negative
+        uint thumb : 1;
+        uint fiq_disable : 1;
+        uint irq_disable : 1;
+        uint reserved : 19;
+        uint q : 1; // Sticky overflow
+        uint v : 1; // Signed overflow
+        uint c : 1; // Carry / borrow
+        uint z : 1; // Zero
+        uint n : 1; // Negative
     } fields;
     u32 value;
 };

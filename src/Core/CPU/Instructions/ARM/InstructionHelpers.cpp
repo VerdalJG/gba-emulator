@@ -4,8 +4,6 @@
 #include "Core/GBA_CPU.hpp"
 
 
-
-
 uint32_t ZeroExtendTo32(uint8_t value)
 {
     return static_cast<uint32_t>(value);

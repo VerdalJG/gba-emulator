@@ -38,10 +38,7 @@ void GBA_CPU::Step()
 
     Fetch();
     Decode();
-    Execute();
-
-    // Advance program counter
-    visibleRegisters[PC_INDEX] += (IsThumbMode() ? 2u : 4u);
+    Execute(); // Instructions advance the program counter if appropriate
 }
 
 void GBA_CPU::RequestInterrupt()

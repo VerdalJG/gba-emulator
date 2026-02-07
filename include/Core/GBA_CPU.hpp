@@ -6,6 +6,7 @@
 #include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
 #include "Utils/Logger.hpp"
 #include "Utils/Integer.hpp"
+#include "Core/CPU/Registers.hpp"
 
 class GBA_Bus;
 class EmulatorCore;
@@ -21,6 +22,8 @@ public:
     void Step();             // Fetch, decode, and execute loop
     void RequestInterrupt(); // Triggered by emulator core
 
+    CPU_Registers cpuState;
+
     // Register functions
     inline uint32_t GetValueAtRegister(int registerIndex) { return visibleRegisters[registerIndex]; }
     inline void SetValueAtRegister(int registerIndex, uint32_t value) 
@@ -35,17 +38,18 @@ public:
 
     inline uint32_t GetValueAtUserRegister(int registerIndex) { return sharedR8_R12[8 - registerIndex]; }
     inline void SetValueAtUserRegister(int registerIndex, uint32_t value) { sharedR8_R12[8 - registerIndex] = value; }
+    inline void AdvanceProgramCounter() { cpuState.r15 += (IsThumbMode() ? 2u : 4u); }
 
     // CPSR functions
     inline uint32_t GetCPSR() { return cpsr; }
-    inline bool GetCPSR_N() { return (cpsr >> 31) & 1; }
-    inline bool GetCPSR_Z() { return (cpsr >> 30) & 1; }
-    inline bool GetCPSR_C() { return (cpsr >> 29) & 1; }
-    inline bool GetCPSR_V() { return (cpsr >> 28) & 1; }
-    inline bool IsThumbMode() { return (cpsr >> 5) & 1; }
+    inline uint GetCPSR_N() { return cpuState.cpsr.fields.n; }
+    inline uint GetCPSR_Z() { return cpuState.cpsr.fields.z; }
+    inline uint GetCPSR_C() { return cpuState.cpsr.fields.c; }
+    inline uint GetCPSR_V() { return cpuState.cpsr.fields.v; }
+    inline bool IsThumbMode() { return cpuState.cpsr.fields.thumb; }
     inline OperatingMode GetCurrentOperatingMode() { return static_cast<OperatingMode>(cpsr & 0x1F); }
     inline void UpdateCPSR(uint32_t bits, uint32_t bitsToUpdate = 0xFFFFFFFF) { cpsr = (cpsr & ~bitsToUpdate) | bits; }
-
+    
     // SPSR functions
     inline bool CurrentModeHasSPSR() 
     { 
@@ -84,6 +88,31 @@ public:
     using Handler_ARM = void (GBA_CPU::*)(u32); 
     using Handler_Thumb = void (GBA_CPU::*)(u16);
 
+    //#include "CPU/Instructions/ARM/Handler.hpp"
+
+    // Thumb instructions:
+    template <u16 shiftOp, u16 immediate_5>
+    void Thumb_MoveShiftedRegister(u16 instruction);
+
+    template <bool subtract, bool immediate, u16 operand>
+    void Thumb_AddSubtract(u16 instruction);
+
+    template <u16 opcode, u16 rdIndex>
+    void Thumb_ImmediateOp(u16 instruction);
+
+    template <u16 opcode>
+    void Thumb_ALU(u16 instruction);
+
+    // Arithmetic operations:
+    u32 ADD(u32 op1, u32 op2, bool set_flags);
+    u32 SUB(u32 op1, u32 op2, bool set_flags);
+    u32 ADC(u32 op1, u32 op2, bool set_flags);
+    u32 SBC(u32 op1, u32 op2, bool set_flags);
+    void UpdateNZFlags(u32 result);
+    void UpdateCFlag(u32 op1, u32 op2, bool isSub, u32 carry = 0);
+    void UpdateVFlag(u32 op1, u32 op2, u32 result, bool isSub);
+
+
 protected:
     std::array<uint32_t, 16> visibleRegisters{};    // R0 - R14 contain data, R15 contains address of next instruction (PC)
     uint32_t cpsr = 0;                              // Current Program Status Register
@@ -109,7 +138,6 @@ protected:
     void HandleHalt();
 
 private:
-    friend struct TableGenerator;
     EmulatorCore* core;
     GBA_Bus& bus;
 
@@ -119,15 +147,13 @@ private:
     bool nextInstructionFetchIsSequential = false;
     bool nextDataAccessIsSequential = false;
 
-    //#include "CPU/Instructions/ARM/Handler.hpp"
-    #include "CPU/Instructions/Thumb/Instructions.inl"
-
     static std::array<bool, 256> conditionTable; // Condition lookup table, precomputed
     static std::array<Handler_ARM, 4096> armInstructionTable; // ARM instruction lookup table, precomputed
     static std::array<Handler_Thumb, 4096> thumbInstructionTable; // ARM instruction lookup table, precomputed
 };
 
-
+#include "CPU/Instructions/Thumb/Instructions.inl"
+#include "CPU/Instructions/Arithmetic.inl"
 
 //https://problemkaputt.de/gbatek-arm-cpu-reference.htm - ARM CPU Reference
 //https://developer.arm.com/documentation/ddi0210/c/Introduction/Instruction-set-summary/ARM-instruction-summary?lang=en

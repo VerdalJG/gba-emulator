@@ -103,6 +103,9 @@ public:
     template <u16 opcode>
     void Thumb_ALU(u16 instruction);
 
+    template <u16 opcode, u16 msbRd, u16 msbRs>
+    void Thumb_HiRegisterOp(u16 instruction);
+
     // Arithmetic operations:
     u32 ADD(u32 op1, u32 op2, bool set_flags);
     u32 SUB(u32 op1, u32 op2, bool set_flags);

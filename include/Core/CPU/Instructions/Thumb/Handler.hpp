@@ -46,5 +46,13 @@ static constexpr Handler_Thumb GenerateHandlerThumb()
         return &GBA_CPU::Thumb_ALU<opcode>;
     }
 
-    // 5. 
+    // 5. High register operations / Branch Exchange (BX)
+    if (ExtractBits<15, 10, u16>(instruction) == 0b010001)
+    {
+        const u16 opcode = ExtractBits<9, 8, u16>(instruction);
+        const u16 msbRd = (instruction >> 7) & 1;
+        const u16 msbRs = (instruction >> 6) & 1;
+
+        return &GBA_CPU::Thumb_HiRegisterOp<opcode, msbRd, msbRs>;
+    }
 }

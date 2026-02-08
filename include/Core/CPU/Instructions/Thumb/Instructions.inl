@@ -2,6 +2,7 @@
 
 #include "Utils/BitOperations.hpp"
 #include "Core/CPU/Registers.hpp"
+#include "Core/CPU/CPU_Timings.hpp"
 
 #include <assert.h>
 
@@ -209,7 +210,10 @@ inline void GBA_CPU::Thumb_ALU(u16 instruction)
             
         case ThumbALUOp::MUL: 
         {
-            // TODO: Implement and add mI cycles
+            u32 cycles = CalculateMultiplierCycles(rs);
+            rd *= rs;
+            UpdateNZFlags(rd);
+            // TODO: Add mI cycles properly
             break;
         }
             
@@ -230,3 +234,10 @@ inline void GBA_CPU::Thumb_ALU(u16 instruction)
 
     AdvanceProgramCounter();
 }
+
+template <u16 opcode, u16 msbRd, u16 msbRs>
+void GBA_CPU::Thumb_HiRegisterOp(u16 instruction)
+{
+    
+}
+

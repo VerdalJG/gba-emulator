@@ -6,6 +6,7 @@
 #include "Core/CPU/CPU_Timings.hpp"
 #include "Core/GBA_Bus.hpp"
 #include "Core/CPU/Instructions/ARM/Conditions.hpp"
+#include "Core/CPU/Instructions/ARM/Shifts.hpp"
 
 #include <assert.h>
 
@@ -19,7 +20,7 @@ void GBA_CPU::Reset()
     // Fill registers with 0
     std::fill(std::begin(visibleRegisters), std::end(visibleRegisters), 0);
     cpsr = 0x000000D3;   // Supervisor mode, IRQ/FIQ disabled
-    SetValueAtRegister(PC_INDEX, 0x00000000);
+    WriteRegister(CPU_Registers::PC_INDEX, 0x00000000);
     FlushPipeline();
     totalCycles = 0;
 }
@@ -78,17 +79,17 @@ void GBA_CPU::HandleHalt()
 
 void GBA_CPU::AdvanceInstructionPipeline()
 {
-    instructionPipeline[2] = instructionPipeline[1]; // Move [1] to [2];
-    instructionPipeline[1] = instructionPipeline[0]; // Move [0] to [1];
+    pipeline[2] = pipeline[1]; // Move [1] to [2];
+    pipeline[1] = pipeline[0]; // Move [0] to [1];
 }
 
 
 
 void GBA_CPU::FlushPipeline()
 {
-    instructionPipeline[0].valid = false;
-    instructionPipeline[1].valid = false;
-    instructionPipeline[2].valid = false;
+    pipeline[0].valid = false;
+    pipeline[1].valid = false;
+    pipeline[2].valid = false;
     nextInstructionFetchIsSequential = false;   
 }
 
@@ -96,22 +97,24 @@ void GBA_CPU::Fetch()
 {
     Instruction newInstruction;
 
+    u32 address = cpuState.r15;
+
     if (IsThumbMode())
     {
-        newInstruction.rawInstruction = Read16_Bus(visibleRegisters[PC_INDEX]);
+        newInstruction.rawInstruction = Read16(address);
     }
     else
     {
-        newInstruction.rawInstruction = Read32_Bus(visibleRegisters[PC_INDEX]);
+        newInstruction.rawInstruction = Read32(address);
     }
     newInstruction.valid = true;
-    instructionPipeline[0] = newInstruction;
+    pipeline[0] = newInstruction;
     nextInstructionFetchIsSequential = true;
 }
 
 void GBA_CPU::Decode()
 {
-    if (!instructionPipeline[1].valid) return;
+    if (!pipeline[1].valid) return;
 
     InstructionFunction functionToExecute = nullptr;
     
@@ -123,32 +126,42 @@ void GBA_CPU::Decode()
     }
     else // ARM Mode
     {
-        Condition condition = GetConditionType(instructionPipeline[1].rawInstruction);
-        if (condition == Condition::UD)
+        Condition condition = GetConditionType(pipeline[1].rawInstruction);
+        if (condition == CONDITION_UD)
         {
-            HandleUndefinedBehavior(instructionPipeline[1].rawInstruction);
+            HandleUndefinedBehavior(pipeline[1].rawInstruction);
             return;
         }
 
-        if (ConditionPassed(condition, *this))
+        if (ConditionPassed(condition))
         {
-            functionToExecute = DecodeInstruction(instructionPipeline[1].rawInstruction, *this);
+            functionToExecute = DecodeInstruction(pipeline[1].rawInstruction, *this);
         }
     }
 
     if (functionToExecute == nullptr) return;
 
     // Store function pointer in pipeline
-    instructionPipeline[1].function = functionToExecute;
+    pipeline[1].function = functionToExecute;
 }
 
 void GBA_CPU::Execute()
 {
-    if (!instructionPipeline[2].valid) return;
-    if (instructionPipeline[2].function == nullptr) return; // No-Op
+    if (!pipeline[2].valid) return;
+    if (pipeline[2].function == nullptr) return; // No-Op
 
     // Execute the instruction
-    instructionPipeline[2].function(instructionPipeline[2].rawInstruction, *this);
+    pipeline[2].function(pipeline[2].rawInstruction, *this);
+}
+
+
+bool GBA_CPU::ConditionPassed(Condition condition)
+{
+    if (condition == CONDITION_AL)
+    {
+        return true;
+    }
+    return conditionTable[(static_cast<int>(condition) << 4) | (cpuState.cpsr.value >> 28)];
 }
 
 void GBA_CPU::AddCycles(uint32_t cycles)
@@ -173,49 +186,99 @@ void GBA_CPU::Log(const std::string& message, LogType logType, const char *funct
     }
 }
 
-uint8_t GBA_CPU::Read8_Bus(uint32_t address)
+u32 GBA_CPU::Read8(u32 address)
 {
-    uint32_t cycles = 0;
-    uint8_t readValue = bus.Read8(address, BusRequester::CPU, &cycles);
+    u32 cycles = 0;
+    u32 readValue = bus.Read8(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
 
-uint16_t GBA_CPU::Read16_Bus(uint32_t address)
+u32 GBA_CPU::Read16(u32 address)
 {
-    uint32_t cycles = 0;
-    uint16_t readValue = bus.Read16(address, BusRequester::CPU, &cycles);
+    u32 cycles = 0;
+    u32 readValue = bus.Read16(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
 
-uint32_t GBA_CPU::Read32_Bus(uint32_t address)
+u32 GBA_CPU::Read32(u32 address)
 {
-    uint32_t cycles = 0;
-    uint32_t readValue = bus.Read32(address, BusRequester::CPU, &cycles);
+    u32 cycles = 0;
+    u32 readValue = bus.Read32(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
 
-void GBA_CPU::Write8_Bus(uint32_t address, uint8_t value)
+void GBA_CPU::Write8(u32 address, u8 value)
 {
-    uint32_t cycles = 0;
+    u32 cycles = 0;
     bus.Write8(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
-void GBA_CPU::Write16_Bus(uint32_t address, uint16_t value)
+void GBA_CPU::Write16(u32 address, u16 value)
 {
-    uint32_t cycles = 0;
+    u32 cycles = 0;
     bus.Write16(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
-void GBA_CPU::Write32_Bus(uint32_t address, uint32_t value)
+void GBA_CPU::Write32(u32 address, u32 value)
 {
-    uint32_t cycles = 0;
+    u32 cycles = 0;
     bus.Write32(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
+}
+
+u32 GBA_CPU::Read16_Rotated(u32 address) 
+{
+    u32 cycles = 0;
+    u32 value = bus.Read16(address, BusRequester::CPU, &cycles);
+    AddCycles(cycles);
+
+    if (address & 1)
+    {
+        value = (value >> 8) | (value << 24);
+    }
+
+    return value;
+}
+
+u32 GBA_CPU::Read32_Rotated(u32 address) 
+{
+    u32 cycles = 0;
+    u32 value = bus.Read32(address, BusRequester::CPU, &cycles);
+    u32 shift = (address & 3) * 8;
+    
+    AddCycles(cycles);
+    return value >> shift | (value << (32 - shift));
+}
+
+u32 GBA_CPU::Read8_SignExtended(u32 address) 
+{ 
+    u32 cycles = 0;
+    u8 value = bus.Read8(address, BusRequester::CPU, &cycles);
+    AddCycles(cycles);
+    return SignExtend_8(value); 
+}
+
+u32 GBA_CPU::Read16_SignExtended(u32 address) 
+{ 
+    u32 cycles = 0;
+
+    if (address & 1) // Misaligned
+    {
+        u8 value = bus.Read8(address, BusRequester::CPU, &cycles);
+        AddCycles(cycles);
+        return SignExtend_8(value);
+    }
+    else
+    {
+        u16 value = bus.Read16(address, BusRequester::CPU, &cycles);
+        AddCycles(cycles);
+        return SignExtend_16(value);
+    }
 }
 
 void GBA_CPU::InvalidateSequentiality() 

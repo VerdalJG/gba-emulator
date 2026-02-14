@@ -52,7 +52,7 @@ ShifterOperand CalculateOp2_Register(uint16_t shifterOperandBits, GBA_CPU &cpu)
 ShifterOperand ShiftOp2_Immediate(uint16_t shifterOperandBits, ShiftType shiftType, GBA_CPU &cpu)
 {
     uint8_t rmIndex = shifterOperandBits & 0xF; // Bits 3:0 carry the base register index
-    uint32_t rm = cpu.GetValueAtRegister(rmIndex);
+    uint32_t rm = cpu.ReadRegister(rmIndex);
     uint32_t shiftImm = (shifterOperandBits >> 7) & 0x1F; // Bits 11:7 
 
     switch (shiftType)
@@ -78,10 +78,10 @@ ShifterOperand ShiftOp2_Immediate(uint16_t shifterOperandBits, ShiftType shiftTy
 ShifterOperand ShiftOp2_Register(uint16_t shifterOperandBits, ShiftType shiftType, GBA_CPU &cpu)
 {
     uint8_t rmIndex = shifterOperandBits & 0xF; // Bits 3:0 carry the base register index
-    uint32_t rm = cpu.GetValueAtRegister(rmIndex);
+    uint32_t rm = cpu.ReadRegister(rmIndex);
 
     uint8_t rsIndex = (shifterOperandBits >> 8) & 0xF;
-    uint8_t rs = cpu.GetValueAtRegister(rsIndex) & 0xFF; // Only bottom byte is used for shifting
+    uint8_t rs = cpu.ReadRegister(rsIndex) & 0xFF; // Only bottom byte is used for shifting
 
     // GBA QUIRK - Instead of UNPREDICTABLE here, we add +12 to current instruction,
     // which means +4 due to pipeline offset applying +8 already

@@ -20,6 +20,19 @@ enum class BusRequester
     DMA
 };
 
+enum Sequentiality
+{
+    Nonsequential = 0,
+    Sequential = 1
+};
+
+enum class AccessType
+{
+    Code, // Instruction fetch/prefetch
+    Data, // CPU Load/Store
+    DMA   // DMA bus request
+};
+
 class EmulatorCore;
 class GBA_Memory;
 class GBA_PPU;

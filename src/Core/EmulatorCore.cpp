@@ -44,7 +44,7 @@ EmulatorCore::EmulatorCore(Logger* logger) :
 
 bool EmulatorCore::InitializeCPU()
 {
-    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, 0);
+    cpu.WriteRegister(GBA_CPU::PC_INDEX, 0);
 
     // SDL_SetAppMetadata("GBAEmu", "Version 0.1", "GBAEmulator");
 

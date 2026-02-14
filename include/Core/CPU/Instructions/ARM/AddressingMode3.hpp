@@ -14,5 +14,5 @@ inline uint32_t GetHDTOffset_Immediate(uint16_t offsetBits)
 // HDT is HalfwordDataTransfer
 inline uint32_t GetHDTOffset_Register(uint16_t offsetBits, GBA_CPU& cpu)
 {
-    return cpu.GetValueAtRegister(offsetBits & 0xF);
+    return cpu.ReadRegister(offsetBits & 0xF);
 }

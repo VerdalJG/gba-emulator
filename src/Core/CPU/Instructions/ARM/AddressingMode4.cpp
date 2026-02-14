@@ -5,7 +5,7 @@
 
 AddressingMode4 CalculateAddressingMode4(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
 {
-    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
+    uint32_t rn = cpu.ReadRegister(values.rnIndex);
     uint32_t amountOfRegisters = NumberOfSetBitsIn(values.registerList);
 
     if (!values.pFlag && values.uFlag)

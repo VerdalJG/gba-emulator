@@ -34,24 +34,24 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         if (!isHalfword)
         {
             // LDRSB
-            uint8_t loadedByte = cpu.Read8_Bus(effectiveAddress);
-            uint32_t valueToLoad = SignExtendTo32(loadedByte);
-            cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
+            uint8_t loadedByte = cpu.Read8(effectiveAddress);
+            uint32_t valueToLoad = SignExtend_8(loadedByte);
+            cpu.WriteRegister(values.rdIndex, valueToLoad);
         }
         else
         {
             // Account for misaligned halfword
             bool misaligned = effectiveAddress & 1; // First bit must be 0 to be divisible by 2 (halfword)
             uint32_t alignedAddress = effectiveAddress & ~1;
-            uint16_t loadedHalfword = cpu.Read16_Bus(alignedAddress);
+            uint16_t loadedHalfword = cpu.Read16(alignedAddress);
             if (misaligned)
             {
-                loadedHalfword = RotateRight(loadedHalfword, 8);
+                loadedHalfword = ROR(loadedHalfword, 8);
             }
             
             // LDRSH vs LDRH
-            uint32_t valueToLoad = isSigned ? SignExtendTo32(loadedHalfword) : ZeroExtendTo32(loadedHalfword);
-            cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
+            uint32_t valueToLoad = isSigned ? SignExtend(loadedHalfword) : static_cast<u32>(loadedHalfword);
+            cpu.WriteRegister(values.rdIndex, valueToLoad);
         }
 
         cpu.AddCycles(CPU_Timings::LOAD_BASE_COST);
@@ -60,24 +60,24 @@ void HalfwordDataTransfer(uint32_t instruction, GBA_CPU& cpu)
     {
         if (isSigned) return; // UNPREDICTABLE
 
-        uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
+        uint32_t rd = cpu.ReadRegister(values.rdIndex);
         // GBA SPECIFIC: ARM7TDMI (GBA) misaligned STRH does NOT fault.
         // The low address bit is ignored and the store is forced to an aligned address.
         uint16_t valueToStore = static_cast<uint16_t>(rd);
 
         // ARM7TDMI (GBA): misaligned STRH is forcibly aligned
         uint32_t alignedAddress = effectiveAddress & ~1;
-        cpu.Write16_Bus(alignedAddress, valueToStore);
+        cpu.Write16(alignedAddress, valueToStore);
         cpu.InvalidateSequentiality();
     }
 
     // Only post-index case updates here
     if (!values.pFlag)
     {
-        uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
+        uint32_t rn = cpu.ReadRegister(values.rnIndex);
         uint32_t offset = values.iFlag ? GetHDTOffset_Immediate(values.offsetBits) : GetHDTOffset_Register(values.offsetBits, cpu);
         uint32_t postIndexedAddress = values.uFlag ? (rn + offset) : (rn - offset);
-        cpu.SetValueAtRegister(values.rnIndex, postIndexedAddress);
+        cpu.WriteRegister(values.rnIndex, postIndexedAddress);
     } 
 }
 
@@ -85,8 +85,8 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
 {
     SingleDataTransfer_Decoded values = SingleDataTransfer_Decode(instruction);
 
-    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
-    uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
+    uint32_t rn = cpu.ReadRegister(values.rnIndex);
+    uint32_t rd = cpu.ReadRegister(values.rdIndex);
 
     bool isImmediate = !values.iFlag; 
     bool isLoad = values.lFlag;
@@ -102,7 +102,7 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         if (isByte)
         {
             // LDRB
-            uint8_t loadedByte = cpu.Read8_Bus(effectiveAddress);
+            uint8_t loadedByte = cpu.Read8(effectiveAddress);
             valueToLoad = ZeroExtendTo32(loadedByte);
         }
         else
@@ -112,7 +112,7 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
             uint32_t align = effectiveAddress & 3;
             uint32_t alignedAddress = effectiveAddress & ~3; 
 
-            valueToLoad = cpu.Read32_Bus(alignedAddress);
+            valueToLoad = cpu.Read32(alignedAddress);
 
             if (align)
             {
@@ -127,12 +127,12 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
             valueToLoad &= cpu.IsThumbMode() ? ~1u : ~3u; // Align if PC 
         }
 
-        cpu.SetValueAtRegister(values.rdIndex, valueToLoad);
+        cpu.WriteRegister(values.rdIndex, valueToLoad);
         cpu.AddCycles(CPU_Timings::LOAD_BASE_COST);
     }
     else
     {
-        uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
+        uint32_t rd = cpu.ReadRegister(values.rdIndex);
         if (values.rdIndex == GBA_CPU::PC_INDEX)
         {
             rd += 4; // +8 is already factored in when doing GetValueAtRegister
@@ -142,14 +142,14 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
         {
             // STRB
             uint8_t byte = rd & 0xFF;
-            cpu.Write8_Bus(effectiveAddress, byte);
+            cpu.Write8(effectiveAddress, byte);
         }
         else
         {
             // STR 
             // (ARM7TDMI / GBA): misaligned address is forcibly aligned
             uint32_t alignedAddress = effectiveAddress & ~3;
-            cpu.Write32_Bus(alignedAddress, rd);
+            cpu.Write32(alignedAddress, rd);
         }
         cpu.InvalidateSequentiality();
     }
@@ -157,10 +157,10 @@ void SingleDataTransfer(uint32_t instruction, GBA_CPU& cpu)
     // Post-indexed update
     if (!values.pFlag)
     {
-        uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
+        uint32_t rn = cpu.ReadRegister(values.rnIndex);
         uint32_t offset = CalculateOffset_AddressingMode2(values.offsetBits, values.iFlag, cpu);
         uint32_t postIndexedAddress = values.uFlag ? (rn + offset) : (rn - offset);
-        cpu.SetValueAtRegister(values.rnIndex, postIndexedAddress);
+        cpu.WriteRegister(values.rnIndex, postIndexedAddress);
     }
 }
 
@@ -221,15 +221,15 @@ void LDM(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex && values.wFlag) continue;
 
-        uint32_t loaded = cpu.Read32_Bus(address);
+        uint32_t loaded = cpu.Read32(address);
 
         if (i == GBA_CPU::PC_INDEX)
         {
-            cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, loaded & 0xFFFFFFFC); // Ignore bits [1:0]
+            cpu.WriteRegister(GBA_CPU::PC_INDEX, loaded & 0xFFFFFFFC); // Ignore bits [1:0]
         }
         else
         {
-            cpu.SetValueAtRegister(i, loaded);
+            cpu.WriteRegister(i, loaded);
         }
 
         address += 4;
@@ -240,7 +240,7 @@ void LDM(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     if (baseRegisterInList && values.wFlag)
     {
         // Normally UNPREDICTABLE, but ARM7TDMI has this special case
-        cpu.SetValueAtRegister(values.rnIndex, addressing4.writebackValue);
+        cpu.WriteRegister(values.rnIndex, addressing4.writebackValue);
     }
 }
 
@@ -255,9 +255,9 @@ void LDMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex && values.wFlag) continue;
 
-        uint32_t loaded = cpu.Read32_Bus(address);
+        uint32_t loaded = cpu.Read32(address);
 
-        cpu.SetValueAtRegister(i, loaded);
+        cpu.WriteRegister(i, loaded);
 
         address += 4;
     }
@@ -267,7 +267,7 @@ void LDMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex) continue;
 
-        uint32_t loaded = cpu.Read32_Bus(address);
+        uint32_t loaded = cpu.Read32(address);
 
         if (cpu.GetCurrentOperatingMode() == OperatingMode::FIQ)
         {
@@ -275,7 +275,7 @@ void LDMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         }
         else
         {
-            cpu.SetValueAtRegister(i, loaded);
+            cpu.WriteRegister(i, loaded);
         }
 
         address += 4;
@@ -286,7 +286,7 @@ void LDMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     if (baseRegisterInList && values.wFlag)
     {
         // Normally UNPREDICTABLE, but ARM7TDMI has this special case
-        cpu.SetValueAtRegister(values.rnIndex, addressing4.writebackValue);
+        cpu.WriteRegister(values.rnIndex, addressing4.writebackValue);
     }
 }
 
@@ -301,8 +301,8 @@ void LDMRestoreCPSR(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         if (!((values.registerList >> i) & 1)) continue;
         if (i == values.rnIndex && values.wFlag) continue;
 
-        uint32_t loaded = cpu.Read32_Bus(address);
-        cpu.SetValueAtRegister(i, loaded);
+        uint32_t loaded = cpu.Read32(address);
+        cpu.WriteRegister(i, loaded);
 
         address += 4;
     }
@@ -310,17 +310,17 @@ void LDMRestoreCPSR(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     int bank = BankIndex(cpu.GetCurrentOperatingMode());
     cpu.RestoreCPSRFromSPSR(bank);
 
-    uint32_t loaded = cpu.Read32_Bus(address);
+    uint32_t loaded = cpu.Read32(address);
     uint32_t pcValue = cpu.IsThumbMode() ? loaded & 0xFFFFFFFE : loaded & 0xFFFFFFFC;
 
-    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, pcValue); // Ignore bits [1:0]
+    cpu.WriteRegister(GBA_CPU::PC_INDEX, pcValue); // Ignore bits [1:0]
 
     assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
 
     if (baseRegisterInList && values.wFlag)
     {
         // Normally UNPREDICTABLE, but ARM7TDMI has this special case
-        cpu.SetValueAtRegister(values.rnIndex, addressing4.writebackValue);
+        cpu.WriteRegister(values.rnIndex, addressing4.writebackValue);
     }
 }
 
@@ -329,10 +329,10 @@ void LDMEmptyRegisterList(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     AddressingMode4 addressing4 = CalculateAddressingMode4(values, cpu);
     uint32_t address = addressing4.startAddress & ~3u;
 
-    uint32_t loaded = cpu.Read32_Bus(address);
+    uint32_t loaded = cpu.Read32(address);
     uint32_t pcValue = cpu.IsThumbMode() ? (loaded & ~1u) : (loaded & ~3u);
 
-    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, pcValue);
+    cpu.WriteRegister(GBA_CPU::PC_INDEX, pcValue);
 
     assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
 }
@@ -348,18 +348,18 @@ void STM(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     {
         if (!((values.registerList >> i) & 1)) continue;
 
-        uint32_t toStore = cpu.GetValueAtRegister(i);
+        uint32_t toStore = cpu.ReadRegister(i);
 
         bool sequential = i != 0;
-        cpu.Write32_Bus(address, toStore);
+        cpu.Write32(address, toStore);
 
         address += 4;
     }
 
     if (values.registerList & (1u << GBA_CPU::PC_INDEX))
     {
-        uint32_t pc = cpu.GetValueAtRegister(GBA_CPU::PC_INDEX) + 4;
-        cpu.Write32_Bus(address, pc);
+        uint32_t pc = cpu.ReadRegister(GBA_CPU::PC_INDEX) + 4;
+        cpu.Write32(address, pc);
         address += 4;
     }
 
@@ -368,7 +368,7 @@ void STM(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     if (!lowestSetBitIsRn && values.wFlag)
     {
         // Normally UNPREDICTABLE, but ARM7TDMI has this special case
-        cpu.SetValueAtRegister(values.rnIndex, addressing4.writebackValue);
+        cpu.WriteRegister(values.rnIndex, addressing4.writebackValue);
     }
 }
 
@@ -381,10 +381,10 @@ void STMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     {
         if (!((values.registerList >> i) & 1)) continue;
 
-        uint32_t toStore = cpu.GetValueAtRegister(i);
+        uint32_t toStore = cpu.ReadRegister(i);
 
         bool sequential = i != 0;
-        cpu.Write32_Bus(address, toStore);
+        cpu.Write32(address, toStore);
 
         address += 4;
     }
@@ -401,19 +401,19 @@ void STMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
         }
         else
         {
-            toStore = cpu.GetValueAtRegister(i);
+            toStore = cpu.ReadRegister(i);
         }
 
         bool sequential = i != 0;
-        cpu.Write32_Bus(address, toStore);
+        cpu.Write32(address, toStore);
 
         address += 4;
     }
 
     if (values.registerList & (1u << GBA_CPU::PC_INDEX))
     {
-        uint32_t pc = cpu.GetValueAtRegister(GBA_CPU::PC_INDEX) + 4;
-        cpu.Write32_Bus(address, pc);
+        uint32_t pc = cpu.ReadRegister(GBA_CPU::PC_INDEX) + 4;
+        cpu.Write32(address, pc);
         address += 4;
     }
 
@@ -422,7 +422,7 @@ void STMUserRegisters(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     if (values.wFlag)
     {
         // Normally UNPREDICTABLE, but ARM7TDMI has this special case
-        cpu.SetValueAtRegister(values.rnIndex, addressing4.writebackValue);
+        cpu.WriteRegister(values.rnIndex, addressing4.writebackValue);
     }
 
 }
@@ -433,8 +433,8 @@ void STMEmptyRegisterList(BlockDataTransfer_Decoded values, GBA_CPU &cpu)
     uint32_t address = addressing4.startAddress & ~3u;
 
     // GetValueAtRegister(PC) returns PC+8; STM stores PC+12
-    uint32_t toStore = cpu.GetValueAtRegister(GBA_CPU::PC_INDEX) + 4;
-    cpu.Write32_Bus(address, toStore);
+    uint32_t toStore = cpu.ReadRegister(GBA_CPU::PC_INDEX) + 4;
+    cpu.Write32(address, toStore);
 
     assert(address - 4 == addressing4.endAddress && "INCORRECT ADDRESSING4 CALCULATION");
 }

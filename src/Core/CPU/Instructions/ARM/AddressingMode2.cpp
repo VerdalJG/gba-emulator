@@ -8,7 +8,7 @@ uint32_t CalculateAddress_AddressingMode2(SingleDataTransfer_Decoded values, GBA
     bool writeback = values.wFlag;
     bool isLoad = values.lFlag;
 
-    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
+    uint32_t rn = cpu.ReadRegister(values.rnIndex);
     uint32_t offset = CalculateOffset_AddressingMode2(values.offsetBits, values.iFlag, cpu);
     uint32_t resultAddress;
     uint32_t rmIndex = values.iFlag ? values.offsetBits & 0xF : 0;
@@ -33,7 +33,7 @@ uint32_t CalculateAddress_AddressingMode2(SingleDataTransfer_Decoded values, GBA
                 return 0xFFFFFFFF; // For compiler
             }
 
-            cpu.SetValueAtRegister(values.rnIndex, resultAddress);
+            cpu.WriteRegister(values.rnIndex, resultAddress);
         }
     }
     else 
@@ -74,13 +74,13 @@ uint32_t CalculateOffset_AddressingMode2(uint32_t offsetBits, bool isRegister, G
 uint32_t CalculateOffset_Register(uint32_t offsetBits, GBA_CPU& cpu)
 {
     uint32_t rmIndex = offsetBits & 0xF;
-    return cpu.GetValueAtRegister(rmIndex);
+    return cpu.ReadRegister(rmIndex);
 }
 
 uint32_t CalculateOffset_ScaledRegister(uint32_t offsetBits, GBA_CPU& cpu)
 {
     uint32_t rmIndex = offsetBits & 0xF;
-    uint32_t rm = cpu.GetValueAtRegister(rmIndex);
+    uint32_t rm = cpu.ReadRegister(rmIndex);
     ShiftType shiftType = static_cast<ShiftType>((offsetBits >> 5) & 3);
     uint32_t shiftImm = (offsetBits >> 7) & 0x1F;
     return CalculateScaledRegister(rm, shiftType, shiftImm, cpu);

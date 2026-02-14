@@ -1,7 +1,7 @@
 #pragma once
-#include <cstdint>
-#include <utility>
+#include "Utils/Integer.hpp"
 
+#include <utility>
 
 class GBA_CPU;
 
@@ -13,13 +13,12 @@ enum class DataProcessingOpcode
     ORR, MOV, BIC, MVN
 };
 
-using InstructionFunction = void (*)(uint32_t, GBA_CPU&); // Instruction Function Pointer alias
+using InstructionFunction = void (GBA_CPU::*)(uint32_t); // Instruction Function Pointer alias
 
 struct Instruction
 {
-    uint32_t rawInstruction;
+    u32 rawInstruction;
     InstructionFunction function = nullptr;
-    bool valid = false;
 };
 
 struct ShifterOperand 
@@ -57,15 +56,17 @@ inline bool CheckBits(uint32_t instruction, uint32_t shift, uint32_t mask, uint3
     return ((instruction >> shift) & mask) == expected;
 }
 
-uint32_t ZeroExtendTo32(uint8_t value);
-uint32_t ZeroExtendTo32(uint16_t value);
+inline u32 SignExtend_8(u8 value)
+{
+    return (value & 0x80) ? (0xFFFFFF00 | static_cast<u32>(value)) : static_cast<u32>(value);
+}
 
-int32_t SignExtendTo32(uint8_t value);
-int32_t SignExtendTo32(uint16_t value);
+inline u32 SignExtend_16(u16 value)
+{
+    return (value & 0x8000) ? (0xFFFF0000 | static_cast<u32>(value)) : static_cast<u32>(value);
+}
 
 inline uint32_t CarryFrom(uint64_t result)
 {
     return static_cast<uint32_t>(result >> 32);
 }
-
-uint32_t NumberOfSetBitsIn(uint32_t value);

@@ -40,19 +40,19 @@ void GBA_HLE::HLE_SoftReset(GBA_CPU &cpu)
     // Reset registers to startup state
     for (int i = 0; i < 16; ++i)
     {
-        cpu.SetValueAtRegister(i, 0);
+        cpu.WriteRegister(i, 0);
     }
         
     // Reset CPSR (enter system mode, ARM state)
     cpu.UpdateCPSR(0x000000DF); // I and F disabled, ARM, System mode
 
     // Restart at address 0 (BIOS entry point)
-    cpu.SetValueAtRegister(GBA_CPU::PC_INDEX, 0x00000000);
+    cpu.WriteRegister(GBA_CPU::PC_INDEX, 0x00000000);
 }
 
 void GBA_HLE::HLE_RegisterRamReset(GBA_CPU &cpu)
 {
-    uint32_t mask = cpu.GetValueAtRegister(0);
+    uint32_t mask = cpu.ReadRegister(0);
 
     if (mask & (1 << 0)) memory.ClearRegion(GBA_MemoryRegionType::EWRAM);
     if (mask & (1 << 1)) memory.ClearRegion(GBA_MemoryRegionType::IWRAM);
@@ -88,33 +88,33 @@ void GBA_HLE::HLE_VBlankIntrWait(GBA_CPU &cpu)
 
 void GBA_HLE::HLE_Div(GBA_CPU &cpu)
 {
-    int32_t dividend = cpu.GetValueAtRegister(0);
-    int32_t divisor = cpu.GetValueAtRegister(1);
+    int32_t dividend = cpu.ReadRegister(0);
+    int32_t divisor = cpu.ReadRegister(1);
 
     int32_t quotient = dividend / divisor;
     int32_t remainder = dividend % divisor;
 
-    cpu.SetValueAtRegister(0, quotient);
-    cpu.SetValueAtRegister(1, remainder);
-    cpu.SetValueAtRegister(3, abs(quotient));
+    cpu.WriteRegister(0, quotient);
+    cpu.WriteRegister(1, remainder);
+    cpu.WriteRegister(3, abs(quotient));
 }
 
 void GBA_HLE::HLE_DivArm(GBA_CPU &cpu)
 {
-    int32_t dividend = cpu.GetValueAtRegister(1);
-    int32_t divisor = cpu.GetValueAtRegister(0);
+    int32_t dividend = cpu.ReadRegister(1);
+    int32_t divisor = cpu.ReadRegister(0);
 
     int32_t quotient = dividend / divisor;
     int32_t remainder = dividend % divisor;
 
-    cpu.SetValueAtRegister(1, quotient);
-    cpu.SetValueAtRegister(0, remainder);
-    cpu.SetValueAtRegister(3, abs(quotient));
+    cpu.WriteRegister(1, quotient);
+    cpu.WriteRegister(0, remainder);
+    cpu.WriteRegister(3, abs(quotient));
 }
 
 void GBA_HLE::HLE_Sqrt(GBA_CPU &cpu)
 {
-    uint32_t value = cpu.GetValueAtRegister(0);
+    uint32_t value = cpu.ReadRegister(0);
 
     // Sqrt of 0 is 0, don't need to continue
     if (value == 0) return;
@@ -132,12 +132,12 @@ void GBA_HLE::HLE_Sqrt(GBA_CPU &cpu)
     uint16_t result = std::sqrt(value);
 
     // Mask result to 16 bits
-    cpu.SetValueAtRegister(0, result & 0xFFFF);
+    cpu.WriteRegister(0, result & 0xFFFF);
 }
 
 void GBA_HLE::HLE_ArcTan(GBA_CPU &cpu)
 {
-    int32_t value = static_cast<int16_t>(cpu.GetValueAtRegister(0));
+    int32_t value = static_cast<int16_t>(cpu.ReadRegister(0));
     double x = static_cast<double>(value) / (1 << 14); // Convert from 1.14 fixed point to float/double
 
     double angleRadians = std::atan(value);
@@ -145,16 +145,16 @@ void GBA_HLE::HLE_ArcTan(GBA_CPU &cpu)
     // Convert radians to GBA angle representation
     uint16_t angleGBA = static_cast<uint16_t>(angleRadians * (0x10000 / (2 * std::numbers::pi)));
 
-    cpu.SetValueAtRegister(0, angleGBA);
+    cpu.WriteRegister(0, angleGBA);
 }
 
 void GBA_HLE::HLE_ArcTan2(GBA_CPU &cpu)
 {
-    int32_t r0 = static_cast<int16_t>(cpu.GetValueAtRegister(0));
-    int32_t r1 = static_cast<int16_t>(cpu.GetValueAtRegister(1));
+    int32_t r0 = static_cast<int16_t>(cpu.ReadRegister(0));
+    int32_t r1 = static_cast<int16_t>(cpu.ReadRegister(1));
 
-    double r0Angle = static_cast<int16_t>(cpu.GetValueAtRegister(0)) / (1 << 14);
-    double r1Angle = static_cast<int16_t>(cpu.GetValueAtRegister(1)) / (1 << 14);
+    double r0Angle = static_cast<int16_t>(cpu.ReadRegister(0)) / (1 << 14);
+    double r1Angle = static_cast<int16_t>(cpu.ReadRegister(1)) / (1 << 14);
 
     double angleRadians = std::atan2(r1Angle, r0Angle);
 
@@ -165,7 +165,7 @@ void GBA_HLE::HLE_ArcTan2(GBA_CPU &cpu)
 
     // Convert to gba angle representation
     uint16_t angleGBA = static_cast<uint16_t>(angleRadians * 0x10000 / (2 * std::numbers::pi));
-    cpu.SetValueAtRegister(0, angleGBA);  
+    cpu.WriteRegister(0, angleGBA);  
 }
 
 void GBA_HLE::HLE_CpuSet(GBA_CPU &cpu)

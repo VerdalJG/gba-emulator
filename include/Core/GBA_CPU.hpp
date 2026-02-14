@@ -7,6 +7,7 @@
 #include "Utils/Logger.hpp"
 #include "Utils/Integer.hpp"
 #include "Core/CPU/Registers.hpp"
+#include "Core/CPU/Instructions/TableGenerator.hpp"
 
 class GBA_Bus;
 class EmulatorCore;
@@ -22,19 +23,9 @@ public:
     void Step();             // Fetch, decode, and execute loop
     void RequestInterrupt(); // Triggered by emulator core
 
-    CPU_Registers cpuState;
-
     // Register functions
-    inline uint32_t GetValueAtRegister(int registerIndex) { return visibleRegisters[registerIndex]; }
-    inline void SetValueAtRegister(int registerIndex, uint32_t value) 
-    { 
-        if (registerIndex == PC_INDEX)
-        {
-            FlushPipeline();
-            value &= ~3;
-        } 
-        visibleRegisters[registerIndex] = value;  
-    }
+    inline uint32_t ReadRegister(int index) { return cpuState.registers[index]; }
+    
 
     inline uint32_t GetValueAtUserRegister(int registerIndex) { return sharedR8_R12[8 - registerIndex]; }
     inline void SetValueAtUserRegister(int registerIndex, uint32_t value) { sharedR8_R12[8 - registerIndex] = value; }
@@ -60,6 +51,8 @@ public:
     void SaveCPSRIntoSPSR(int exceptionModeIndex);
     void UpdateVisibleRegistersForMode(OperatingMode newMode);
 
+    void SwitchMode(Mode mode);
+
     bool GetHalted() { return halted; }
     void SetHalted(bool shouldHalt) { halted = shouldHalt; }
 
@@ -71,19 +64,22 @@ public:
     EmulatorCore* GetEmulatorCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
-    uint8_t Read8_Bus(uint32_t address);
-    uint16_t Read16_Bus(uint32_t address);
-    uint32_t Read32_Bus(uint32_t address);
+    u32 Read8(u32 address);
+    u32 Read16(u32 address);
+    u32 Read32(u32 address);
 
-    void Write8_Bus(uint32_t address, uint8_t value);
-    void Write16_Bus(uint32_t address, uint16_t value);
-    void Write32_Bus(uint32_t address, uint32_t value);
+    void Write8(u32 address, u8 value);
+    void Write16(u32 address, u16 value);
+    void Write32(u32 address, u32 value);
+
+    // Used for LDR and SWP
+    u32 Read16_Rotated(u32 address);
+    u32 Read32_Rotated(u32 address);
+
+    u32 Read8_SignExtended(u32 address);
+    u32 Read16_SignExtended(u32 address);
 
     void InvalidateSequentiality(); 
-
-    static const int SP_INDEX = 13;
-    static const int LR_INDEX = 14;
-    static const int PC_INDEX = 15;
 
     using Handler_ARM = void (GBA_CPU::*)(u32); 
     using Handler_Thumb = void (GBA_CPU::*)(u16);
@@ -106,17 +102,59 @@ public:
     template <u16 opcode, u16 msbRd, u16 msbRs>
     void Thumb_HiRegisterOp(u16 instruction);
 
+    template <u16 rdIndex>
+    void Thumb_LoadPCRelative(u16 instruction);
+
+    template <u16 opcode, u16 roIndex>
+    void Thumb_LoadStoreRegisterOffset(u16 instruction);
+
+    template <u16 opcode, u16 roIndex>
+    void Thumb_LoadStoreSignExtended(u16 instruction);
+
+    template <u16 opcode, u16 offset_5>
+    void Thumb_LoadStoreImmediateOffset(u16 instruction);
+
+    template <bool load, u16 offset_5>
+    void Thumb_LoadStoreHalfword(u16 instruction);
+
+    template <bool load, u16 rdIndex>
+    void Thumb_LoadStoreSPRelative(u16 instruction);
+
+    template <bool getSP, u16 rdIndex>
+    void Thumb_GetRelativeAddress(u16 instruction);
+
+    template <bool sub>
+    void Thumb_AddOffsetToStackPointer(u16 instruction);
+
+    template <bool pop, bool bit_pc_lr>
+    void Thumb_PushPopRegisters(u16 instruction);
+
+    template <bool load, u16 rbIndex>
+    void Thumb_LoadStoreMultiple(u16 instruction);
+
+    template <u16 condition>
+    void Thumb_ConditionalBranch(u16 instruction);
+
+    void Thumb_SoftwareInterrupt(u16 instruction);
+
+    void Thumb_UnconditionalBranch(u16 instruction);
+
+    template <bool secondInstruction>
+    void Thumb_LongBranchWithLink(u16 instruction);
+
     // Arithmetic operations:
     u32 ADD(u32 op1, u32 op2, bool set_flags);
     u32 SUB(u32 op1, u32 op2, bool set_flags);
     u32 ADC(u32 op1, u32 op2, bool set_flags);
     u32 SBC(u32 op1, u32 op2, bool set_flags);
+
     void UpdateNZFlags(u32 result);
     void UpdateCFlag(u32 op1, u32 op2, bool isSub, u32 carry = 0);
     void UpdateVFlag(u32 op1, u32 op2, u32 result, bool isSub);
 
 
 protected:
+    CPU_Registers cpuState;
     std::array<uint32_t, 16> visibleRegisters{};    // R0 - R14 contain data, R15 contains address of next instruction (PC)
     uint32_t cpsr = 0;                              // Current Program Status Register
 
@@ -126,12 +164,19 @@ protected:
     std::array<uint32_t, 6> bankedR14s{};   // Link registers for FIQ, IRQ, Supervisor, Abort, Undefined
     std::array<uint32_t, 5> spsr{};         // SPSR for each banked mode
 
-    std::array<Instruction, 3> instructionPipeline{}; // [0] = fetch, [1] = decode, [2] = execute
+    struct Pipeline
+    {
+        std::array<Instruction, 3> pipeline{}; // [0] = fetch, [1] = decode, [2] = execute
+        
+    } pipeline;
+    
     bool halted = false;
 
     void Fetch();
     void Decode();
     void Execute();
+
+    bool ConditionPassed(Condition condition);
 
     void AdvanceInstructionPipeline(); 
     void FlushPipeline();
@@ -150,9 +195,12 @@ private:
     bool nextInstructionFetchIsSequential = false;
     bool nextDataAccessIsSequential = false;
 
-    static std::array<bool, 256> conditionTable; // Condition lookup table, precomputed
-    static std::array<Handler_ARM, 4096> armInstructionTable; // ARM instruction lookup table, precomputed
-    static std::array<Handler_Thumb, 4096> thumbInstructionTable; // ARM instruction lookup table, precomputed
+    inline void WriteRegister(int index, uint32_t value) { cpuState.registers[index] = value; }
+
+    // Inline allows us to initialize here
+    inline static const std::array<bool, 256> conditionTable = TableGenerator::GenerateTable_Condition(); // Condition lookup table, precomputed
+    inline static const std::array<Handler_ARM, 4096> armInstructionTable = TableGenerator::GenerateTable_ARM(); // ARM instruction lookup table, precomputed
+    inline static const std::array<Handler_Thumb, 1024> thumbInstructionTable = TableGenerator::GenerateTable_Thumb(); // ARM instruction lookup table, precomputed
 };
 
 #include "CPU/Instructions/Thumb/Instructions.inl"

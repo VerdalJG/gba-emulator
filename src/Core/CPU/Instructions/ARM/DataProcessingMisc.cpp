@@ -10,10 +10,10 @@ void Multiply(uint32_t instruction, GBA_CPU& cpu)
 {
     Multiply_Decoded values = Multiply_Decode(instruction);
 
-    uint32_t rm = cpu.GetValueAtRegister(values.rmIndex);
-    uint32_t rs = cpu.GetValueAtRegister(values.rsIndex);
-    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
-    uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
+    uint32_t rm = cpu.ReadRegister(values.rmIndex);
+    uint32_t rs = cpu.ReadRegister(values.rsIndex);
+    uint32_t rn = cpu.ReadRegister(values.rnIndex);
+    uint32_t rd = cpu.ReadRegister(values.rdIndex);
     
     // Check for Unpredictable conditions
     bool usingPC = values.rmIndex == 15 || values.rsIndex == 15 || values.rdIndex == 15 || values.rnIndex == 15;
@@ -23,7 +23,7 @@ void Multiply(uint32_t instruction, GBA_CPU& cpu)
 
     // MUL and MLA
     uint32_t result = values.accumulateFlag ? (rm * rs + rn) : (rm * rs);
-    cpu.SetValueAtRegister(values.rdIndex, result);
+    cpu.WriteRegister(values.rdIndex, result);
 
     // CPU Cycles calculation
     uint32_t multiplierCycles = CalculateMultiplierCycles(rs);
@@ -50,10 +50,10 @@ void MultiplyLong(uint32_t instruction, GBA_CPU& cpu)
 {
     MultiplyLong_Decoded values = MultiplyLong_Decode(instruction);
 
-    uint32_t rdHi = cpu.GetValueAtRegister(values.rdHiIndex);
-    uint32_t rdLo = cpu.GetValueAtRegister(values.rdLoIndex);
-    uint32_t rm = cpu.GetValueAtRegister(values.rmIndex);
-    uint32_t rs = cpu.GetValueAtRegister(values.rsIndex);
+    uint32_t rdHi = cpu.ReadRegister(values.rdHiIndex);
+    uint32_t rdLo = cpu.ReadRegister(values.rdLoIndex);
+    uint32_t rm = cpu.ReadRegister(values.rmIndex);
+    uint32_t rs = cpu.ReadRegister(values.rsIndex);
 
     // Check for Unpredictable conditions
     bool usingPC = values.rmIndex == 15 || values.rdHiIndex == 15 || values.rdLoIndex == 15 || values.rsIndex == 15;
@@ -90,8 +90,8 @@ void MultiplyLong(uint32_t instruction, GBA_CPU& cpu)
         }
     }
 
-    cpu.SetValueAtRegister(values.rdHiIndex, rdHi);
-    cpu.SetValueAtRegister(values.rdLoIndex, rdLo);
+    cpu.WriteRegister(values.rdHiIndex, rdHi);
+    cpu.WriteRegister(values.rdLoIndex, rdLo);
 
     // CPU Cycles calculation
     uint32_t multiplierCycles = CalculateMultiplierCycles(rs);
@@ -153,23 +153,23 @@ void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu)
     if (values.rdIndex == values.rmIndex || values.rdIndex == values.rnIndex)
     return; // UNPREDICTABLE
 
-    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
-    uint32_t rm = cpu.GetValueAtRegister(values.rmIndex);
-    uint32_t rd = cpu.GetValueAtRegister(values.rdIndex);
+    uint32_t rn = cpu.ReadRegister(values.rnIndex);
+    uint32_t rm = cpu.ReadRegister(values.rmIndex);
+    uint32_t rd = cpu.ReadRegister(values.rdIndex);
 
     uint32_t readValue;
 
     if (values.bFlag) // SWPB
     {
-        readValue = cpu.Read8_Bus(rn);
-        cpu.Write8_Bus(rn, rm & 0xFF);
+        readValue = cpu.Read8(rn);
+        cpu.Write8(rn, rm & 0xFF);
     }
     else // SWP
     {
         uint32_t alignedAddress = rn & ~3u;
         uint32_t misalignment = rn & 3u;
 
-        readValue = cpu.Read32_Bus(alignedAddress);
+        readValue = cpu.Read32(alignedAddress);
 
         // Rotate if misaligned
         if (misalignment)
@@ -178,10 +178,10 @@ void SingleDataSwap(uint32_t instruction, GBA_CPU& cpu)
         }
 
         // Aligned write, unrotated
-        cpu.Write32_Bus(alignedAddress, rm);
+        cpu.Write32(alignedAddress, rm);
     }
 
-    cpu.SetValueAtRegister(values.rdIndex, readValue); 
+    cpu.WriteRegister(values.rdIndex, readValue); 
     cpu.AddCycles(CPU_Timings::SWAP_BASE_COST);
 }
 

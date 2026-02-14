@@ -9,7 +9,7 @@ uint32_t CalculateAddress_AddressingMode3(HalfwordDataTransfer_Decoded values, G
     bool isLoad = values.lFlag;
     bool isImmediate = values.iFlag;
 
-    uint32_t rn = cpu.GetValueAtRegister(values.rnIndex);
+    uint32_t rn = cpu.ReadRegister(values.rnIndex);
     uint32_t offset = isImmediate ? GetHDTOffset_Immediate(values.offsetBits) : GetHDTOffset_Register(values.offsetBits, cpu);
     uint32_t resultAddress;
 
@@ -24,7 +24,7 @@ uint32_t CalculateAddress_AddressingMode3(HalfwordDataTransfer_Decoded values, G
                 return 0xFFFFFFFF; // For compiler
             } 
             // Pre-indexed with write-back: Rn = EA
-            cpu.SetValueAtRegister(values.rnIndex, resultAddress);
+            cpu.WriteRegister(values.rnIndex, resultAddress);
         }
     }
     else // P = 0

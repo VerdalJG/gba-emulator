@@ -5,9 +5,12 @@
 #include "Core/CPU/CPU_Modes.hpp"
 #include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
 #include "Utils/Logger.hpp"
-#include "Utils/Integer.hpp"
+#include "Utils/Integers.hpp"
 #include "Core/CPU/Registers.hpp"
 #include "Core/CPU/Instructions/TableGenerator.hpp"
+#include "Core/GBA_Bus.hpp"
+
+#include "Core/CPU/InstructionPipeline.hpp"
 
 class GBA_Bus;
 class EmulatorCore;
@@ -64,13 +67,13 @@ public:
     EmulatorCore* GetEmulatorCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
-    u32 Read8(u32 address);
-    u32 Read16(u32 address);
-    u32 Read32(u32 address);
+    u32 Read8(u32 address, Access access);
+    u32 Read16(u32 address, Access access);
+    u32 Read32(u32 address, Access access);
 
-    void Write8(u32 address, u8 value);
-    void Write16(u32 address, u16 value);
-    void Write32(u32 address, u32 value);
+    void Write8(u32 address, u8 value, Access access);
+    void Write16(u32 address, u16 value, Access access);
+    void Write32(u32 address, u32 value, Access access);
 
     // Used for LDR and SWP
     u32 Read16_Rotated(u32 address);
@@ -83,8 +86,6 @@ public:
 
     using Handler_ARM = void (GBA_CPU::*)(u32); 
     using Handler_Thumb = void (GBA_CPU::*)(u16);
-
-    //#include "CPU/Instructions/ARM/Handler.hpp"
 
     // Thumb instructions:
     template <u16 shiftOp, u16 immediate_5>
@@ -164,11 +165,7 @@ protected:
     std::array<uint32_t, 6> bankedR14s{};   // Link registers for FIQ, IRQ, Supervisor, Abort, Undefined
     std::array<uint32_t, 5> spsr{};         // SPSR for each banked mode
 
-    struct Pipeline
-    {
-        std::array<Instruction, 3> pipeline{}; // [0] = fetch, [1] = decode, [2] = execute
-        
-    } pipeline;
+    Pipeline pipeline;
     
     bool halted = false;
 
@@ -201,6 +198,7 @@ private:
     inline static const std::array<bool, 256> conditionTable = TableGenerator::GenerateTable_Condition(); // Condition lookup table, precomputed
     inline static const std::array<Handler_ARM, 4096> armInstructionTable = TableGenerator::GenerateTable_ARM(); // ARM instruction lookup table, precomputed
     inline static const std::array<Handler_Thumb, 1024> thumbInstructionTable = TableGenerator::GenerateTable_Thumb(); // ARM instruction lookup table, precomputed
+    
 };
 
 #include "CPU/Instructions/Thumb/Instructions.inl"

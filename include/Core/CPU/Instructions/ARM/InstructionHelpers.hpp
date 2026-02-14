@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Integer.hpp"
+#include "Utils/Integers.hpp"
 
 #include <utility>
 
@@ -13,13 +13,6 @@ enum class DataProcessingOpcode
     ORR, MOV, BIC, MVN
 };
 
-using InstructionFunction = void (GBA_CPU::*)(uint32_t); // Instruction Function Pointer alias
-
-struct Instruction
-{
-    u32 rawInstruction;
-    InstructionFunction function = nullptr;
-};
 
 struct ShifterOperand 
 {

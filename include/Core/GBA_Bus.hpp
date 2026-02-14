@@ -20,17 +20,14 @@ enum class BusRequester
     DMA
 };
 
-enum Sequentiality
+enum class Access : u8
 {
     Nonsequential = 0,
-    Sequential = 1
-};
-
-enum class AccessType
-{
-    Code, // Instruction fetch/prefetch
-    Data, // CPU Load/Store
-    DMA   // DMA bus request
+    Sequential = 1,
+    Code = 2, // Instruction fetch/prefetch
+    Data = 4, // CPU Load/Store
+    DMA = 8,  // DMA bus request
+    Lock = 16
 };
 
 class EmulatorCore;

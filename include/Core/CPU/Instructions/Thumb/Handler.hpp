@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/GBA_CPU.hpp"
-#include "Utils/Integer.hpp"
+#include "Utils/Integers.hpp"
 #include "Utils/BitOperations.hpp"
 
 using Handler_Thumb = GBA_CPU::Handler_Thumb;

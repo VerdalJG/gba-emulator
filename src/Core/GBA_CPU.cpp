@@ -95,21 +95,36 @@ void GBA_CPU::FlushPipeline()
 
 void GBA_CPU::Fetch()
 {
-    Instruction newInstruction;
+    uint validInstructions = 0;
+    for (PipelineStage stage : pipeline.stage)
+    {
+        if (stage.valid) validInstructions++;
+    }
 
-    u32 address = cpuState.r15;
+    u32 address;
+    u32 fetched;
 
     if (IsThumbMode())
     {
-        newInstruction.rawInstruction = Read16(address);
+        address = cpuState.r15 + (validInstructions * 2);
+        address &= 1; // Ignore bit [0] in THUMB
+        fetched = Read16(address, pipeline.nextAccess);
     }
-    else
+    else // ARM
     {
-        newInstruction.rawInstruction = Read32(address);
+        address = cpuState.r15 + (validInstructions * 4);
+        address &= 3; // Ignore bits [0:1] in ARM
+        fetched = Read32(address, pipeline.nextAccess);
     }
-    newInstruction.valid = true;
-    pipeline[0] = newInstruction;
-    nextInstructionFetchIsSequential = true;
+
+    pipeline.stage[0].valid = true;
+    pipeline.stage[0].instruction = fetched;
+    pipeline.stage[0].handler = nullptr;
+
+    if (validInstructions >= 2) // Pipeline is now full
+    {
+        AdvanceProgramCounter();
+    }
 }
 
 void GBA_CPU::Decode()

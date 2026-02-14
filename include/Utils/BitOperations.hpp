@@ -1,5 +1,5 @@
 #pragma once
-#include "Integer.hpp"
+#include "Integers.hpp"
 
 /// @brief Returns a range of bits
 /// @tparam T integral type

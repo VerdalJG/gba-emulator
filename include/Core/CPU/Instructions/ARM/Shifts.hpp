@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Integer.hpp"
+#include "Utils/Integers.hpp"
 #include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
 
 class GBA_CPU;

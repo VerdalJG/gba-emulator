@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Integer.hpp"
+#include "Utils/Integers.hpp"
 #include <array>
 
 enum class Mode

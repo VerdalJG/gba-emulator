@@ -165,7 +165,6 @@ inline void GBA_CPU::Thumb_ALU(u16 instruction)
             break;
         }
             
-        
         case ThumbALUOp::SBC:
         {
             rd = SBC(rd, rs, true);

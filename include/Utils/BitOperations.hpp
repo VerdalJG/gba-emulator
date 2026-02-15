@@ -2,17 +2,30 @@
 #include "Integers.hpp"
 
 /// @brief Returns a range of bits
-/// @tparam T integral type
 /// @tparam hi Index of upper bit (inclusive)
 /// @tparam lo Index of lower bit (inclusive)
 /// @param value Value to extract bits from
 /// @return An integral value, bits shifted down to least siginificant bits
-template<int hi, int lo, typename T>
-inline constexpr T ExtractBits(T value) 
+template<int hi, int lo>
+inline constexpr u32 ExtractBits(u32 value) 
 {
-    static_assert(hi < sizeof(T) * 4 && lo < sizeof(T) * 4);
-    static_assert(hi >= lo && std::is_unsigned_v<T>);
-    return (value >> lo) & ((T(1) << (hi - lo + 1)) - 1);
+    static_assert(hi < 32 && lo < 31);
+    static_assert(hi > lo);
+    return (value >> lo) & ((static_cast<u32>(1) << (hi - lo + 1)) - 1);
+}
+
+
+/// @brief Returns a range of bits
+/// @tparam hi Index of upper bit (inclusive)
+/// @tparam lo Index of lower bit (inclusive)
+/// @param value Value to extract bits from
+/// @return An integral value, bits shifted down to least siginificant bits
+template<int hi, int lo>
+inline constexpr u16 ExtractBits(u16 value) 
+{
+    static_assert(hi < 16 && lo < 15);
+    static_assert(hi > lo);
+    return (value >> lo) & ((static_cast<u16>(1) << (hi - lo + 1)) - 1);
 }
 
 template<int bitIndex>

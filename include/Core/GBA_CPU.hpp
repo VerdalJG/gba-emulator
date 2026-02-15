@@ -171,7 +171,12 @@ protected:
     void Execute();
 
     bool ConditionPassed(Condition condition);
+    
     void Decode_ARM(u32 instruction, InstructionHandler& handler);
+    void Decode_ARM_Pattern00(u32 instruction, InstructionHandler& handler);
+    void Decode_ARM_Pattern01(u32 instruction, InstructionHandler& handler);
+    void Decode_ARM_Pattern10(u32 instruction, InstructionHandler& handler);
+    void Decode_ARM_Pattern11(u32 instruction, InstructionHandler& handler);
     void Decode_Thumb(u32 instruction, InstructionHandler& handler);
 
     void AdvanceInstructionPipeline(); 
@@ -191,11 +196,14 @@ private:
 
     inline void WriteRegister(int index, uint32_t value) { cpuState.registers[index] = value; }
 
+    #include "Core/CPU/ARM/Decoder.hpp"
+
+    // ARM instructions:
+    void ARM_DataProcessing_Immediate(u32 instruction);
+    void ARM_DataProcessing_Register(u32 instruction);
+
     // Inline allows us to initialize here
-    inline static const std::array<bool, 256> conditionTable = TableGenerator::GenerateTable_Condition(); // Condition lookup table, precomputed
-    inline static const std::array<Handler_ARM, 4096> armInstructionTable = TableGenerator::GenerateTable_ARM(); // ARM instruction lookup table, precomputed
-    inline static const std::array<Handler_Thumb, 1024> thumbInstructionTable = TableGenerator::GenerateTable_Thumb(); // ARM instruction lookup table, precomputed
-    
+    inline static const std::array<bool, 256> conditionTable = GenerateConditionTable(); // Condition lookup table, precomputed
 };
 
 #include "CPU/Instructions/Thumb/Instructions.inl"

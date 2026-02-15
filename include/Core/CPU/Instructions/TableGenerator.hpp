@@ -34,35 +34,5 @@ struct TableGenerator
         return table;
     }
 
-    static constexpr std::array<bool, 256> GenerateTable_Condition()
-    {
-        std::array<bool, 256> table = {};
-
-        for (int flags = 0; flags < 16; flags++)
-        {
-            bool n = flags & 8;
-            bool z = flags & 4;
-            bool c = flags & 2;
-            bool v = flags & 1;
-
-            table[(CONDITION_EQ << 4 | flags)] = z;
-            table[(CONDITION_NE << 4 | flags)] = !z;
-            table[(CONDITION_CS << 4 | flags)] = c;
-            table[(CONDITION_CC << 4 | flags)] = !c;
-            table[(CONDITION_MI << 4 | flags)] = n;
-            table[(CONDITION_PL << 4 | flags)] = !n;
-            table[(CONDITION_VS << 4 | flags)] = v;
-            table[(CONDITION_VC << 4 | flags)] = !v;
-            table[(CONDITION_HI << 4 | flags)] = c && !z;
-            table[(CONDITION_LS << 4 | flags)] = !c || z;
-            table[(CONDITION_GE << 4 | flags)] = n == v;
-            table[(CONDITION_LT << 4 | flags)] = n != v;
-            table[(CONDITION_GT << 4 | flags)] = !z && (n == v);
-            table[(CONDITION_LE << 4 | flags)] = z || (n != v);
-            table[(CONDITION_AL << 4 | flags)] = true;
-            table[(CONDITION_UD << 4 | flags)] = false;
-        }
-
-        return table;
-    }
+    
 };

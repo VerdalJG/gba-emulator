@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include "Utils/Integers.hpp"
 
 class GBA_CPU;
 
@@ -22,8 +22,11 @@ enum Condition
     CONDITION_GT = 12,          // Greater than                 - Z clear, N = V
     CONDITION_LE = 13,          // Less than, or equal          - Z set, N <> V
     CONDITION_AL = 14,          // Always                       - No condition
-    CONDITION_UD = 15           // Undefined                    - Undefined
+    CONDITION_NV = 15           // Unpredictable (no-op)        - Unpredictable
 };
 
-Condition GetConditionType(uint32_t instruction);
+inline Condition GetConditionType(u32 instruction)
+{
+    return static_cast<Condition>(instruction >> 28);
+}
 

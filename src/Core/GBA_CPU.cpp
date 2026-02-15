@@ -7,6 +7,7 @@
 #include "Core/GBA_Bus.hpp"
 #include "Core/CPU/Instructions/ARM/Conditions.hpp"
 #include "Core/CPU/Instructions/ARM/Shifts.hpp"
+#include "Core/CPU/Instructions/ARM/Conditions.hpp"
 
 #include <assert.h>
 
@@ -17,12 +18,11 @@ GBA_CPU::GBA_CPU(EmulatorCore* core, GBA_Bus& bus) : core(core), bus(bus)
 
 void GBA_CPU::Reset()
 {
-    // Fill registers with 0
-    std::fill(std::begin(visibleRegisters), std::end(visibleRegisters), 0);
-    cpsr = 0x000000D3;   // Supervisor mode, IRQ/FIQ disabled
-    WriteRegister(CPU_Registers::PC_INDEX, 0x00000000);
+    // Reset all registers and set CPSR to it's reset value (0x000000D3)
+    cpuState.Reset();
     FlushPipeline();
-    totalCycles = 0;
+
+    //totalCycles = 0;
 }
 
 void GBA_CPU::Step()
@@ -33,7 +33,7 @@ void GBA_CPU::Step()
         return; // No instructions/cycles during cpu halt
     }
 
-    currentInstructionCycles = 0;
+    //currentInstructionCycles = 0;
 
     AdvanceInstructionPipeline();
 
@@ -57,13 +57,6 @@ void GBA_CPU::SaveCPSRIntoSPSR(int exceptionModeIndex)
     spsr[exceptionModeIndex] = cpsr;
 }
 
-
-
-void GBA_CPU::HandleUndefinedBehavior(uint32_t instruction)
-{
-    // In an emulator, treat it as NOP (No operation), and just step to next instruction
-}
-
 void GBA_CPU::HandleHalt()
 {
     if (/*interrupts.AnyPendingEnabled(*this)*/ true)
@@ -77,96 +70,62 @@ void GBA_CPU::HandleHalt()
     }
 }
 
-void GBA_CPU::AdvanceInstructionPipeline()
+void GBA_CPU:: AdvanceInstructionPipeline()
 {
-    pipeline[2] = pipeline[1]; // Move [1] to [2];
-    pipeline[1] = pipeline[0]; // Move [0] to [1];
+    pipeline.stage[2] = pipeline.stage[1]; // Move decoded instruction [1] to execute stage [2];
+    pipeline.stage[1] = pipeline.stage[0]; // Move fetch instruction [0] to decode stage [1];
 }
-
-
 
 void GBA_CPU::FlushPipeline()
 {
-    pipeline[0].valid = false;
-    pipeline[1].valid = false;
-    pipeline[2].valid = false;
-    nextInstructionFetchIsSequential = false;   
+    pipeline.stage[0].valid = false;
+    pipeline.stage[1].valid = false;
+    pipeline.stage[2].valid = false;
+    pipeline.access = Access::Code | Access::Nonsequential;   
 }
 
 void GBA_CPU::Fetch()
 {
-    uint validInstructions = 0;
-    for (PipelineStage stage : pipeline.stage)
-    {
-        if (stage.valid) validInstructions++;
-    }
-
-    u32 address;
-    u32 fetched;
-
-    if (IsThumbMode())
-    {
-        address = cpuState.r15 + (validInstructions * 2);
-        address &= 1; // Ignore bit [0] in THUMB
-        fetched = Read16(address, pipeline.nextAccess);
-    }
-    else // ARM
-    {
-        address = cpuState.r15 + (validInstructions * 4);
-        address &= 3; // Ignore bits [0:1] in ARM
-        fetched = Read32(address, pipeline.nextAccess);
-    }
-
-    pipeline.stage[0].valid = true;
-    pipeline.stage[0].instruction = fetched;
-    pipeline.stage[0].handler = nullptr;
-
-    if (validInstructions >= 2) // Pipeline is now full
-    {
-        AdvanceProgramCounter();
-    }
+    u32 address = cpuState.r15;
+    u32 fetched = IsThumbMode() ? Read16(address, pipeline.access) : Read32(address, pipeline.access);
+    pipeline.stage[0] = { fetched, nullptr, true };
+    pipeline.access = Access::Code | Access::Sequential;
 }
 
 void GBA_CPU::Decode()
 {
-    if (!pipeline[1].valid) return;
+    if (!pipeline.stage[1].valid) return;
 
-    InstructionFunction functionToExecute = nullptr;
+    u32 instruction = pipeline.stage[1].instruction;
+    InstructionHandler handler = nullptr;
     
-    // Thumb mode does not use condition bits
     if (IsThumbMode()) 
     {
-        // Handle Thumb mode here
-        return;
+        // Thumb mode does not use condition bits
+        Decode_Thumb(instruction, handler);
     }
     else // ARM Mode
     {
-        Condition condition = GetConditionType(pipeline[1].rawInstruction);
-        if (condition == CONDITION_UD)
-        {
-            HandleUndefinedBehavior(pipeline[1].rawInstruction);
-            return;
-        }
+        Condition condition = GetConditionType(pipeline.stage[1].instruction);
+        if (condition == CONDITION_NV) return; // Unpredictable, treat as no-op
 
         if (ConditionPassed(condition))
         {
-            functionToExecute = DecodeInstruction(pipeline[1].rawInstruction, *this);
+            Decode_ARM(instruction, handler);
         }
     }
 
-    if (functionToExecute == nullptr) return;
-
     // Store function pointer in pipeline
-    pipeline[1].function = functionToExecute;
+    pipeline.stage[1].handler = handler;
 }
 
 void GBA_CPU::Execute()
 {
-    if (!pipeline[2].valid) return;
-    if (pipeline[2].function == nullptr) return; // No-Op
+    if (!pipeline.stage[2].valid) return;
+    if (pipeline.stage[2].handler == nullptr) return; // No-op
 
     // Execute the instruction
-    pipeline[2].function(pipeline[2].rawInstruction, *this);
+    (this->*pipeline.stage[2].handler)(pipeline.stage[2].instruction);
 }
 
 
@@ -201,7 +160,7 @@ void GBA_CPU::Log(const std::string& message, LogType logType, const char *funct
     }
 }
 
-u32 GBA_CPU::Read8(u32 address)
+u32 GBA_CPU::Read8(u32 address, uint access)
 {
     u32 cycles = 0;
     u32 readValue = bus.Read8(address, BusRequester::CPU, &cycles);
@@ -209,7 +168,7 @@ u32 GBA_CPU::Read8(u32 address)
     return readValue;
 }
 
-u32 GBA_CPU::Read16(u32 address)
+u32 GBA_CPU::Read16(u32 address, uint access)
 {
     u32 cycles = 0;
     u32 readValue = bus.Read16(address, BusRequester::CPU, &cycles);
@@ -217,7 +176,7 @@ u32 GBA_CPU::Read16(u32 address)
     return readValue;
 }
 
-u32 GBA_CPU::Read32(u32 address)
+u32 GBA_CPU::Read32(u32 address, uint access)
 {
     u32 cycles = 0;
     u32 readValue = bus.Read32(address, BusRequester::CPU, &cycles);
@@ -225,28 +184,28 @@ u32 GBA_CPU::Read32(u32 address)
     return readValue;
 }
 
-void GBA_CPU::Write8(u32 address, u8 value)
+void GBA_CPU::Write8(u32 address, u8 value, uint access)
 {
     u32 cycles = 0;
     bus.Write8(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
-void GBA_CPU::Write16(u32 address, u16 value)
+void GBA_CPU::Write16(u32 address, u16 value, uint access)
 {
     u32 cycles = 0;
     bus.Write16(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
-void GBA_CPU::Write32(u32 address, u32 value)
+void GBA_CPU::Write32(u32 address, u32 value, uint access)
 {
     u32 cycles = 0;
     bus.Write32(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
-u32 GBA_CPU::Read16_Rotated(u32 address) 
+u32 GBA_CPU::Read16_Rotated(u32 address, uint access) 
 {
     u32 cycles = 0;
     u32 value = bus.Read16(address, BusRequester::CPU, &cycles);
@@ -260,7 +219,7 @@ u32 GBA_CPU::Read16_Rotated(u32 address)
     return value;
 }
 
-u32 GBA_CPU::Read32_Rotated(u32 address) 
+u32 GBA_CPU::Read32_Rotated(u32 address, uint access) 
 {
     u32 cycles = 0;
     u32 value = bus.Read32(address, BusRequester::CPU, &cycles);
@@ -270,7 +229,7 @@ u32 GBA_CPU::Read32_Rotated(u32 address)
     return value >> shift | (value << (32 - shift));
 }
 
-u32 GBA_CPU::Read8_SignExtended(u32 address) 
+u32 GBA_CPU::Read8_SignExtended(u32 address, uint access) 
 { 
     u32 cycles = 0;
     u8 value = bus.Read8(address, BusRequester::CPU, &cycles);
@@ -278,7 +237,7 @@ u32 GBA_CPU::Read8_SignExtended(u32 address)
     return SignExtend_8(value); 
 }
 
-u32 GBA_CPU::Read16_SignExtended(u32 address) 
+u32 GBA_CPU::Read16_SignExtended(u32 address, uint access) 
 { 
     u32 cycles = 0;
 

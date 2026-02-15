@@ -29,26 +29,23 @@ public:
     // Register functions
     inline uint32_t ReadRegister(int index) { return cpuState.registers[index]; }
     
-
     inline uint32_t GetValueAtUserRegister(int registerIndex) { return sharedR8_R12[8 - registerIndex]; }
     inline void SetValueAtUserRegister(int registerIndex, uint32_t value) { sharedR8_R12[8 - registerIndex] = value; }
     inline void AdvanceProgramCounter() { cpuState.r15 += (IsThumbMode() ? 2u : 4u); }
 
     // CPSR functions
-    inline uint32_t GetCPSR() { return cpsr; }
+    inline uint GetCPSR() { return cpuState.cpsr.value; }
     inline uint GetCPSR_N() { return cpuState.cpsr.fields.n; }
     inline uint GetCPSR_Z() { return cpuState.cpsr.fields.z; }
     inline uint GetCPSR_C() { return cpuState.cpsr.fields.c; }
     inline uint GetCPSR_V() { return cpuState.cpsr.fields.v; }
     inline bool IsThumbMode() { return cpuState.cpsr.fields.thumb; }
-    inline OperatingMode GetCurrentOperatingMode() { return static_cast<OperatingMode>(cpsr & 0x1F); }
+    
+    inline Mode GetCurrentMode() { return static_cast<Mode>(cpuState.cpsr.fields.mode); }
     inline void UpdateCPSR(uint32_t bits, uint32_t bitsToUpdate = 0xFFFFFFFF) { cpsr = (cpsr & ~bitsToUpdate) | bits; }
     
     // SPSR functions
-    inline bool CurrentModeHasSPSR() 
-    { 
-        return GetCurrentOperatingMode() != OperatingMode::User && GetCurrentOperatingMode() != OperatingMode::System; 
-    }
+    inline bool CurrentModeHasSPSR() { return (GetCurrentMode() != Mode::USR) && (GetCurrentMode() != Mode::SYS); } 
     
     void RestoreCPSRFromSPSR(int oldExceptionModeIndex);
     void SaveCPSRIntoSPSR(int exceptionModeIndex);
@@ -67,20 +64,20 @@ public:
     EmulatorCore* GetEmulatorCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
-    u32 Read8(u32 address, Access access);
-    u32 Read16(u32 address, Access access);
-    u32 Read32(u32 address, Access access);
+    u32 Read8(u32 address, uint access);
+    u32 Read16(u32 address, uint access);
+    u32 Read32(u32 address, uint access);
 
-    void Write8(u32 address, u8 value, Access access);
-    void Write16(u32 address, u16 value, Access access);
-    void Write32(u32 address, u32 value, Access access);
+    void Write8(u32 address, u8 value, uint access);
+    void Write16(u32 address, u16 value, uint access);
+    void Write32(u32 address, u32 value, uint access);
 
     // Used for LDR and SWP
-    u32 Read16_Rotated(u32 address);
-    u32 Read32_Rotated(u32 address);
+    u32 Read16_Rotated(u32 address, uint access);
+    u32 Read32_Rotated(u32 address, uint access);
 
-    u32 Read8_SignExtended(u32 address);
-    u32 Read16_SignExtended(u32 address);
+    u32 Read8_SignExtended(u32 address, uint access);
+    u32 Read16_SignExtended(u32 address, uint access);
 
     void InvalidateSequentiality(); 
 
@@ -174,11 +171,11 @@ protected:
     void Execute();
 
     bool ConditionPassed(Condition condition);
+    void Decode_ARM(u32 instruction, InstructionHandler& handler);
+    void Decode_Thumb(u32 instruction, InstructionHandler& handler);
 
     void AdvanceInstructionPipeline(); 
     void FlushPipeline();
-
-    void HandleUndefinedBehavior(uint32_t instruction);
 
     void HandleHalt();
 

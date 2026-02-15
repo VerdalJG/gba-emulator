@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Utils/Integers.hpp"
-#include "Core/GBA_Bus.hpp"
 #include <array>
 
 class GBA_CPU;
@@ -18,5 +17,5 @@ struct PipelineStage
 struct Pipeline
 {
     std::array<PipelineStage, 3> stage{}; // [0] = fetch, [1] = decode, [2] = execute
-    Access nextAccess;
+    int access;
 };

@@ -20,7 +20,7 @@ enum class BusRequester
     DMA
 };
 
-enum class Access : u8
+enum Access : uint
 {
     Nonsequential = 0,
     Sequential = 1,

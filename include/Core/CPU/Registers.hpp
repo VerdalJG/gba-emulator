@@ -118,5 +118,15 @@ struct CPU_Registers
                 bankedR13_R14s[i][j] = 0;
             }
         }
+
+        StatusRegister new_cpsr;
+        new_cpsr.fields.mode = Mode::SVC;
+        new_cpsr.fields.irq_disable = 1;
+        new_cpsr.fields.fiq_disable = 1;
+
+        cpsr = new_cpsr;
     }
+
+    void RestoreCPSRFromSPSR(int oldExceptionModeIndex);
+    void SaveCPSRIntoSPSR(int exceptionModeIndex);
 };

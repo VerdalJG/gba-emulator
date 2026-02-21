@@ -3,17 +3,12 @@
 #include "Utils/Integers.hpp"
 #include "Utils/BitOperations.hpp"
 
-using Handler_Thumb = GBA_CPU::Handler_Thumb;
-
 template <u16 instruction>
 static constexpr Handler_Thumb GenerateHandlerThumb()
 {
     // 1. Move shifted register
     if (ExtractBits<15, 10, u16>(instruction) < 0b11000)
     {
-        const u16 shiftOp = ExtractBits<12, 11, u16>;
-        const u16 offset_5 = (instruction >> 6) & 0x1F;
-
         return &GBA_CPU::Thumb_MoveShiftedRegister<shiftOp, offset_5>;
     }
 

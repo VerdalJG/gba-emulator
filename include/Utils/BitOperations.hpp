@@ -46,3 +46,13 @@ inline uint32_t NumberOfSetBitsIn(uint32_t value)
 
     return result;
 }
+
+inline constexpr u32 SignExtend_8(u8 value)
+{
+    return (value & 0x80) ? (0xFFFFFF00 | static_cast<u32>(value)) : static_cast<u32>(value);
+}
+
+inline constexpr u32 SignExtend_16(u16 value)
+{
+    return (value & 0x8000) ? (0xFFFF0000 | static_cast<u32>(value)) : static_cast<u32>(value);
+}

@@ -126,7 +126,4 @@ struct CPU_Registers
 
         cpsr = new_cpsr;
     }
-
-    void RestoreCPSRFromSPSR(int oldExceptionModeIndex);
-    void SaveCPSRIntoSPSR(int exceptionModeIndex);
 };

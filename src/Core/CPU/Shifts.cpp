@@ -1,4 +1,4 @@
-#include "Core/CPU/Instructions/ARM/Shifts.hpp"
+#include "Core/CPU/Shifts.hpp"
 #include "Core/GBA_CPU.hpp"
 
 void LSL(u32& value, u32 shift, u32& carry) 

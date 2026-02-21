@@ -3,14 +3,15 @@
 #include <cstdint>
 #include <array>
 #include "Core/CPU/CPU_Modes.hpp"
-#include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
+//#include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
 #include "Utils/Logger.hpp"
 #include "Utils/Integers.hpp"
 #include "Core/CPU/Registers.hpp"
-#include "Core/CPU/Instructions/TableGenerator.hpp"
 #include "Core/GBA_Bus.hpp"
 
 #include "Core/CPU/InstructionPipeline.hpp"
+#include "Core/CPU/ARM/Opcodes.hpp"
+#include "Core/CPU/Thumb/Opcodes.hpp"
 
 class GBA_Bus;
 class EmulatorCore;
@@ -29,8 +30,8 @@ public:
     // Register functions
     inline uint32_t ReadRegister(int index) { return cpuState.registers[index]; }
     
-    inline uint32_t GetValueAtUserRegister(int registerIndex) { return sharedR8_R12[8 - registerIndex]; }
-    inline void SetValueAtUserRegister(int registerIndex, uint32_t value) { sharedR8_R12[8 - registerIndex] = value; }
+    // inline uint32_t GetValueAtUserRegister(int registerIndex) { return sharedR8_R12[8 - registerIndex]; }
+    // inline void SetValueAtUserRegister(int registerIndex, uint32_t value) { sharedR8_R12[8 - registerIndex] = value; }
     inline void AdvanceProgramCounter() { cpuState.r15 += (IsThumbMode() ? 2u : 4u); }
 
     // CPSR functions
@@ -42,16 +43,16 @@ public:
     inline bool IsThumbMode() { return cpuState.cpsr.fields.thumb; }
     
     inline Mode GetCurrentMode() { return static_cast<Mode>(cpuState.cpsr.fields.mode); }
-    inline void UpdateCPSR(uint32_t bits, uint32_t bitsToUpdate = 0xFFFFFFFF) { cpsr = (cpsr & ~bitsToUpdate) | bits; }
+    // inline void UpdateCPSR(uint32_t bits, uint32_t bitsToUpdate = 0xFFFFFFFF) { cpsr = (cpsr & ~bitsToUpdate) | bits; }
     
     // SPSR functions
     inline bool CurrentModeHasSPSR() { return (GetCurrentMode() != Mode::USR) && (GetCurrentMode() != Mode::SYS); } 
     
-    void RestoreCPSRFromSPSR(int oldExceptionModeIndex);
-    void SaveCPSRIntoSPSR(int exceptionModeIndex);
+    
     void UpdateVisibleRegistersForMode(OperatingMode newMode);
 
     void SwitchMode(Mode mode);
+    
 
     bool GetHalted() { return halted; }
     void SetHalted(bool shouldHalt) { halted = shouldHalt; }
@@ -64,6 +65,7 @@ public:
     EmulatorCore* GetEmulatorCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
+    // Memory access
     u32 Read8(u32 address, uint access);
     u32 Read16(u32 address, uint access);
     u32 Read32(u32 address, uint access);
@@ -76,91 +78,14 @@ public:
     u32 Read16_Rotated(u32 address, uint access);
     u32 Read32_Rotated(u32 address, uint access);
 
-    u32 Read8_SignExtended(u32 address, uint access);
-    u32 Read16_SignExtended(u32 address, uint access);
+    u32 Read8_Signed(u32 address, uint access);
+    u32 Read16_Signed(u32 address, uint access);
 
     void InvalidateSequentiality(); 
 
-    using Handler_ARM = void (GBA_CPU::*)(u32); 
-    using Handler_Thumb = void (GBA_CPU::*)(u16);
 
-    // Thumb instructions:
-    template <u16 shiftOp, u16 immediate_5>
-    void Thumb_MoveShiftedRegister(u16 instruction);
-
-    template <bool subtract, bool immediate, u16 operand>
-    void Thumb_AddSubtract(u16 instruction);
-
-    template <u16 opcode, u16 rdIndex>
-    void Thumb_ImmediateOp(u16 instruction);
-
-    template <u16 opcode>
-    void Thumb_ALU(u16 instruction);
-
-    template <u16 opcode, u16 msbRd, u16 msbRs>
-    void Thumb_HiRegisterOp(u16 instruction);
-
-    template <u16 rdIndex>
-    void Thumb_LoadPCRelative(u16 instruction);
-
-    template <u16 opcode, u16 roIndex>
-    void Thumb_LoadStoreRegisterOffset(u16 instruction);
-
-    template <u16 opcode, u16 roIndex>
-    void Thumb_LoadStoreSignExtended(u16 instruction);
-
-    template <u16 opcode, u16 offset_5>
-    void Thumb_LoadStoreImmediateOffset(u16 instruction);
-
-    template <bool load, u16 offset_5>
-    void Thumb_LoadStoreHalfword(u16 instruction);
-
-    template <bool load, u16 rdIndex>
-    void Thumb_LoadStoreSPRelative(u16 instruction);
-
-    template <bool getSP, u16 rdIndex>
-    void Thumb_GetRelativeAddress(u16 instruction);
-
-    template <bool sub>
-    void Thumb_AddOffsetToStackPointer(u16 instruction);
-
-    template <bool pop, bool bit_pc_lr>
-    void Thumb_PushPopRegisters(u16 instruction);
-
-    template <bool load, u16 rbIndex>
-    void Thumb_LoadStoreMultiple(u16 instruction);
-
-    template <u16 condition>
-    void Thumb_ConditionalBranch(u16 instruction);
-
-    void Thumb_SoftwareInterrupt(u16 instruction);
-
-    void Thumb_UnconditionalBranch(u16 instruction);
-
-    template <bool secondInstruction>
-    void Thumb_LongBranchWithLink(u16 instruction);
-
-    // Arithmetic operations:
-    u32 ADD(u32 op1, u32 op2, bool set_flags);
-    u32 SUB(u32 op1, u32 op2, bool set_flags);
-    u32 ADC(u32 op1, u32 op2, bool set_flags);
-    u32 SBC(u32 op1, u32 op2, bool set_flags);
-
-    void UpdateNZFlags(u32 result);
-    void UpdateCFlag(u32 op1, u32 op2, bool isSub, u32 carry = 0);
-    void UpdateVFlag(u32 op1, u32 op2, u32 result, bool isSub);
-
-
-protected:
+private:
     CPU_Registers cpuState;
-    std::array<uint32_t, 16> visibleRegisters{};    // R0 - R14 contain data, R15 contains address of next instruction (PC)
-    uint32_t cpsr = 0;                              // Current Program Status Register
-
-    std::array<uint32_t, 5> fiqR8_R12{};
-    std::array<uint32_t, 5> sharedR8_R12{}; // User registers, shared with some other modes
-    std::array<uint32_t, 6> bankedR13s{};   // Stack pointers for FIQ, IRQ, Supervisor, Abort, Undefined
-    std::array<uint32_t, 6> bankedR14s{};   // Link registers for FIQ, IRQ, Supervisor, Abort, Undefined
-    std::array<uint32_t, 5> spsr{};         // SPSR for each banked mode
 
     Pipeline pipeline;
     
@@ -172,19 +97,24 @@ protected:
 
     bool ConditionPassed(Condition condition);
     
-    void Decode_ARM(u32 instruction, InstructionHandler& handler);
-    void Decode_ARM_Pattern00(u32 instruction, InstructionHandler& handler);
-    void Decode_ARM_Pattern01(u32 instruction, InstructionHandler& handler);
-    void Decode_ARM_Pattern10(u32 instruction, InstructionHandler& handler);
-    void Decode_ARM_Pattern11(u32 instruction, InstructionHandler& handler);
-    void Decode_Thumb(u32 instruction, InstructionHandler& handler);
+    ARM_Opcode Decode_ARM(u32 instruction);
+    ARM_Opcode Decode_ARM_Pattern00(u32 instruction);
+    ARM_Opcode Decode_ARM_Pattern01(u32 instruction);
+    ARM_Opcode Decode_ARM_Pattern10(u32 instruction);
+    ARM_Opcode Decode_ARM_Pattern11(u32 instruction);
+
+    Thumb_Opcode Decode_Thumb(u16 instruction);
 
     void AdvanceInstructionPipeline(); 
     void FlushPipeline();
 
+    // TODO: Implement
+    StatusRegister GetCurrentSPSR() { return StatusRegister{}; };
+
+    StatusRegister* currentSPSR;
+
     void HandleHalt();
 
-private:
     EmulatorCore* core;
     GBA_Bus& bus;
 
@@ -194,19 +124,67 @@ private:
     bool nextInstructionFetchIsSequential = false;
     bool nextDataAccessIsSequential = false;
 
-    inline void WriteRegister(int index, uint32_t value) { cpuState.registers[index] = value; }
-
-    #include "Core/CPU/ARM/Decoder.hpp"
+    void WriteRegister(uint index, u32 value); 
 
     // ARM instructions:
-    void ARM_DataProcessing_Immediate(u32 instruction);
-    void ARM_DataProcessing_Register(u32 instruction);
+    void ARM_DataProcessing(u32 instruction);
+    void ARM_PSRTransfer(u32 instruction);
+    void ARM_Multiply(u32 instruction);
+    void ARM_MultiplyLong(u32 instruction);
+    void ARM_SingleDataTransfer(u32 instruction);
+    void ARM_HalfwordDataTransfer(u32 instruction);
+    void ARM_BlockDataTransfer(u32 instruction);
+    void ARM_SingleDataSwap(u32 instruction);
+    void ARM_Branch(u32 instruction);
+    void ARM_BranchAndExchange(u32 instruction);
+    void ARM_SoftwareInterrupt(u32 instruction);
+    void ARM_UndefinedInstruction(u32 instruction);
+
+    // Thumb instructions:
+    void Thumb_MoveShiftedRegister(u16 instruction);
+    void Thumb_AddSubtract(u16 instruction);
+    void Thumb_ImmediateOp(u16 instruction);
+    void Thumb_ALU(u16 instruction);
+    void Thumb_HiRegisterOp(u16 instruction);
+    void Thumb_LoadPCRelative(u16 instruction);
+    void Thumb_LoadStoreRegisterOffset(u16 instruction);
+    void Thumb_LoadStoreSignExtended(u16 instruction);
+    void Thumb_LoadStoreImmediateOffset(u16 instruction);
+    void Thumb_LoadStoreHalfword(u16 instruction);
+    void Thumb_LoadStoreSPRelative(u16 instruction);
+    void Thumb_GetRelativeAddress(u16 instruction);
+    void Thumb_AddOffsetToStackPointer(u16 instruction);
+    void Thumb_PushPopRegisters(u16 instruction);
+    void Thumb_LoadStoreMultiple(u16 instruction);
+    void Thumb_ConditionalBranch(u16 instruction);
+    void Thumb_SoftwareInterrupt(u16 instruction);
+    void Thumb_UnconditionalBranch(u16 instruction);
+    void Thumb_LongBranchWithLink(u16 instruction);
+
+    // Arithmetic operations:
+    u32 ADD(u32 op1, u32 op2, bool set_flags);
+    u32 SUB(u32 op1, u32 op2, bool set_flags);
+    u32 ADC(u32 op1, u32 op2, bool set_flags);
+    u32 SBC(u32 op1, u32 op2, bool set_flags);
+
+    // CPSR / SPSR operations:
+    void RestoreCPSRFromSPSR(ExceptionBank oldExceptionModeIndex);
+    void SaveCPSRIntoSPSR(ExceptionBank exceptionModeIndex);
+
+    void UpdateNZFlags(u32 result);
+    void UpdateCFlag(u32 op1, u32 op2, bool isSub, u32 carry = 0);
+    void UpdateVFlag(u32 op1, u32 op2, u32 result, bool isSub);
+
+    static constexpr std::array<ARM_Handler, ARM_Opcode_Count> GenerateARMInstructionTable();
+    static constexpr std::array<Thumb_Handler, Thumb_Opcode_Count> GenerateThumbInstructionTable();
 
     // Inline allows us to initialize here
     inline static const std::array<bool, 256> conditionTable = GenerateConditionTable(); // Condition lookup table, precomputed
+    inline static const std::array<ARM_Handler, ARM_Opcode_Count> armDispatchTable = GenerateARMInstructionTable(); // ARM instruction lookup table, precomputed
+    inline static const std::array<Thumb_Handler, Thumb_Opcode_Count> thumbDispatchTable = GenerateThumbInstructionTable(); // Thumb instruction lookup table, precomputed
 };
 
-#include "CPU/Instructions/Thumb/Instructions.inl"
+#include "CPU/Instructions/TableGeneration.inl"
 #include "CPU/Instructions/Arithmetic.inl"
 
 //https://problemkaputt.de/gbatek-arm-cpu-reference.htm - ARM CPU Reference

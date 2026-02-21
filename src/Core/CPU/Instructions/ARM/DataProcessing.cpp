@@ -30,21 +30,21 @@ DataProcessing_Decoded DataProcessing_Decode(uint32_t instruction)
     return result;
 }
 
-bool IsReverseOpcode(DataProcessingOpcode opcode)
+bool IsReverseOpcode(ARM_ALUOp opcode)
 {
-    return opcode == DataProcessingOpcode::RSB || opcode == DataProcessingOpcode::RSC;
+    return opcode == ARM_ALUOp::RSB || opcode == ARM_ALUOp::RSC;
 }
 
 
-bool IsSubtractionOpcode(DataProcessingOpcode opcode) 
+bool IsSubtractionOpcode(ARM_ALUOp opcode) 
 {
     switch (opcode)
     {
-        case DataProcessingOpcode::SUB:
-        case DataProcessingOpcode::SBC: 
-        case DataProcessingOpcode::RSC: 
-        case DataProcessingOpcode::RSB:
-        case DataProcessingOpcode::CMP:
+        case ARM_ALUOp::SUB:
+        case ARM_ALUOp::SBC: 
+        case ARM_ALUOp::RSC: 
+        case ARM_ALUOp::RSB:
+        case ARM_ALUOp::CMP:
         return true;
         
         default:
@@ -52,13 +52,13 @@ bool IsSubtractionOpcode(DataProcessingOpcode opcode)
     }
 }
 
-bool ShouldUseCarryIn(DataProcessingOpcode opcode)
+bool ShouldUseCarryIn(ARM_ALUOp opcode)
 {
     switch (opcode)
     {
-        case DataProcessingOpcode::ADC:
-        case DataProcessingOpcode::RSC:
-        case DataProcessingOpcode::SBC:
+        case ARM_ALUOp::ADC:
+        case ARM_ALUOp::RSC:
+        case ARM_ALUOp::SBC:
         return true;
 
         default:

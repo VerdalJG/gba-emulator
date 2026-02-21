@@ -5,12 +5,13 @@
 
 class GBA_CPU;
 
-using InstructionHandler = void (GBA_CPU::*)(u32);
+using ARM_Handler = void (GBA_CPU::*)(u32);
+using Thumb_Handler = void (GBA_CPU::*)(u16);
 
 struct PipelineStage
 {
-    u32 instruction;
-    InstructionHandler handler;
+    u32 rawBits;
+    u8 opcode; // Corresponds to ARM_Instruction and Thumb_Instruction types
     bool valid;
 };
 

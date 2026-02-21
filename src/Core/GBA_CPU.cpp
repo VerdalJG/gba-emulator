@@ -1,13 +1,11 @@
 #include "Core/GBA_CPU.hpp"
-#include "Core/CPU/Instructions/ARM/Decoder.hpp"
 #include "Core/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_WaitstateController.hpp"
-#include "Core/CPU/CPU_Timings.hpp"
 #include "Core/GBA_Bus.hpp"
 #include "Core/CPU/Instructions/ARM/Conditions.hpp"
-#include "Core/CPU/Instructions/ARM/Shifts.hpp"
-#include "Core/CPU/Instructions/ARM/Conditions.hpp"
+#include "Core/CPU/Shifts.hpp"
+#include "Utils/BitOperations.hpp"
 
 #include <assert.h>
 
@@ -47,14 +45,14 @@ void GBA_CPU::RequestInterrupt()
 
 }
 
-void GBA_CPU::RestoreCPSRFromSPSR(int oldExceptionModeIndex)
+void GBA_CPU::RestoreCPSRFromSPSR(ExceptionBank oldExceptionModeIndex)
 {
-    cpsr = spsr[oldExceptionModeIndex];
+    cpuState.cpsr = cpuState.spsr[oldExceptionModeIndex];
 }
 
-void GBA_CPU::SaveCPSRIntoSPSR(int exceptionModeIndex)
+void GBA_CPU::SaveCPSRIntoSPSR(ExceptionBank exceptionModeIndex)
 {
-    spsr[exceptionModeIndex] = cpsr;
+    cpuState.spsr[exceptionModeIndex] = cpuState.cpsr;
 }
 
 void GBA_CPU::HandleHalt()
@@ -88,7 +86,7 @@ void GBA_CPU::Fetch()
 {
     u32 address = cpuState.r15;
     u32 fetched = IsThumbMode() ? Read16(address, pipeline.access) : Read32(address, pipeline.access);
-    pipeline.stage[0] = { fetched, nullptr, true };
+    pipeline.stage[0] = { fetched, ARM_Suppressed, true };
     pipeline.access = Access::Code | Access::Sequential;
 }
 
@@ -96,36 +94,41 @@ void GBA_CPU::Decode()
 {
     if (!pipeline.stage[1].valid) return;
 
-    u32 instruction = pipeline.stage[1].instruction;
-    InstructionHandler handler = nullptr;
+    u32 instructionBits = pipeline.stage[1].rawBits;
     
     if (IsThumbMode()) 
     {
         // Thumb mode does not use condition bits
-        Decode_Thumb(instruction, handler);
+        pipeline.stage[1].opcode = Decode_Thumb(instructionBits);
     }
     else // ARM Mode
     {
-        Condition condition = GetConditionType(pipeline.stage[1].instruction);
+        Condition condition = GetConditionType(pipeline.stage[1].rawBits);
         if (condition == CONDITION_NV) return; // Unpredictable, treat as no-op
 
         if (ConditionPassed(condition))
         {
-            Decode_ARM(instruction, handler);
+            pipeline.stage[1].opcode = Decode_ARM(instructionBits);
         }
     }
-
-    // Store function pointer in pipeline
-    pipeline.stage[1].handler = handler;
 }
 
 void GBA_CPU::Execute()
 {
     if (!pipeline.stage[2].valid) return;
-    if (pipeline.stage[2].handler == nullptr) return; // No-op
+    if (pipeline.stage[2].opcode == ARM_Opcode::ARM_Suppressed) return; // No-op
 
     // Execute the instruction
-    (this->*pipeline.stage[2].handler)(pipeline.stage[2].instruction);
+    if (IsThumbMode())
+    {
+        Thumb_Handler function = thumbDispatchTable[pipeline.stage[2].opcode];
+        (this->*function)(pipeline.stage[2].rawBits);
+    }
+    else
+    {
+        ARM_Handler function = armDispatchTable[pipeline.stage[2].opcode];
+        (this->*function)(pipeline.stage[2].rawBits);
+    }
 }
 
 
@@ -229,7 +232,7 @@ u32 GBA_CPU::Read32_Rotated(u32 address, uint access)
     return value >> shift | (value << (32 - shift));
 }
 
-u32 GBA_CPU::Read8_SignExtended(u32 address, uint access) 
+u32 GBA_CPU::Read8_Signed(u32 address, uint access) 
 { 
     u32 cycles = 0;
     u8 value = bus.Read8(address, BusRequester::CPU, &cycles);
@@ -237,7 +240,7 @@ u32 GBA_CPU::Read8_SignExtended(u32 address, uint access)
     return SignExtend_8(value); 
 }
 
-u32 GBA_CPU::Read16_SignExtended(u32 address, uint access) 
+u32 GBA_CPU::Read16_Signed(u32 address, uint access) 
 { 
     u32 cycles = 0;
 
@@ -258,4 +261,10 @@ u32 GBA_CPU::Read16_SignExtended(u32 address, uint access)
 void GBA_CPU::InvalidateSequentiality() 
 {
     bus.InvalidateSequentiality();
+}
+
+void GBA_CPU::WriteRegister(uint index, u32 value)
+{ 
+
+    cpuState.registers[index] = value; 
 }

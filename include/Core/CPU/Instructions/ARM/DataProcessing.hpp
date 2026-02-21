@@ -9,7 +9,7 @@ struct DataProcessing_Decoded
     Condition condition;
     uint8_t rnIndex, rdIndex;
     uint16_t shifterOperandBits;
-    DataProcessingOpcode opcode;
+    ARM_ALUOp opcode;
     bool setCPSRFlag, immediateFlag;
 };
 
@@ -39,9 +39,9 @@ void BitClear(DataProcessing_Decoded values, ShifterOperand shifterOperand, GBA_
 void MoveNot(DataProcessing_Decoded values, ShifterOperand shifterOperand, GBA_CPU& cpu);
 
 // Is the opcode RSB/RSC?
-bool IsReverseOpcode(DataProcessingOpcode opcode);
-bool IsSubtractionOpcode(DataProcessingOpcode opcode);
-bool ShouldUseCarryIn(DataProcessingOpcode opcode);
+bool IsReverseOpcode(ARM_ALUOp opcode);
+bool IsSubtractionOpcode(ARM_ALUOp opcode);
+bool ShouldUseCarryIn(ARM_ALUOp opcode);
 
 void UpdateCPSR_Arithmetic(DataProcessing_Decoded values, uint32_t rn, uint32_t op2, uint32_t result, GBA_CPU& cpu);
 void UpdateCPSR_Logical(uint32_t result, ShifterOperand op2, GBA_CPU& cpu);

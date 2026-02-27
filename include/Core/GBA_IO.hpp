@@ -1,9 +1,10 @@
 #pragma once    
-#include <cstdint>
-#include <unordered_map>
-
 #include "Core/GBA_Memory_Helpers.hpp"
 #include "Core/GBA_IO_Helpers.hpp"
+
+#include "Utils/Integers.hpp"
+
+#include <unordered_map>
 
 class EmulatorCore;
 class GBA_PPU;
@@ -25,13 +26,13 @@ public:
         GBA_TimerController* timers, GBA_InterruptController* interrupts, GBA_Keypad* keypad, 
         GBA_WaitstateController* waitstates);
 
-    MemReadResult<uint8_t> Read8(uint32_t address);
-    MemReadResult<uint16_t> Read16(uint32_t address);
-    MemReadResult<uint32_t> Read32(uint32_t address);
+    MemReadResult<u8> Read8(u32 address);
+    MemReadResult<u16> Read16(u32 address);
+    MemReadResult<u32> Read32(u32 address);
 
-    void Write8(uint32_t address, uint8_t value);
-    void Write16(uint32_t address, uint16_t value);
-    void Write32(uint32_t address, uint32_t value);
+    void Write8(u32 address, u8 value);
+    void Write16(u32 address, u16 value);
+    void Write32(u32 address, u32 value);
 
     // void ResetSIORegisters();
     // void ResetSoundRegisters();
@@ -75,5 +76,16 @@ private:
     IO_MiscRegisters miscRegisters;
 
     // Address - Register map
-    std::unordered_map<uint32_t, IORegister*> ioMap;
+    std::unordered_map<u32, IORegister*> ioMap;
 };
+
+
+/* Found:
+
+IME on writing:
+Bit 0 = master enable
+0 → disable all interrupts
+1 → enable interrupts
+
+
+*/ 

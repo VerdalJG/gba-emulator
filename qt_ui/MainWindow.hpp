@@ -31,6 +31,6 @@ private:
     EmulatorHandler* emulatorHandler;
     QThread* emulatorThread;
 
-    const QString BASE_WINDOW_TITLE = "VerdalGBA";
+    const QString BASE_WINDOW_TITLE = "FiSTGBA3000";
 
 };

@@ -1,4 +1,5 @@
 #include "Core/GBA_InterruptController.hpp"
+
 #include <assert.h>
 
 GBA_InterruptController::GBA_InterruptController(EmulatorCore *core, 

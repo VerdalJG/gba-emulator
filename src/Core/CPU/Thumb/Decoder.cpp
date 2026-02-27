@@ -1,7 +1,7 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/CPU/Thumb/Opcodes.hpp"
-#include "Utils/BitOperations.hpp"
 
+#include "Utils/BitOperations.hpp"
 
 Thumb_Opcode GBA_CPU::Decode_Thumb(u16 instruction)
 {
@@ -118,4 +118,6 @@ Thumb_Opcode GBA_CPU::Decode_Thumb(u16 instruction)
     {
         return Thumb_Opcode::Thumb_SoftwareInterrupt;
     }
+
+    return Thumb_Opcode::Thumb_Invalid;
 }

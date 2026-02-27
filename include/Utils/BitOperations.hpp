@@ -14,7 +14,6 @@ inline constexpr u32 ExtractBits(u32 value)
     return (value >> lo) & ((static_cast<u32>(1) << (hi - lo + 1)) - 1);
 }
 
-
 /// @brief Returns a range of bits
 /// @tparam hi Index of upper bit (inclusive)
 /// @tparam lo Index of lower bit (inclusive)
@@ -31,7 +30,7 @@ inline constexpr u16 ExtractBits(u16 value)
 template<int bitIndex>
 inline constexpr bool IsBitSet(u32 value)
 {
-    static_assert(bitIndex < sizeof(u32) * 4);
+    static_assert(bitIndex < sizeof(u32) * 8);
     return (value >> bitIndex) & 1;
 }
 
@@ -55,4 +54,10 @@ inline constexpr u32 SignExtend_8(u8 value)
 inline constexpr u32 SignExtend_16(u16 value)
 {
     return (value & 0x8000) ? (0xFFFF0000 | static_cast<u32>(value)) : static_cast<u32>(value);
+}
+
+template<typename T>
+inline u32 Align(u32 address)
+{
+    return address & ~(sizeof(T) - 1);
 }

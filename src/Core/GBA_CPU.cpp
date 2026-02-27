@@ -3,8 +3,8 @@
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_WaitstateController.hpp"
 #include "Core/GBA_Bus.hpp"
-#include "Core/CPU/Instructions/ARM/Conditions.hpp"
 #include "Core/CPU/Shifts.hpp"
+
 #include "Utils/BitOperations.hpp"
 
 #include <assert.h>
@@ -18,9 +18,10 @@ void GBA_CPU::Reset()
 {
     // Reset all registers and set CPSR to it's reset value (0x000000D3)
     cpuState.Reset();
+    SwitchMode(Mode::SVC);
     FlushPipeline();
 
-    //totalCycles = 0;
+    totalCycles = 0;
 }
 
 void GBA_CPU::Step()
@@ -45,14 +46,93 @@ void GBA_CPU::RequestInterrupt()
 
 }
 
-void GBA_CPU::RestoreCPSRFromSPSR(ExceptionBank oldExceptionModeIndex)
+void GBA_CPU::RestoreCPSRFromSPSR(ExceptionBank bankIndex)
 {
-    cpuState.cpsr = cpuState.spsr[oldExceptionModeIndex];
+    cpuState.cpsr = cpuState.spsr[bankIndex];
 }
 
-void GBA_CPU::SaveCPSRIntoSPSR(ExceptionBank exceptionModeIndex)
+void GBA_CPU::SaveCPSRIntoSPSR(ExceptionBank bankIndex)
 {
-    cpuState.spsr[exceptionModeIndex] = cpuState.cpsr;
+    cpuState.spsr[bankIndex] = cpuState.cpsr;
+}
+
+ExceptionBank GBA_CPU::GetBankFromMode(Mode mode)
+{
+    switch(mode)
+    {
+        case Mode::FIQ: return BANK_FIQ;
+        case Mode::IRQ: return BANK_IRQ;
+        case Mode::SVC: return BANK_SVC;
+        case Mode::ABT: return BANK_ABT;
+        case Mode::UND: return BANK_UND;
+        default: return BANK_UNBANKED;
+    }
+}
+
+StatusRegister GBA_CPU::GetCurrentSPSR()
+{
+    // TODO: maybe has specific behavior with LDM usermode conflict
+    return StatusRegister{currentSPSR->value}; // CurrentSPSR pointer is always set, no nullcheck needed
+}
+
+void GBA_CPU::SwitchMode(Mode newMode)
+{
+    Mode oldMode = cpuState.cpsr.fields.mode;
+
+    ExceptionBank oldBank = GetBankFromMode(oldMode);
+    ExceptionBank newBank = GetBankFromMode(newMode);
+    
+    cpuState.cpsr.fields.mode = newMode;
+
+    // In USR/SYS mode reading SPSR returns CPSR
+    if (newBank == BANK_UNBANKED)
+    {
+        currentSPSR = &cpuState.cpsr;
+    }
+    else // Banked mode
+    {
+        currentSPSR = &cpuState.spsr[newBank];
+    }
+
+    if (oldBank == newBank) return;
+
+    // Manage R8 - R12 (only used by USR, SYS, FIQ)
+    if (oldBank == BANK_FIQ)
+    {
+        // Save to FIQ bank
+        for (int i = 0; i < FIQ_RCOUNT; i++)
+        {
+            cpuState.fiq_banked_R8_R12[i] = cpuState.registers[i + 8];
+        }
+        
+        // Load the 'USR bank'
+        for (int i = 0; i < FIQ_RCOUNT; i++)
+        {
+            cpuState.registers[i + 8] = cpuState.shared_R8_R12[i];
+        }
+    }
+    else if (newBank == BANK_FIQ)
+    {
+        // Save to USR bank
+        for (int i = 0; i < FIQ_RCOUNT; i++)
+        {
+            cpuState.shared_R8_R12[i] = cpuState.registers[i + 8];
+        }
+
+        // Load the FIQ bank
+        for (int i = 0; i < FIQ_RCOUNT; i++)
+        {
+            cpuState.registers[i + 8] = cpuState.fiq_banked_R8_R12[i];
+        }
+    }
+
+    // Store the current R13 and R14 inside the bank of the respective mode
+    cpuState.bankedR13_R14[oldBank][BANK_R13] = cpuState.r13;
+    cpuState.bankedR13_R14[oldBank][BANK_R14] = cpuState.r14;
+
+    // Load the new bank R13/14
+    cpuState.r13 = cpuState.bankedR13_R14[newBank][BANK_R13];
+    cpuState.r14 = cpuState.bankedR13_R14[newBank][BANK_R14];
 }
 
 void GBA_CPU::HandleHalt()
@@ -84,7 +164,7 @@ void GBA_CPU::FlushPipeline()
 
 void GBA_CPU::Fetch()
 {
-    u32 address = cpuState.r15;
+    u32 address = cpuState.r15 & (IsThumbMode() ? ~1u : ~3u);
     u32 fetched = IsThumbMode() ? Read16(address, pipeline.access) : Read32(address, pipeline.access);
     pipeline.stage[0] = { fetched, ARM_Suppressed, true };
     pipeline.access = Access::Code | Access::Sequential;
@@ -103,22 +183,37 @@ void GBA_CPU::Decode()
     }
     else // ARM Mode
     {
-        Condition condition = GetConditionType(pipeline.stage[1].rawBits);
-        if (condition == CONDITION_NV) return; // Unpredictable, treat as no-op
-
-        if (ConditionPassed(condition))
-        {
-            pipeline.stage[1].opcode = Decode_ARM(instructionBits);
-        }
+        pipeline.stage[1].opcode = Decode_ARM(instructionBits);
     }
 }
 
 void GBA_CPU::Execute()
 {
-    if (!pipeline.stage[2].valid) return;
-    if (pipeline.stage[2].opcode == ARM_Opcode::ARM_Suppressed) return; // No-op
+    if (!pipeline.stage[2].valid) // No-op
+    {
+        AdvanceProgramCounter();
+        return;
+    }
+
+    // Check condition for ARM
+    if (!IsThumbMode()) // current = line 76 // bits = 0xe5c44208
+    {
+        Condition condition = GetConditionType(pipeline.stage[2].rawBits);
+
+        if (condition == CONDITION_NV || !ConditionPassed(condition)) // Unpredictable, treat as no-op
+        {
+            pipeline.stage[2].opcode = ARM_Opcode::ARM_Suppressed;
+        }
+    }
+
+    if (pipeline.stage[2].opcode == ARM_Opcode::ARM_Suppressed) // Condition failed, no-op
+    {
+        AdvanceProgramCounter();
+        return;
+    }
 
     // Execute the instruction
+
     if (IsThumbMode())
     {
         Thumb_Handler function = thumbDispatchTable[pipeline.stage[2].opcode];
@@ -134,14 +229,13 @@ void GBA_CPU::Execute()
 
 bool GBA_CPU::ConditionPassed(Condition condition)
 {
-    if (condition == CONDITION_AL)
-    {
-        return true;
-    }
-    return conditionTable[(static_cast<int>(condition) << 4) | (cpuState.cpsr.value >> 28)];
+    uint cpsrValue = (cpuState.cpsr.value >> 28);
+    uint tableIndex = (static_cast<int>(condition) << 4) | cpsrValue;
+
+    return conditionTable[tableIndex];
 }
 
-void GBA_CPU::AddCycles(uint32_t cycles)
+void GBA_CPU::AddCycles(u32 cycles)
 {
     if (cycles == 0) return;
 
@@ -150,7 +244,7 @@ void GBA_CPU::AddCycles(uint32_t cycles)
     totalCycles += cycles;
 }
 
-EmulatorCore* GBA_CPU::GetEmulatorCore()
+EmulatorCore* GBA_CPU::GetCore()
 {
     return core;
 }
@@ -166,7 +260,7 @@ void GBA_CPU::Log(const std::string& message, LogType logType, const char *funct
 u32 GBA_CPU::Read8(u32 address, uint access)
 {
     u32 cycles = 0;
-    u32 readValue = bus.Read8(address, BusRequester::CPU, &cycles);
+    u32 readValue = bus.Read8(Align<u8>(address), BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
@@ -174,7 +268,7 @@ u32 GBA_CPU::Read8(u32 address, uint access)
 u32 GBA_CPU::Read16(u32 address, uint access)
 {
     u32 cycles = 0;
-    u32 readValue = bus.Read16(address, BusRequester::CPU, &cycles);
+    u32 readValue = bus.Read16(Align<u16>(address), BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
@@ -182,7 +276,7 @@ u32 GBA_CPU::Read16(u32 address, uint access)
 u32 GBA_CPU::Read32(u32 address, uint access)
 {
     u32 cycles = 0;
-    u32 readValue = bus.Read32(address, BusRequester::CPU, &cycles);
+    u32 readValue = bus.Read32(Align<u32>(address), BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
@@ -190,31 +284,31 @@ u32 GBA_CPU::Read32(u32 address, uint access)
 void GBA_CPU::Write8(u32 address, u8 value, uint access)
 {
     u32 cycles = 0;
-    bus.Write8(address, value, BusRequester::CPU, &cycles);
+    bus.Write8(Align<u8>(address), value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
 void GBA_CPU::Write16(u32 address, u16 value, uint access)
 {
     u32 cycles = 0;
-    bus.Write16(address, value, BusRequester::CPU, &cycles);
+    bus.Write16(Align<u16>(address), value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
 void GBA_CPU::Write32(u32 address, u32 value, uint access)
 {
     u32 cycles = 0;
-    bus.Write32(address, value, BusRequester::CPU, &cycles);
+    bus.Write32(Align<u32>(address), value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
 u32 GBA_CPU::Read16_Rotated(u32 address, uint access) 
 {
     u32 cycles = 0;
-    u32 value = bus.Read16(address, BusRequester::CPU, &cycles);
+    u32 value = bus.Read16(Align<u16>(address), BusRequester::CPU, &cycles);
     AddCycles(cycles);
 
-    if (address & 1)
+    if (address & 1) // ROR 8 if misaligned
     {
         value = (value >> 8) | (value << 24);
     }
@@ -225,7 +319,7 @@ u32 GBA_CPU::Read16_Rotated(u32 address, uint access)
 u32 GBA_CPU::Read32_Rotated(u32 address, uint access) 
 {
     u32 cycles = 0;
-    u32 value = bus.Read32(address, BusRequester::CPU, &cycles);
+    u32 value = bus.Read32(Align<u32>(address), BusRequester::CPU, &cycles);
     u32 shift = (address & 3) * 8;
     
     AddCycles(cycles);
@@ -235,7 +329,7 @@ u32 GBA_CPU::Read32_Rotated(u32 address, uint access)
 u32 GBA_CPU::Read8_Signed(u32 address, uint access) 
 { 
     u32 cycles = 0;
-    u8 value = bus.Read8(address, BusRequester::CPU, &cycles);
+    u8 value = bus.Read8(Align<u8>(address), BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return SignExtend_8(value); 
 }
@@ -246,13 +340,13 @@ u32 GBA_CPU::Read16_Signed(u32 address, uint access)
 
     if (address & 1) // Misaligned
     {
-        u8 value = bus.Read8(address, BusRequester::CPU, &cycles);
+        u8 value = bus.Read8(Align<u8>(address), BusRequester::CPU, &cycles);
         AddCycles(cycles);
         return SignExtend_8(value);
     }
     else
     {
-        u16 value = bus.Read16(address, BusRequester::CPU, &cycles);
+        u16 value = bus.Read16(Align<u16>(address), BusRequester::CPU, &cycles);
         AddCycles(cycles);
         return SignExtend_16(value);
     }
@@ -261,10 +355,4 @@ u32 GBA_CPU::Read16_Signed(u32 address, uint access)
 void GBA_CPU::InvalidateSequentiality() 
 {
     bus.InvalidateSequentiality();
-}
-
-void GBA_CPU::WriteRegister(uint index, u32 value)
-{ 
-
-    cpuState.registers[index] = value; 
 }

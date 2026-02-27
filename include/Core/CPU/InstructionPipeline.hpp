@@ -1,6 +1,6 @@
 #pragma once
-
 #include "Utils/Integers.hpp"
+
 #include <array>
 
 class GBA_CPU;

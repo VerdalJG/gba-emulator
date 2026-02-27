@@ -2,7 +2,7 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/CPU/ARM/Opcodes.hpp"
 #include "Core/CPU/Thumb/Opcodes.hpp"
-#include "Core/CPU/Instructions/ARM/Conditions.hpp"
+#include "Core/CPU/Conditions.hpp"
 
 inline constexpr std::array<ARM_Handler, ARM_Opcode_Count> GBA_CPU::GenerateARMInstructionTable()
 {
@@ -50,6 +50,7 @@ inline constexpr std::array<Thumb_Handler, Thumb_Opcode_Count> GBA_CPU::Generate
     table[Thumb_Opcode::Thumb_SoftwareInterrupt]        = &GBA_CPU::Thumb_SoftwareInterrupt;
     table[Thumb_Opcode::Thumb_UnconditionalBranch]      = &GBA_CPU::Thumb_UnconditionalBranch;
     table[Thumb_Opcode::Thumb_LongBranchWithLink]       = &GBA_CPU::Thumb_LongBranchWithLink;
+    table[Thumb_Opcode::Thumb_Invalid]                  = nullptr;
 
     return table;
 }

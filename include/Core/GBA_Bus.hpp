@@ -1,8 +1,8 @@
 #pragma once
-#include <cstdint>
-
 #include "Core/GBA_Memory_Helpers.hpp"
 #include "Core/GBA_WaitstateController.hpp"
+
+#include "Utils/Integers.hpp"
 
 struct LastBusAccess
 {

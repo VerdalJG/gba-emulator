@@ -1,9 +1,9 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/CPU/Shifts.hpp"
-#include "Core/CPU/InstructionHelpers.hpp"
 
 #include "Utils/BitOperations.hpp"
 
+#include <assert.h>
 
 void GBA_CPU::ARM_DataProcessing(u32 instruction)
 {
@@ -17,7 +17,7 @@ void GBA_CPU::ARM_DataProcessing(u32 instruction)
     u32 rn = ReadRegister(rnIndex);
     bool rd_isPC = rdIndex == 15;
 
-    const bool shiftByImmediate = IsBitSet<4>(instruction);
+    const bool shiftByImmediate = !IsBitSet<4>(instruction);
 
     uint carry = GetCPSR_C();
     u32 op1;
@@ -30,7 +30,7 @@ void GBA_CPU::ARM_DataProcessing(u32 instruction)
         u32 shiftAmount = ExtractBits<11, 8>(instruction) * 2; // 0 - 30, in steps of 2
         u32 immediate_8 = ExtractBits<7, 0>(instruction);
 
-        ROR(immediate_8, shiftAmount, carry, immediate);
+        ROR(immediate_8, shiftAmount, carry, false); // RRX only happens in register shifted by immediate encoding
 
         op1 = rn;
         op2 = immediate_8;
@@ -38,6 +38,7 @@ void GBA_CPU::ARM_DataProcessing(u32 instruction)
     else // Register Op2
     {
         const uint shiftOp = ExtractBits<6, 5>(instruction);
+
 
         const u32 rmIndex = ExtractBits<3, 0>(instruction);
         u32 rm = ReadRegister(rmIndex);
@@ -60,7 +61,7 @@ void GBA_CPU::ARM_DataProcessing(u32 instruction)
             pipeline.access = Access::Code | Access::Nonsequential;
         }
 
-        ApplyShift(shiftOp, rm, shift, carry, immediate);
+        ApplyShift(shiftOp, rm, shift, carry, shiftByImmediate);
         op1 = rn;
         op2 = rm;
     }
@@ -227,5 +228,85 @@ void GBA_CPU::ARM_DataProcessing(u32 instruction)
     {
         AdvanceProgramCounter();
     }
+}
 
+void GBA_CPU::ARM_PSRTransfer(u32 instruction)
+{
+    bool useSPSR = IsBitSet<22>(instruction);
+    bool toStatusRegister = IsBitSet<21>(instruction);
+    Mode currentMode = GetCurrentMode();
+
+    if (useSPSR && !CurrentModeHasSPSR())
+    {
+        // UNPREDICTABLE, ignore for now
+    }
+
+    StatusRegister& psr = useSPSR ? *currentSPSR : cpuState.cpsr; // Current SPSR can never be nullptr
+   
+    if (toStatusRegister) // MSR - Move to status register from ARM register
+    {
+        bool immediate = IsBitSet<25>(instruction);
+        bool writeFlags = IsBitSet<19>(instruction);
+        bool writeStatus = IsBitSet<18>(instruction);
+        bool writeExtension = IsBitSet<17>(instruction);
+        bool writeControl = IsBitSet<16>(instruction);
+        u32 operand;
+
+        if (immediate)
+        {
+            u32 shift = ExtractBits<11, 8>(instruction) * 2; // In steps of 2
+            u32 immediate_8 = ExtractBits<7, 0>(instruction);
+            u32 carry = cpuState.cpsr.fields.c;
+            ROR(immediate_8, shift, carry, false); // False to prevent RRX #1 on ROR #0, carry is unused anyways
+            operand = immediate_8;
+        }
+        else
+        {
+            u32 rmIndex = ExtractBits<3, 0>(instruction);
+            operand = ReadRegister(rmIndex);
+        }
+
+        u32 mask = 0;
+
+        if (writeControl)   mask |= 0xFF;
+        if (writeExtension) mask |= 0xFF << 8;
+        if (writeStatus)    mask |= 0xFF << 16;
+        if (writeFlags)     mask |= 0xFF << 24;
+
+        if (!useSPSR && currentMode == Mode::USR)
+        {
+            mask &= 0xFF000000; // allow flags only
+        }
+
+        // Clear respective bits then OR them with the operand's respective bits (for new value)
+        u32 oldValue = psr.value;
+        u32 newValue = (oldValue & ~mask) | (operand & mask);
+
+        if (!useSPSR)
+        {
+            newValue |= 0x10; // Bit 4 is forced to be set on ARM7TDMI
+
+            Mode oldMode = psr.fields.mode;
+            Mode newMode = static_cast<Mode>(newValue & 0x1F);
+
+            if (oldMode != newMode)
+            {
+                SwitchMode(newMode);
+            }
+
+            psr.value = newValue;
+        }
+        else
+        {
+            psr.value = newValue;
+        }
+    }
+    else // MRS - Move PSR to General purpose register
+    {
+        u32 rdIndex = ExtractBits<15, 12>(instruction);
+        assert(rdIndex != 15 && "Rd cannot be 15 for MRS");
+        cpuState.registers[rdIndex] = psr.value;
+    }
+
+    AdvanceProgramCounter();
 }

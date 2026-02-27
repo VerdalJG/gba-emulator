@@ -1,20 +1,19 @@
 #pragma once
-
-#include <cstdint>
-#include <array>
-#include "Core/CPU/CPU_Modes.hpp"
-//#include "Core/CPU/Instructions/ARM/InstructionHelpers.hpp"
-#include "Utils/Logger.hpp"
-#include "Utils/Integers.hpp"
 #include "Core/CPU/Registers.hpp"
-#include "Core/GBA_Bus.hpp"
-
 #include "Core/CPU/InstructionPipeline.hpp"
 #include "Core/CPU/ARM/Opcodes.hpp"
 #include "Core/CPU/Thumb/Opcodes.hpp"
+#include "Core/CPU/Conditions.hpp"
+#include "Core/GBA_Bus.hpp"
+
+#include "Utils/Logger.hpp"
+#include "Utils/Integers.hpp"
+
+#include <array>
 
 class GBA_Bus;
 class EmulatorCore;
+enum Condition;
 
 // Emulates the ARM7TDMI, ARMv4t core
 class GBA_CPU 
@@ -29,9 +28,8 @@ public:
 
     // Register functions
     inline uint32_t ReadRegister(int index) { return cpuState.registers[index]; }
+    void WriteRegister(uint index, u32 value) { cpuState.registers[index] = value; } 
     
-    // inline uint32_t GetValueAtUserRegister(int registerIndex) { return sharedR8_R12[8 - registerIndex]; }
-    // inline void SetValueAtUserRegister(int registerIndex, uint32_t value) { sharedR8_R12[8 - registerIndex] = value; }
     inline void AdvanceProgramCounter() { cpuState.r15 += (IsThumbMode() ? 2u : 4u); }
 
     // CPSR functions
@@ -41,28 +39,21 @@ public:
     inline uint GetCPSR_C() { return cpuState.cpsr.fields.c; }
     inline uint GetCPSR_V() { return cpuState.cpsr.fields.v; }
     inline bool IsThumbMode() { return cpuState.cpsr.fields.thumb; }
-    
     inline Mode GetCurrentMode() { return static_cast<Mode>(cpuState.cpsr.fields.mode); }
-    // inline void UpdateCPSR(uint32_t bits, uint32_t bitsToUpdate = 0xFFFFFFFF) { cpsr = (cpsr & ~bitsToUpdate) | bits; }
+    inline void SetCPSR(u32 value) { cpuState.cpsr.value = value; }
     
     // SPSR functions
     inline bool CurrentModeHasSPSR() { return (GetCurrentMode() != Mode::USR) && (GetCurrentMode() != Mode::SYS); } 
-    
-    
-    void UpdateVisibleRegistersForMode(OperatingMode newMode);
-
-    void SwitchMode(Mode mode);
-    
 
     bool GetHalted() { return halted; }
     void SetHalted(bool shouldHalt) { halted = shouldHalt; }
 
-    void AddCycles(uint32_t cycles);
-    uint32_t GetTotalCycles() { return totalCycles; }
-    uint32_t GetCurrentInstructionCycles() { return currentInstructionCycles; }
-    uint32_t GetCurrentFrameCycles() { return currentFrameCycles; }
+    
+    u32 GetTotalCycles() { return totalCycles; }
+    u32 GetCurrentInstructionCycles() { return currentInstructionCycles; }
+    u32 GetCurrentFrameCycles() { return currentFrameCycles; }
 
-    EmulatorCore* GetEmulatorCore();
+    EmulatorCore* GetCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
     // Memory access
@@ -83,10 +74,8 @@ public:
 
     void InvalidateSequentiality(); 
 
-
 private:
     CPU_Registers cpuState;
-
     Pipeline pipeline;
     
     bool halted = false;
@@ -108,9 +97,9 @@ private:
     void AdvanceInstructionPipeline(); 
     void FlushPipeline();
 
-    // TODO: Implement
-    StatusRegister GetCurrentSPSR() { return StatusRegister{}; };
-
+    ExceptionBank GetBankFromMode(Mode mode);
+    StatusRegister GetCurrentSPSR();
+    void SwitchMode(Mode newMode);
     StatusRegister* currentSPSR;
 
     void HandleHalt();
@@ -118,13 +107,12 @@ private:
     EmulatorCore* core;
     GBA_Bus& bus;
 
-    uint32_t totalCycles;
-    uint32_t currentInstructionCycles;
-    uint32_t currentFrameCycles;
+    u32 totalCycles;
+    u32 currentInstructionCycles;
+    u32 currentFrameCycles;
     bool nextInstructionFetchIsSequential = false;
     bool nextDataAccessIsSequential = false;
-
-    void WriteRegister(uint index, u32 value); 
+    void AddCycles(u32 cycles);
 
     // ARM instructions:
     void ARM_DataProcessing(u32 instruction);
@@ -168,8 +156,8 @@ private:
     u32 SBC(u32 op1, u32 op2, bool set_flags);
 
     // CPSR / SPSR operations:
-    void RestoreCPSRFromSPSR(ExceptionBank oldExceptionModeIndex);
-    void SaveCPSRIntoSPSR(ExceptionBank exceptionModeIndex);
+    void RestoreCPSRFromSPSR(ExceptionBank bankIndex);
+    void SaveCPSRIntoSPSR(ExceptionBank bankIndex);
 
     void UpdateNZFlags(u32 result);
     void UpdateCFlag(u32 op1, u32 op2, bool isSub, u32 carry = 0);
@@ -184,8 +172,8 @@ private:
     inline static const std::array<Thumb_Handler, Thumb_Opcode_Count> thumbDispatchTable = GenerateThumbInstructionTable(); // Thumb instruction lookup table, precomputed
 };
 
-#include "CPU/Instructions/TableGeneration.inl"
-#include "CPU/Instructions/Arithmetic.inl"
+#include "Core/CPU/TableGeneration.inl"
+#include "Core/CPU/Arithmetic.inl"
 
 //https://problemkaputt.de/gbatek-arm-cpu-reference.htm - ARM CPU Reference
 //https://developer.arm.com/documentation/ddi0210/c/Introduction/Instruction-set-summary/ARM-instruction-summary?lang=en

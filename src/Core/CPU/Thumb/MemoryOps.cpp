@@ -1,4 +1,5 @@
 #include "Core/GBA_CPU.hpp"
+
 #include "Utils/BitOperations.hpp"
 
 #include <assert.h>

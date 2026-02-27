@@ -1,5 +1,6 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/CPU/ARM/Opcodes.hpp"
+
 #include "Utils/BitOperations.hpp"
 
 ARM_Opcode GBA_CPU::Decode_ARM(u32 instruction)
@@ -10,6 +11,7 @@ ARM_Opcode GBA_CPU::Decode_ARM(u32 instruction)
         case 0b01: return Decode_ARM_Pattern01(instruction);
         case 0b10: return Decode_ARM_Pattern10(instruction);
         case 0b11: return Decode_ARM_Pattern11(instruction);
+        default: return ARM_Opcode::ARM_Invalid;
     }
 }
 
@@ -18,10 +20,9 @@ ARM_Opcode GBA_CPU::Decode_ARM_Pattern00(u32 instruction)
     if (IsBitSet<25>(instruction))
     {
         // ARM 1. PSR transfer immediate
-        if (ExtractBits<24, 23>(instruction) == 0b10 && IsBitSet<20>(instruction))
+        if (ExtractBits<24, 23>(instruction) == 0b10 && !IsBitSet<20>(instruction))
         {
             return ARM_Opcode::ARM_PSRTransfer; // Immediate
-            
         }
 
         // ARM 2. Data processing immediate op2
@@ -98,7 +99,7 @@ ARM_Opcode GBA_CPU::Decode_ARM_Pattern00(u32 instruction)
 ARM_Opcode GBA_CPU::Decode_ARM_Pattern01(u32 instruction)
 {
     // ARM 11. Undefined instruction
-    if (IsBitSet<4>(instruction))
+    if (IsBitSet<25>(instruction) && IsBitSet<4>(instruction))
     {
         return ARM_Opcode::ARM_UndefinedInstruction;
     }

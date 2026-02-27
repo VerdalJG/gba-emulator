@@ -1,7 +1,8 @@
 #pragma once
+#include "Core/CPU/Registers.hpp"
 
 #include "Utils/Integers.hpp"
-#include "Core/CPU/Registers.hpp"
+
 
 
 inline u32 GBA_CPU::ADD(u32 op1, u32 op2, bool set_flags)
@@ -25,8 +26,8 @@ inline u32 GBA_CPU::SUB(u32 op1, u32 op2, bool set_flags)
     if (set_flags) // Update CPSR
     {
         UpdateNZFlags(result);
-        UpdateCFlag(op1, op2, false);
-        UpdateVFlag(op1, op2, result, false);
+        UpdateCFlag(op1, op2, true);
+        UpdateVFlag(op1, op2, result, true);
     }
 
     return result;

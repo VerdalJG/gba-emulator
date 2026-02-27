@@ -1,6 +1,6 @@
 #pragma once
-
 #include "Core/CPU/InstructionPipeline.hpp"
+
 #include "Utils/Integers.hpp"
 
 enum Thumb_Opcode : u8
@@ -34,5 +34,25 @@ enum Thumb_Opcode : u8
     Thumb_LongBranchWithLink,           // BL (two-instruction sequence)
     Thumb_SoftwareInterrupt,            // SWI
 
+    Thumb_Invalid,
     Thumb_Opcode_Count
+};
+
+enum class Thumb_ALUOp {
+    AND = 0,
+    EOR = 1,
+    LSL = 2,
+    LSR = 3,
+    ASR = 4,
+    ADC = 5,
+    SBC = 6,
+    ROR = 7,
+    TST = 8,
+    NEG = 9,
+    CMP = 10,
+    CMN = 11,
+    ORR = 12,
+    MUL = 13,
+    BIC = 14,
+    MVN = 15
 };

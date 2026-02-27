@@ -22,80 +22,79 @@ void GBA_IO::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma
     this->waitstates = waitstates;
 }
 
-MemReadResult<uint8_t> GBA_IO::Read8(uint32_t address) 
+MemReadResult<u8> GBA_IO::Read8(u32 address) 
 {
     IORegister* reg = ioMap[address];
     if (!reg || !reg->readable) return OPEN_BUS;
 
-    uint32_t shift = (address - reg->address) * sizeof(uint8_t); // Accounting for little-endianess
-    uint8_t read = static_cast<uint8_t>((reg->value >> shift) & 0xFF);
+    // Accounting for little-endianess
+    uint byteOffset = (address - reg->address);
+    uint bitOffset = byteOffset * 8; 
+    u8 read = static_cast<u8>((reg->value >> bitOffset) & 0xFF);
 
     if (reg->onRead) reg->onRead(address);
     return { read, true };
 }
 
-MemReadResult<uint16_t> GBA_IO::Read16(uint32_t address)
+MemReadResult<u16> GBA_IO::Read16(u32 address)
 {
     IORegister* reg = ioMap[address];
     if (!reg || !reg->readable) return OPEN_BUS;
 
-    uint32_t shift = (address - reg->address) * sizeof(uint8_t); 
-    uint16_t read = static_cast<uint16_t>((reg->value >> shift) & 0xFFFF);
+    uint byteOffset = (address - reg->address);
+    uint bitOffset = byteOffset * 8; 
+    u16 read = static_cast<u16>((reg->value >> bitOffset) & 0xFFFF);
 
     if (reg->onRead) reg->onRead(address);
     return { read, true };
 }
 
-MemReadResult<uint32_t> GBA_IO::Read32(uint32_t address) 
+MemReadResult<u32> GBA_IO::Read32(u32 address) 
 {
-    IORegister* reg = ioMap[address];
-    if (!reg || !reg->readable) return OPEN_BUS;
+    auto lo = Read16(address);
+    auto hi = Read16(address + 2);
 
-    uint32_t read = reg->value;
+    u32 value = (hi.value << 16) | lo.value;
+    bool valid = lo.valid && hi.valid;
 
-    if (reg->onRead) reg->onRead(address);
-    return { read, true };
+    return { value, valid };
 }
 
-void GBA_IO::Write8(uint32_t address, uint8_t value) 
+void GBA_IO::Write8(u32 address, u8 value) 
 {
     IORegister* reg = ioMap[address];
     if (!reg || !reg->writeable) return;
 
-    uint32_t shift = (address - reg->address) * sizeof(uint8_t);
+    u32 shift = (address - reg->address) * 8;
     reg->value &= ~(0xFFu << shift); // clear the target byte
     reg->value |= (value << shift); // set the new byte
 
     if (reg->onWrite) reg->onWrite(address, reg->value);
 }
 
-void GBA_IO::Write16(uint32_t address, uint16_t value) 
+void GBA_IO::Write16(u32 address, u16 value) 
 {
     IORegister* reg = ioMap[address];
     if (!reg || !reg->writeable) return;
 
-    uint32_t shift = (address - reg->address) * sizeof(uint8_t);
+    u32 shift = (address - reg->address) * 8;
     reg->value &= ~(0xFFFFu << shift); // clear the target halfword
     reg->value |= (value << shift); // set the new halfword
 
     if (reg->onWrite) reg->onWrite(address, reg->value);
 }
 
-void GBA_IO::Write32(uint32_t address, uint32_t value) 
+void GBA_IO::Write32(u32 address, u32 value) 
 {
-    IORegister* reg = ioMap[address];
-    if (!reg || !reg->writeable) return;
-
-    reg->value = value;
-
-    if (reg->onWrite) reg->onWrite(address, reg->value);
+    Write16(address, value & 0xFFFF);
+    Write16(address + 2, value >> 16);
 }
 
 void GBA_IO::PopulateIORegistersMap()
 {
     ioMap.clear();
 
-    auto addRegister = [this](IORegister reg) -> void 
+    auto addRegister = [this](IORegister& reg) -> void 
     {
         for (int i = 0; i < static_cast<size_t>(reg.width); i++)
         {
@@ -280,7 +279,7 @@ void GBA_IO::SetupLCDReadCallbacks()
 
     // DISPSTAT — readable, contains live flags (VBlank/HBlank/VCount)
     lcdRegisters.DISPSTAT.onRead =
-        [this](uint32_t address) -> uint32_t
+        [this](u32 address) -> u32
         {
             // TODO: Replace with real PPU state
             // Bits 0-2 are status flags, rest is writable configuration
@@ -289,7 +288,7 @@ void GBA_IO::SetupLCDReadCallbacks()
 
     // VCOUNT — live scanline counter
     lcdRegisters.VCOUNT.onRead =
-        [this](uint32_t address) -> uint32_t
+        [this](u32 address) -> u32
         {
             // TODO: Hook to PPU current scanline
             return lcdRegisters.VCOUNT.value;
@@ -322,7 +321,7 @@ void GBA_IO::SetupLCDWriteCallbacks()
 {
     // DISPCNT — controls display
     lcdRegisters.DISPCNT.onWrite =
-        [this](uint32_t address, uint32_t value)
+        [this](u32 address, u32 value)
         {
             // TODO: Update PPU display control
             printf("DISPCNT changed to: %u", value);
@@ -331,7 +330,7 @@ void GBA_IO::SetupLCDWriteCallbacks()
 
     // GREENSWAP — undocumented green swap
     lcdRegisters.GREENSWAP.onWrite =
-        [this](uint32_t address, uint32_t value)
+        [this](u32 address, u32 value)
         {
             // TODO: Apply green swap effect in PPU
             // ppu.SetGreenSwap(value);
@@ -339,7 +338,7 @@ void GBA_IO::SetupLCDWriteCallbacks()
 
     // DISPSTAT — interrupt and scanline control
     lcdRegisters.DISPSTAT.onWrite =
-        [this](uint32_t address, uint32_t value)
+        [this](u32 address, u32 value)
         {
             // TODO: Update HBlank/VBlank/LYC interrupt enables
             // ppu.SetDispStatInterrupts(value);
@@ -347,38 +346,38 @@ void GBA_IO::SetupLCDWriteCallbacks()
 
     // VCOUNT — read-only in hardware, write ignored
     lcdRegisters.VCOUNT.onWrite =
-        [](uint32_t, uint32_t) { /* ignored */ };
+        [](u32, u32) { /* ignored */ };
 
     // BGxCNT — background control
     lcdRegisters.BG0CNT.onWrite =
-        [this](uint32_t, uint32_t value)
+        [this](u32, u32 value)
         {
             // TODO: ppu.SetBGControl(0, value);
         };
     lcdRegisters.BG1CNT.onWrite =
-        [this](uint32_t, uint32_t value)
+        [this](u32, u32 value)
         {
             // TODO: ppu.SetBGControl(1, value);
         };
     lcdRegisters.BG2CNT.onWrite =
-        [this](uint32_t, uint32_t value)
+        [this](u32, u32 value)
         {
             // TODO: ppu.SetBGControl(2, value);
         };
     lcdRegisters.BG3CNT.onWrite =
-        [this](uint32_t, uint32_t value)
+        [this](u32, u32 value)
         {
             // TODO: ppu.SetBGControl(3, value);
         };
 
     // BGxHOFS / BGxVOFS — background offsets
     lcdRegisters.BG0HOFS.onWrite = 
-        [this](uint32_t, uint32_t value)
+        [this](u32, u32 value)
         {
             // TODO: ppu.SetBGOffset(0, value, lcdRegisters.BG0VOFS.value);
         };
     lcdRegisters.BG0VOFS.onWrite = 
-        [this](uint32_t, uint32_t value)
+        [this](u32, u32 value)
         {
             // TODO: ppu.SetBGOffset(0, lcdRegisters.BG0HOFS.value, value);
         };
@@ -387,14 +386,14 @@ void GBA_IO::SetupLCDWriteCallbacks()
 
     // WIN0H / WIN1H / WIN0V / WIN1V — window dimensions
     lcdRegisters.WIN0H.onWrite =
-        [this](uint32_t, uint32_t value)
+        [this](u32, u32 value)
         {
             // TODO: ppu.SetWindow0H(value);
         };
 
     // BLDCNT / BLDALPHA / BLDY — blending control
     lcdRegisters.BLDCNT.onWrite =
-        [this](uint32_t, uint32_t value)
+        [this](u32, u32 value)
         {
             // TODO: ppu.SetBlending(value);
         };

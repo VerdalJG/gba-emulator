@@ -9,7 +9,6 @@ void GBA_CPU::Thumb_PushPopRegisters(u16 instruction)
     const bool bit_pc_lr = IsBitSet<8>(instruction);
     u16 registerList = ExtractBits<7, 0>(instruction);
 
-    // TODO: Affect pipeline
     AdvanceProgramCounter();
 
     // Handle special case for empty register lists.

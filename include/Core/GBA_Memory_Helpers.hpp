@@ -1,42 +1,43 @@
 #pragma once
-#include <cstdint>
+#include "Utils/Integers.hpp"
+
 #include <memory>
 #include <vector>
 #include <cmath>
 
 // Memory map locations for GBA (inclusive ranges)
-constexpr uint32_t BIOS_START = 0x00000000;
-constexpr uint32_t BIOS_END = 0x00003FFF;
+constexpr u32 BIOS_START = 0x00000000;
+constexpr u32 BIOS_END = 0x00003FFF;
 
-constexpr uint32_t EWRAM_START = 0x02000000;
-constexpr uint32_t EWRAM_END = 0x02FFFFFF;
+constexpr u32 EWRAM_START = 0x02000000;
+constexpr u32 EWRAM_END = 0x02FFFFFF;
 
-constexpr uint32_t IWRAM_START = 0x03000000;
-constexpr uint32_t IWRAM_END = 0x03FFFFFF;
+constexpr u32 IWRAM_START = 0x03000000;
+constexpr u32 IWRAM_END = 0x03FFFFFF;
 
-constexpr uint32_t IO_START = 0x04000000;
-constexpr uint32_t IO_END = 0x04FFFFFF;
+constexpr u32 IO_START = 0x04000000;
+constexpr u32 IO_END = 0x04FFFFFF;
 
-constexpr uint32_t PALETTE_RAM_START = 0x05000000;
-constexpr uint32_t PALETTE_RAM_END = 0x05FFFFFF;
+constexpr u32 PALETTE_RAM_START = 0x05000000;
+constexpr u32 PALETTE_RAM_END = 0x05FFFFFF;
 
-constexpr uint32_t VRAM_START = 0x06000000;
-constexpr uint32_t VRAM_END = 0x06FFFFFF;
+constexpr u32 VRAM_START = 0x06000000;
+constexpr u32 VRAM_END = 0x06FFFFFF;
 
-constexpr uint32_t OAM_START = 0x07000000;
-constexpr uint32_t OAM_END = 0x07FFFFFF;
+constexpr u32 OAM_START = 0x07000000;
+constexpr u32 OAM_END = 0x07FFFFFF;
 
-constexpr uint32_t ROM0_START = 0x08000000;
-constexpr uint32_t ROM0_END = 0x09FFFFFF;
+constexpr u32 ROM0_START = 0x08000000;
+constexpr u32 ROM0_END = 0x09FFFFFF;
 
-constexpr uint32_t ROM1_START = 0x0A000000;
-constexpr uint32_t ROM1_END = 0x0BFFFFFF;
+constexpr u32 ROM1_START = 0x0A000000;
+constexpr u32 ROM1_END = 0x0BFFFFFF;
 
-constexpr uint32_t ROM2_START = 0x0C000000;
-constexpr uint32_t ROM2_END = 0x0DFFFFFF;
+constexpr u32 ROM2_START = 0x0C000000;
+constexpr u32 ROM2_END = 0x0DFFFFFF;
 
-constexpr uint32_t SRAM_START = 0x0E000000;
-constexpr uint32_t SRAM_END = 0x0FFFFFFF;
+constexpr u32 SRAM_START = 0x0E000000;
+constexpr u32 SRAM_END = 0x0FFFFFFF;
 
 // Memory map sizes for GBA
 constexpr size_t BIOS_SIZE = 0x4000; // 16KB
@@ -104,41 +105,42 @@ struct MemReadResult
 };
 
 // Access masks
-constexpr uint8_t R8 = static_cast<uint8_t>(BusAccessSize::Byte);
-constexpr uint8_t R16 = static_cast<uint8_t>(BusAccessSize::Halfword);
-constexpr uint8_t R32 = static_cast<uint8_t>(BusAccessSize::Word);
-constexpr uint8_t R8_16 = R8 | R16;
-constexpr uint8_t R16_32 = R16 | R32;
-constexpr uint8_t RALL = R8 | R16 | R32;
-constexpr uint8_t RNONE = 0;
+constexpr u8 R8 = static_cast<u8>(BusAccessSize::Byte);
+constexpr u8 R16 = static_cast<u8>(BusAccessSize::Halfword);
+constexpr u8 R32 = static_cast<u8>(BusAccessSize::Word);
+constexpr u8 R8_16 = R8 | R16;
+constexpr u8 R16_32 = R16 | R32;
+constexpr u8 RALL = R8 | R16 | R32;
+constexpr u8 RNONE = 0;
 
 #define OPEN_BUS {0, false}
 
 struct GBA_MemoryRegion
 {
-    uint32_t start;
-    uint32_t end;
-    uint32_t physicalSize;
+    u32 start;
+    u32 end;
+    u32 physicalSize;
     BusAccessSize busWidth;
     Mirroring mirroring;
 
     // Bitmask for R/W permissions 8/16/32
-    uint8_t readMask : 3;
-    uint8_t writeMask : 3;
+    u8 readMask : 3;
+    u8 writeMask : 3;
 
     GBA_MemoryRegionType type;
 
-    GBA_MemoryRegion(uint32_t start, uint32_t end, uint32_t physicalSize, BusAccessSize busWidth, 
-        uint8_t readMask, uint8_t writeMask, GBA_MemoryRegionType type, Mirroring mirroring) :
+    GBA_MemoryRegion(u32 start, u32 end, u32 physicalSize, BusAccessSize busWidth, 
+        u8 readMask, u8 writeMask, GBA_MemoryRegionType type, Mirroring mirroring) :
         start(start), end(end), physicalSize(physicalSize), busWidth(busWidth), readMask(readMask), 
         writeMask(writeMask), type(type), mirroring(mirroring)
     {}
 
-    bool IsValidAccess(uint32_t address, AccessType access, BusAccessSize accessSize) const
+    bool IsValidAccess(u32 address, AccessType access, BusAccessSize accessSize) const
     {
         size_t sizeBytes = static_cast<size_t>(accessSize);
-        bool withinBounds = (address >= start) && ((address + sizeBytes) <= end);
-
+        
+        bool withinBounds = (address >= start) && ((address + (sizeBytes - 1)) <= end);
+        
         bool isRead = access == AccessType::Read;
         bool allowed = isRead ? (readMask & sizeBytes) : (writeMask & sizeBytes);
 
@@ -147,8 +149,8 @@ struct GBA_MemoryRegion
 
     int AccessesRequired(BusAccessSize size) const
     {
-        uint32_t access = static_cast<uint32_t>(size);
-        uint32_t bus = static_cast<uint32_t>(busWidth);
+        u32 access = static_cast<u32>(size);
+        u32 bus = static_cast<u32>(busWidth);
 
         return (access + bus - 1) / bus;
     }

@@ -1,6 +1,4 @@
 #pragma once
-//#include <SDL3/SDL3.h>
-//#include "Timer.hpp"
 #include "Core/GBA_HLE.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/GBA_Bus.hpp"
@@ -33,7 +31,7 @@ public:
     void Shutdown();
     
     void SetUsingHLE(bool enabled) { usingHLEBios = enabled; }
-    bool GetUsingHLE() { return usingHLEBios; }
+    bool UsingHLE() { return usingHLEBios; }
 
     GBA_CPU& GetCPU() { return cpu; }
     GBA_Memory& GetMemory() { return memory; }
@@ -69,6 +67,6 @@ protected:
     GBA_TimerController timerController;
     GBA_InterruptController interruptController;
     GBA_Keypad keypad;
-    GBA_HLE hle;
     GBA_CPU cpu;
+    GBA_HLE hle;
 };

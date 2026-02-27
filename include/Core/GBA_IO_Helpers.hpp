@@ -1,30 +1,30 @@
 #pragma once
-#include <cstdint>
-#include <string>
-#include <functional>
 #include "Core/GBA_Memory_Helpers.hpp"
 
+#include "Utils/Integers.hpp"
 
+#include <string>
+#include <functional>
 
 // TODO: probably not needed
-// constexpr uint32_t LCD_END     = 0x04000060;
-// constexpr uint32_t SOUND_END   = 0x040000B0;
-// constexpr uint32_t DMA_END     = 0x04000100;
-// constexpr uint32_t TIMER_END   = 0x04000120;
-// constexpr uint32_t SIO_END     = 0x04000130;
-// constexpr uint32_t KEYPAD_END  = 0x04000134;
-// constexpr uint32_t IRQ_END     = 0x04000300;
+// constexpr u32 LCD_END     = 0x04000060;
+// constexpr u32 SOUND_END   = 0x040000B0;
+// constexpr u32 DMA_END     = 0x04000100;
+// constexpr u32 TIMER_END   = 0x04000120;
+// constexpr u32 SIO_END     = 0x04000130;
+// constexpr u32 KEYPAD_END  = 0x04000134;
+// constexpr u32 IRQ_END     = 0x04000300;
 
-using ReadHandler  = std::function<uint32_t(uint32_t busAddress)>;
-using WriteHandler = std::function<void(uint32_t busAddress, uint32_t value)>;
+using ReadHandler  = std::function<u32(u32 busAddress)>;
+using WriteHandler = std::function<void(u32 busAddress, u32 value)>;
 
 struct IORegister
 {
-    uint32_t address;
+    u32 address;
     BusAccessSize width;
     bool readable;
     bool writeable;
-    uint32_t value = 0;
+    u32 value = 0;
 
     ReadHandler onRead = nullptr;
     WriteHandler onWrite = nullptr;
@@ -111,40 +111,40 @@ struct IO_SoundRegisters
 
 struct IO_DMARegisters
 {
-    IORegister DMA0SAD   { 0x04000B0, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 0 Source Address
-    IORegister DMA0DAD   { 0x04000B4, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 0 Destination Address
-    IORegister DMA0CNT_L { 0x04000B8, BusAccessSize::Halfword, false, true, 0x0000 }; // DMA 0 Word Count
-    IORegister DMA0CNT_H { 0x04000BA, BusAccessSize::Halfword, true, true, 0x0000 }; // DMA 0 Control
+    IORegister DMA0SAD   { 0x040000B0, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 0 Source Address
+    IORegister DMA0DAD   { 0x040000B4, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 0 Destination Address
+    IORegister DMA0CNT_L { 0x040000B8, BusAccessSize::Halfword, false, true, 0x0000 }; // DMA 0 Word Count
+    IORegister DMA0CNT_H { 0x040000BA, BusAccessSize::Halfword, true, true, 0x0000 }; // DMA 0 Control
 
-    IORegister DMA1SAD   { 0x04000BC, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 1 Source Address
-    IORegister DMA1DAD   { 0x04000C0, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 1 Destination Address
-    IORegister DMA1CNT_L { 0x04000C4, BusAccessSize::Halfword, false, true, 0x0000 }; // DMA 1 Word Count
-    IORegister DMA1CNT_H { 0x04000C6, BusAccessSize::Halfword, true, true, 0x0000 }; // DMA 1 Control
+    IORegister DMA1SAD   { 0x040000BC, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 1 Source Address
+    IORegister DMA1DAD   { 0x040000C0, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 1 Destination Address
+    IORegister DMA1CNT_L { 0x040000C4, BusAccessSize::Halfword, false, true, 0x0000 }; // DMA 1 Word Count
+    IORegister DMA1CNT_H { 0x040000C6, BusAccessSize::Halfword, true, true, 0x0000 }; // DMA 1 Control
 
-    IORegister DMA2SAD   { 0x04000C8, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 2 Source Address
-    IORegister DMA2DAD   { 0x04000CC, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 2 Destination Address
-    IORegister DMA2CNT_L { 0x04000D0, BusAccessSize::Halfword, false, true, 0x0000 }; // DMA 2 Word Count
-    IORegister DMA2CNT_H { 0x04000D2, BusAccessSize::Halfword, true, true, 0x0000 }; // DMA 2 Control
+    IORegister DMA2SAD   { 0x040000C8, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 2 Source Address
+    IORegister DMA2DAD   { 0x040000CC, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 2 Destination Address
+    IORegister DMA2CNT_L { 0x040000D0, BusAccessSize::Halfword, false, true, 0x0000 }; // DMA 2 Word Count
+    IORegister DMA2CNT_H { 0x040000D2, BusAccessSize::Halfword, true, true, 0x0000 }; // DMA 2 Control
 
-    IORegister DMA3SAD   { 0x04000D4, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 3 Source Address
-    IORegister DMA3DAD   { 0x04000D8, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 3 Destination Address
-    IORegister DMA3CNT_L { 0x04000DC, BusAccessSize::Halfword, false, true, 0x0000 }; // DMA 3 Word Count
-    IORegister DMA3CNT_H { 0x04000DE, BusAccessSize::Halfword, true, true, 0x0000 }; // DMA 3 Control
+    IORegister DMA3SAD   { 0x040000D4, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 3 Source Address
+    IORegister DMA3DAD   { 0x040000D8, BusAccessSize::Word, false, true, 0x00000000 }; // DMA 3 Destination Address
+    IORegister DMA3CNT_L { 0x040000DC, BusAccessSize::Halfword, false, true, 0x0000 }; // DMA 3 Word Count
+    IORegister DMA3CNT_H { 0x040000DE, BusAccessSize::Halfword, true, true, 0x0000 }; // DMA 3 Control
 };
 
 struct IO_TimerRegisters
 {
-    IORegister TM0CNT_L { 0x0400100, BusAccessSize::Halfword, false, true, 0x0000 }; // Timer 0 Counter/Reload
-    IORegister TM0CNT_H { 0x0400102, BusAccessSize::Halfword, true, true, 0x0000 }; // Timer 0 Control
+    IORegister TM0CNT_L { 0x04000100, BusAccessSize::Halfword, false, true, 0x0000 }; // Timer 0 Counter/Reload
+    IORegister TM0CNT_H { 0x04000102, BusAccessSize::Halfword, true, true, 0x0000 }; // Timer 0 Control
 
-    IORegister TM1CNT_L { 0x0400104, BusAccessSize::Halfword, false, true, 0x0000 }; // Timer 1 Counter/Reload
-    IORegister TM1CNT_H { 0x0400106, BusAccessSize::Halfword, true, true, 0x0000 }; // Timer 1 Control
+    IORegister TM1CNT_L { 0x04000104, BusAccessSize::Halfword, false, true, 0x0000 }; // Timer 1 Counter/Reload
+    IORegister TM1CNT_H { 0x04000106, BusAccessSize::Halfword, true, true, 0x0000 }; // Timer 1 Control
 
-    IORegister TM2CNT_L { 0x0400108, BusAccessSize::Halfword, false, true, 0x0000 }; // Timer 2 Counter/Reload
-    IORegister TM2CNT_H { 0x040010A, BusAccessSize::Halfword, true, true, 0x0000 }; // Timer 2 Control
+    IORegister TM2CNT_L { 0x04000108, BusAccessSize::Halfword, false, true, 0x0000 }; // Timer 2 Counter/Reload
+    IORegister TM2CNT_H { 0x0400010A, BusAccessSize::Halfword, true, true, 0x0000 }; // Timer 2 Control
 
-    IORegister TM3CNT_L { 0x040010C, BusAccessSize::Halfword, false, true, 0x0000 }; // Timer 3 Counter/Reload
-    IORegister TM3CNT_H { 0x040010E, BusAccessSize::Halfword, true, true, 0x0000 }; // Timer 3 Control
+    IORegister TM3CNT_L { 0x0400010C, BusAccessSize::Halfword, false, true, 0x0000 }; // Timer 3 Counter/Reload
+    IORegister TM3CNT_H { 0x0400010E, BusAccessSize::Halfword, true, true, 0x0000 }; // Timer 3 Control
 };
 
 struct IO_SerialRegisters
@@ -155,54 +155,54 @@ struct IO_SerialRegisters
     // ===============================
 
     // Normal 32-bit mode (shared with multiplayer)
-    IORegister SIODATA32 {0x0400120, BusAccessSize::Word, true, true, 0x00000000};
+    IORegister SIODATA32 {0x04000120, BusAccessSize::Word, true, true, 0x00000000};
 
     // Multiplayer mode (2-byte halfword registers)
-    IORegister SIOMULTI0 {0x0400120, BusAccessSize::Halfword, true, true, 0x0000}; // Parent
-    IORegister SIOMULTI1 {0x0400122, BusAccessSize::Halfword, true, true, 0x0000}; // 1st child
-    IORegister SIOMULTI2 {0x0400124, BusAccessSize::Halfword, true, true, 0x0000}; // 2nd child
-    IORegister SIOMULTI3 {0x0400126, BusAccessSize::Halfword, true, true, 0x0000}; // 3rd child
+    IORegister SIOMULTI0 {0x04000120, BusAccessSize::Halfword, true, true, 0x0000}; // Parent
+    IORegister SIOMULTI1 {0x04000122, BusAccessSize::Halfword, true, true, 0x0000}; // 1st child
+    IORegister SIOMULTI2 {0x04000124, BusAccessSize::Halfword, true, true, 0x0000}; // 2nd child
+    IORegister SIOMULTI3 {0x04000126, BusAccessSize::Halfword, true, true, 0x0000}; // 3rd child
 
     // Control register
-    IORegister SIOCNT {0x0400128, BusAccessSize::Halfword, true, true, 0x0000};
+    IORegister SIOCNT {0x04000128, BusAccessSize::Halfword, true, true, 0x0000};
 
     // Local multiplayer send / 8-bit UART
-    IORegister SIOMLT_SEND {0x040012A, BusAccessSize::Halfword, false, true, 0x0000};
-    IORegister SIODATA8    {0x040012A, BusAccessSize::Byte, true, true, 0x00};
+    IORegister SIOMLT_SEND {0x0400012A, BusAccessSize::Halfword, false, true, 0x0000};
+    IORegister SIODATA8    {0x0400012A, BusAccessSize::Byte, true, true, 0x00};
 
     // ===============================
     // Serial Communication (2)
     // 0x0400134 → 0x040015A
     // ===============================
 
-    IORegister RCNT {0x0400134, BusAccessSize::Halfword, true, true, 0x0000};
+    IORegister RCNT {0x04000134, BusAccessSize::Halfword, true, true, 0x0000};
 
     // Ancient infrared register (prototypes only)
-    IORegister IR {0x0400136, BusAccessSize::Halfword, false, false, 0x0000};
+    IORegister IR {0x04000136, BusAccessSize::Halfword, false, false, 0x0000};
 
     // SIO JOY Control
-    IORegister JOYCNT {0x0400140, BusAccessSize::Halfword, true, true, 0x0000};
-    IORegister JOY_RECV {0x0400150, BusAccessSize::Word, true, true, 0x00000000};
-    IORegister JOY_TRANS {0x0400154, BusAccessSize::Word, true, true, 0x00000000};
-    IORegister JOYSTAT {0x0400158, BusAccessSize::Halfword, true, false, 0x0000};
+    IORegister JOYCNT {0x04000140, BusAccessSize::Halfword, true, true, 0x0000};
+    IORegister JOY_RECV {0x04000150, BusAccessSize::Word, true, true, 0x00000000};
+    IORegister JOY_TRANS {0x04000154, BusAccessSize::Word, true, true, 0x00000000};
+    IORegister JOYSTAT {0x04000158, BusAccessSize::Halfword, true, false, 0x0000};
 };
 
 struct IO_KeypadRegisters
 {
-    IORegister KEYINPUT { 0x0400130, BusAccessSize::Halfword, true, false, 0x03FF }; // Key Status (Read-only)
-    IORegister KEYCNT   { 0x0400132, BusAccessSize::Halfword, true, true, 0x0000 };  // Key Interrupt Control
+    IORegister KEYINPUT { 0x04000130, BusAccessSize::Halfword, true, false, 0x03FF }; // Key Status (Read-only)
+    IORegister KEYCNT   { 0x04000132, BusAccessSize::Halfword, true, true, 0x0000 };  // Key Interrupt Control
 };
 
 struct IO_InterruptRegisters
 {
-    IORegister IE  { 0x0400200, BusAccessSize::Halfword, true, true, 0x0000 }; // Interrupt Enable Register
-    IORegister IF  { 0x0400202, BusAccessSize::Halfword, true, true, 0x0000 }; // Interrupt Request Flags / IRQ Acknowledge
-    IORegister IME { 0x0400208, BusAccessSize::Halfword, true, true, 0x0000 }; // Interrupt Master Enable Register
+    IORegister IE  { 0x04000200, BusAccessSize::Halfword, true, true, 0x0000 }; // Interrupt Enable Register
+    IORegister IF  { 0x04000202, BusAccessSize::Halfword, true, true, 0x0000 }; // Interrupt Request Flags / IRQ Acknowledge
+    IORegister IME { 0x04000208, BusAccessSize::Halfword, true, true, 0x0000 }; // Interrupt Master Enable Register
 };
 
 struct IO_MiscRegisters
 {
-    IORegister WAITCNT { 0x0400204, BusAccessSize::Halfword, true, true, 0x0000 }; // Game Pak Waitstate Control
-    IORegister POSTFLG { 0x0400300, BusAccessSize::Byte, true, true, 0x80 };     // Undocumented - Post Boot Flag
-    IORegister HALTCNT { 0x0400301, BusAccessSize::Byte, false, true, 0x00 };    // Undocumented - Power Down Control
+    IORegister WAITCNT { 0x04000204, BusAccessSize::Halfword, true, true, 0x0000 }; // Game Pak Waitstate Control
+    IORegister POSTFLG { 0x04000300, BusAccessSize::Byte, true, true, 0x80 };     // Undocumented - Post Boot Flag
+    IORegister HALTCNT { 0x04000301, BusAccessSize::Byte, false, true, 0x00 };    // Undocumented - Power Down Control
 };

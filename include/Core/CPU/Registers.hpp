@@ -2,7 +2,7 @@
 #include "Utils/Integers.hpp"
 #include <array>
 
-enum class Mode
+enum class Mode : uint
 {
     USR = 0x10, // User
     FIQ = 0x11, // Fast Interrupt
@@ -20,6 +20,7 @@ enum ExceptionBank
     BANK_ABT  = 2,
     BANK_IRQ  = 3,
     BANK_UND  = 4,
+    BANK_UNBANKED  = 5, // Technically user/system mode are not banked but for the active registers implementation, it is necessary
     BANK_COUNT,
 };
 
@@ -89,12 +90,13 @@ struct CPU_Registers
     };
 
     // Banked Registers
-    std::array<u32, FIQ_RCOUNT> fiqR8_R12;
-    std::array<std::array<u32, BANK_RCOUNT>, BANK_COUNT> bankedR13_R14s;
+    std::array<u32, FIQ_RCOUNT> fiq_banked_R8_R12;
+    std::array<u32, FIQ_RCOUNT> shared_R8_R12;
+    std::array<std::array<u32, BANK_RCOUNT>, BANK_COUNT> bankedR13_R14;
 
     // Program Status Registers
     StatusRegister cpsr;
-    StatusRegister spsr[BANK_COUNT];
+    std::array<StatusRegister, BANK_COUNT> spsr;
 
     CPU_Registers() { Reset(); }
 
@@ -108,21 +110,25 @@ struct CPU_Registers
 
         for (int i = 0; i < FIQ_RCOUNT; i++)
         {
-            fiqR8_R12[i] = 0;
+            fiq_banked_R8_R12[i] = 0;
+            shared_R8_R12[i] = 0;
         }
 
         for (int i = 0; i < BANK_COUNT; i++)
         {
             for (int j = 0; j < BANK_RCOUNT; j++)
             {
-                bankedR13_R14s[i][j] = 0;
+                bankedR13_R14[i][j] = 0;
             }
+            spsr[i].value = 0;
         }
 
-        StatusRegister new_cpsr;
+        StatusRegister new_cpsr{};
+        new_cpsr.fields.reserved = 0;
         new_cpsr.fields.mode = Mode::SVC;
         new_cpsr.fields.irq_disable = 1;
         new_cpsr.fields.fiq_disable = 1;
+        new_cpsr.fields.thumb = 0;
 
         cpsr = new_cpsr;
     }

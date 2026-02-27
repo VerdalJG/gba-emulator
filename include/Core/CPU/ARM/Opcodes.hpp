@@ -1,6 +1,6 @@
 #pragma once
-
 #include "Core/CPU/InstructionPipeline.hpp"
+
 #include "Utils/Integers.hpp"
 
 enum ARM_Opcode : u8
@@ -22,7 +22,7 @@ enum ARM_Opcode : u8
     ARM_SingleDataSwap,          // SWP / SWPB
 
     // --- Branch ---
-    ARM_Branch,          // B / BL
+    ARM_Branch,                  // B / BL
     ARM_BranchAndExchange,       // BX
 
     // --- Exceptions ---
@@ -35,4 +35,24 @@ enum ARM_Opcode : u8
     ARM_Invalid,
     ARM_Suppressed,
     ARM_Opcode_Count
+};
+
+enum class ARM_ALUOp
+{
+    AND = 0, 
+    EOR = 1, 
+    SUB = 2, 
+    RSB = 3,
+    ADD = 4, 
+    ADC = 5, 
+    SBC = 6, 
+    RSC = 7,
+    TST = 8, 
+    TEQ = 9, 
+    CMP = 10, 
+    CMN = 11,
+    ORR = 12, 
+    MOV = 13, 
+    BIC = 14, 
+    MVN = 15
 };

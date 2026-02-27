@@ -3,20 +3,20 @@
 #include "Core/GBA_Memory.hpp"
 #include "Core/GBA_IO.hpp"
 #include "Core/GBA_CPU.hpp"
+
 #include "Utils/Logger.hpp"
 
-//#include <cmath>
 #include <assert.h>
 #include <numbers>
 
-GBA_HLE::GBA_HLE(EmulatorCore* core, GBA_Memory& memory, GBA_IO& io) : 
-    core(core), memory(memory), io(io)
+GBA_HLE::GBA_HLE(EmulatorCore* core, GBA_Memory& memory, GBA_IO& io, GBA_CPU& cpu) : 
+    core(core), memory(memory), io(io), cpu(cpu)
 {
     assert(core != nullptr && "HLE must have valid EmulatorCore object");
     BuildTable();
 }
 
-void GBA_HLE::HandleSWI(uint8_t swiNumber, GBA_CPU &cpu)
+void GBA_HLE::HandleSWI(uint8_t swiNumber)
 {
     if (swiNumber >= swiTable.size())
     {
@@ -27,7 +27,7 @@ void GBA_HLE::HandleSWI(uint8_t swiNumber, GBA_CPU &cpu)
     auto& swiFunc = swiTable[swiNumber];
     if (swiFunc)
     {
-        (this->*swiFunc)(cpu);;
+        (this->*swiFunc)();;
     }
     else
     {
@@ -35,7 +35,7 @@ void GBA_HLE::HandleSWI(uint8_t swiNumber, GBA_CPU &cpu)
     }
 }
 
-void GBA_HLE::HLE_SoftReset(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoftReset()
 {
     // Reset registers to startup state
     for (int i = 0; i < 16; ++i)
@@ -44,13 +44,13 @@ void GBA_HLE::HLE_SoftReset(GBA_CPU &cpu)
     }
         
     // Reset CPSR (enter system mode, ARM state)
-    cpu.UpdateCPSR(0x000000DF); // I and F disabled, ARM, System mode
+    cpu.SetCPSR(0x000000DF); // I and F disabled, ARM, System mode
 
     // Restart at address 0 (BIOS entry point)
-    cpu.WriteRegister(GBA_CPU::PC_INDEX, 0x00000000);
+    cpu.WriteRegister(15, 0x00000000);
 }
 
-void GBA_HLE::HLE_RegisterRamReset(GBA_CPU &cpu)
+void GBA_HLE::HLE_RegisterRamReset()
 {
     uint32_t mask = cpu.ReadRegister(0);
 
@@ -66,27 +66,27 @@ void GBA_HLE::HLE_RegisterRamReset(GBA_CPU &cpu)
     // if (mask & (1 << 7)) io.ResetOtherIORegisters();
 }
 
-void GBA_HLE::HLE_Halt(GBA_CPU &cpu)
+void GBA_HLE::HLE_Halt()
 {
     cpu.SetHalted(true); // CPU internally handles what to do in HandleHalt()
 }
 
-void GBA_HLE::HLE_Sleep(GBA_CPU &cpu)
+void GBA_HLE::HLE_Sleep()
 {
     // Low
 }
 
-void GBA_HLE::HLE_IntrWait(GBA_CPU &cpu)
+void GBA_HLE::HLE_IntrWait()
 {
     // High
 }
 
-void GBA_HLE::HLE_VBlankIntrWait(GBA_CPU &cpu)
+void GBA_HLE::HLE_VBlankIntrWait()
 {
     // ExHigh
 }
 
-void GBA_HLE::HLE_Div(GBA_CPU &cpu)
+void GBA_HLE::HLE_Div()
 {
     int32_t dividend = cpu.ReadRegister(0);
     int32_t divisor = cpu.ReadRegister(1);
@@ -99,7 +99,7 @@ void GBA_HLE::HLE_Div(GBA_CPU &cpu)
     cpu.WriteRegister(3, abs(quotient));
 }
 
-void GBA_HLE::HLE_DivArm(GBA_CPU &cpu)
+void GBA_HLE::HLE_DivArm()
 {
     int32_t dividend = cpu.ReadRegister(1);
     int32_t divisor = cpu.ReadRegister(0);
@@ -112,7 +112,7 @@ void GBA_HLE::HLE_DivArm(GBA_CPU &cpu)
     cpu.WriteRegister(3, abs(quotient));
 }
 
-void GBA_HLE::HLE_Sqrt(GBA_CPU &cpu)
+void GBA_HLE::HLE_Sqrt()
 {
     uint32_t value = cpu.ReadRegister(0);
 
@@ -135,7 +135,7 @@ void GBA_HLE::HLE_Sqrt(GBA_CPU &cpu)
     cpu.WriteRegister(0, result & 0xFFFF);
 }
 
-void GBA_HLE::HLE_ArcTan(GBA_CPU &cpu)
+void GBA_HLE::HLE_ArcTan()
 {
     int32_t value = static_cast<int16_t>(cpu.ReadRegister(0));
     double x = static_cast<double>(value) / (1 << 14); // Convert from 1.14 fixed point to float/double
@@ -148,7 +148,7 @@ void GBA_HLE::HLE_ArcTan(GBA_CPU &cpu)
     cpu.WriteRegister(0, angleGBA);
 }
 
-void GBA_HLE::HLE_ArcTan2(GBA_CPU &cpu)
+void GBA_HLE::HLE_ArcTan2()
 {
     int32_t r0 = static_cast<int16_t>(cpu.ReadRegister(0));
     int32_t r1 = static_cast<int16_t>(cpu.ReadRegister(1));
@@ -168,163 +168,163 @@ void GBA_HLE::HLE_ArcTan2(GBA_CPU &cpu)
     cpu.WriteRegister(0, angleGBA);  
 }
 
-void GBA_HLE::HLE_CpuSet(GBA_CPU &cpu)
+void GBA_HLE::HLE_CpuSet()
 {
     // ExHigh
     
 }
 
-void GBA_HLE::HLE_CpuFastSet(GBA_CPU &cpu)
+void GBA_HLE::HLE_CpuFastSet()
 {
     // ExHigh
 }
 
-void GBA_HLE::HLE_GetBiosChecksum(GBA_CPU &cpu)
+void GBA_HLE::HLE_GetBiosChecksum()
 {
     // Low
 }
 
-void GBA_HLE::HLE_BgAffineSet(GBA_CPU &cpu)
+void GBA_HLE::HLE_BgAffineSet()
 {
     // Medium
 }
 
-void GBA_HLE::HLE_ObjAffineSet(GBA_CPU &cpu)
+void GBA_HLE::HLE_ObjAffineSet()
 {
     // Medium
 }
 
-void GBA_HLE::HLE_BitUnpack(GBA_CPU &cpu)
+void GBA_HLE::HLE_BitUnpack()
 {
     // Medium
 }
 
-void GBA_HLE::HLE_LZ77UnCompReadNormalWrite8Bit(GBA_CPU &cpu)
+void GBA_HLE::HLE_LZ77UnCompReadNormalWrite8Bit()
 {
     // High
 }
 
-void GBA_HLE::HLE_LZ77UnCompReadNormalWrite16Bit(GBA_CPU &cpu)
+void GBA_HLE::HLE_LZ77UnCompReadNormalWrite16Bit()
 {
     // High
 }
 
-void GBA_HLE::HLE_HuffUnCompReadNormal(GBA_CPU &cpu)
+void GBA_HLE::HLE_HuffUnCompReadNormal()
 {
     // Low
 }
 
-void GBA_HLE::HLE_RLUnCompReadNormalWrite8bit(GBA_CPU &cpu)
+void GBA_HLE::HLE_RLUnCompReadNormalWrite8bit()
 {
     // Low
 }
 
-void GBA_HLE::HLE_RLUnCompReadNormalWrite16bit(GBA_CPU &cpu)
+void GBA_HLE::HLE_RLUnCompReadNormalWrite16bit()
 {
     // Low
 }
 
-void GBA_HLE::HLE_Diff8bitUnFilterWrite8bit(GBA_CPU &cpu)
+void GBA_HLE::HLE_Diff8bitUnFilterWrite8bit()
 {
     // Low
 }
 
-void GBA_HLE::HLE_Diff8bitUnFilterWrite16bit(GBA_CPU &cpu)
+void GBA_HLE::HLE_Diff8bitUnFilterWrite16bit()
 {
     // Low
 }
 
-void GBA_HLE::HLE_Diff16bitUnFilter(GBA_CPU &cpu)
+void GBA_HLE::HLE_Diff16bitUnFilter()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundBias(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundBias()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundDriverInit(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundDriverInit()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundDriverMode(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundDriverMode()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundDriverMain(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundDriverMain()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundDriverVSync(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundDriverVSync()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundChannelClear(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundChannelClear()
 {
     // Low
 }
 
-void GBA_HLE::HLE_MidiKey2Freq(GBA_CPU &cpu)
+void GBA_HLE::HLE_MidiKey2Freq()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundWhatever0(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundWhatever0()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundWhatever1(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundWhatever1()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundWhatever2(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundWhatever2()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundWhatever3(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundWhatever3()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundWhatever4(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundWhatever4()
 {
     // Low
 }
 
-void GBA_HLE::HLE_MultiBoot(GBA_CPU &cpu)
+void GBA_HLE::HLE_MultiBoot()
 {
     // Low
 }
 
-void GBA_HLE::HLE_HardReset(GBA_CPU &cpu)
+void GBA_HLE::HLE_HardReset()
 {
     // Low
 }
 
-void GBA_HLE::HLE_CustomHalt(GBA_CPU &cpu)
+void GBA_HLE::HLE_CustomHalt()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundDriverVSyncOff(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundDriverVSyncOff()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundDriverVSyncOn(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundDriverVSyncOn()
 {
     // Low
 }
 
-void GBA_HLE::HLE_SoundGetJumpList(GBA_CPU &cpu)
+void GBA_HLE::HLE_SoundGetJumpList()
 {
     // Low
 }

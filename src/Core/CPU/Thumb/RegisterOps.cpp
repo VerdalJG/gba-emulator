@@ -1,7 +1,7 @@
 #include "Core/GBA_CPU.hpp"
-#include "Core/CPU/InstructionHelpers.hpp"
-#include "Core/CPU/CPU_Timings.hpp"
 #include "Core/CPU/Shifts.hpp"
+#include "Core/CPU/MultiplyTiming.hpp"
+
 #include "Utils/BitOperations.hpp"
 
 

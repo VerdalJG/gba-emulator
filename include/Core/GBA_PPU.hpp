@@ -1,6 +1,7 @@
 #pragma once    
-#include <cstdint>
 #include "Core/GBA_IO_Helpers.hpp"
+
+#include <cstdint>
 
 static constexpr uint32_t CYCLES_PER_FRAME = 228 * 160; // ≈ 36,480
 static constexpr uint32_t GBA_WIDTH = 240;

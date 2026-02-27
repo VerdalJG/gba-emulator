@@ -75,7 +75,6 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
         u32 shiftAmount = ExtractBits<11, 7>(instruction); // Shift amount is an immediate value
         uint shiftOp = ExtractBits<6, 5>(instruction);
         
-
         offset = ReadRegister(rmIndex);
         if (shiftAmount != 0)
         {
@@ -117,7 +116,7 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
         }
 
         // Align if rdIndex == PC
-        if (rdIndex == 15) readValue &= IsThumbMode() ? ~1u : ~3u;
+        if (rdIndex == 15) readValue &= (IsThumbMode() ? ~1u : ~3u);
         cpuState.registers[rdIndex] = readValue;
 
         // TODO: Add one I cycle
@@ -261,7 +260,7 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
 
 void GBA_CPU::ARM_BlockDataTransfer(u32 instruction)
 {
-    const bool pre_indexed = IsBitSet<24>(instruction);
+    bool pre_indexed = IsBitSet<24>(instruction);
     const bool incrementing = IsBitSet<23>(instruction);
     const bool forceUserMode = IsBitSet<22>(instruction);
     const bool writeback = IsBitSet<21>(instruction);
@@ -337,7 +336,7 @@ void GBA_CPU::ARM_BlockDataTransfer(u32 instruction)
     }
     else // Decrementing
     {
-        pre_indexed != pre_indexed;
+        pre_indexed = !pre_indexed;
         address -= bytes;
         newBaseAddress -= bytes;
     }

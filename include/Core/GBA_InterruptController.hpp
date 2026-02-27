@@ -1,6 +1,7 @@
 #pragma once  
-#include <cstdint>
 #include "GBA_IO_Helpers.hpp"
+
+#include <cstdint>
 
 class EmulatorCore;
 

@@ -1,4 +1,7 @@
 #pragma once
+#include "Core/GBA_Memory_Helpers.hpp"
+
+#include "Utils/Logger.hpp"
 
 #include <cstdint>
 #include <vector>
@@ -6,9 +9,6 @@
 #include <variant>
 #include <memory>
 #include <span>
-
-#include "Core/GBA_Memory_Helpers.hpp"
-
 #include "Utils/Logger.hpp"
 
 class EmulatorCore;
@@ -78,7 +78,7 @@ private:
     GBA_MemoryRegion rom0Region = GBA_MemoryRegion(ROM0_START, ROM0_END, ROM_BANK_SIZE, BusAccessSize::Halfword, RALL, RNONE, GBA_MemoryRegionType::ROM0, Mirroring::NoMirror);
     GBA_MemoryRegion rom1Region = GBA_MemoryRegion(ROM1_START, ROM1_END, ROM_BANK_SIZE, BusAccessSize::Halfword, RALL, RNONE, GBA_MemoryRegionType::ROM1, Mirroring::NoMirror);
     GBA_MemoryRegion rom2Region = GBA_MemoryRegion(ROM2_START, ROM2_END, ROM_BANK_SIZE, BusAccessSize::Halfword, RALL, RNONE, GBA_MemoryRegionType::ROM2, Mirroring::NoMirror);
-    GBA_MemoryRegion sramRegion = GBA_MemoryRegion(SRAM_START, SRAM_END, SRAM_SIZE, BusAccessSize::Byte, R8, R8, GBA_MemoryRegionType::SRAM, Mirroring::SpecialMirror);
+    GBA_MemoryRegion sramRegion = GBA_MemoryRegion(SRAM_START, SRAM_END, SRAM_SIZE, BusAccessSize::Byte, R8, R8, GBA_MemoryRegionType::SRAM, Mirroring::NoMirror);
 
     // All memory (except GamePak SRAM) can be accessed by 16bit and 32bit DMA.
     // The GBA has unused memory area after the SRAM, which goes from 0x10000000 to 0xFFFFFFFF

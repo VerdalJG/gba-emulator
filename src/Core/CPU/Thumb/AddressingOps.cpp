@@ -1,4 +1,5 @@
 #include "Core/GBA_CPU.hpp"
+
 #include "Utils/BitOperations.hpp"
 
 void GBA_CPU::Thumb_GetRelativeAddress(u16 instruction)

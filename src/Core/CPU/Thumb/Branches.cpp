@@ -1,4 +1,7 @@
 #include "Core/GBA_CPU.hpp"
+#include "Core/EmulatorCore.hpp"
+#include "Core/GBA_HLE.hpp"
+
 #include "Utils/BitOperations.hpp"
 
 void GBA_CPU::Thumb_ConditionalBranch(u16 instruction)
@@ -27,6 +30,16 @@ void GBA_CPU::Thumb_ConditionalBranch(u16 instruction)
 
 void GBA_CPU::Thumb_SoftwareInterrupt(u16 instruction)
 {
+    // HLE BIOS path
+    if (GetCore()->UsingHLE())
+    {
+        u32 swiNumber = ExtractBits<8, 0>(instruction);
+        GetCore()->GetHLE().HandleSWI(swiNumber);
+
+        // TODO: Add cycles - 2S + 1N
+        return;
+    }
+
     // Save CPSR
     cpuState.spsr[BANK_SVC].value = cpuState.cpsr.value;
 
@@ -36,8 +49,8 @@ void GBA_CPU::Thumb_SoftwareInterrupt(u16 instruction)
     cpuState.cpsr.fields.irq_disable = 1;
 
     // Save one instruction ahead of the fault address and jump to SVC exception vector
-    // TODO: Check
-    cpuState.r14 = cpuState.r15 - 2; // Only minus 2 because we want the instruction after the SWI
+    u32 returnAddress = cpuState.r15 - 2; // Only minus 2 because we want the instruction after the SWI
+    cpuState.r14 = returnAddress;
     cpuState.r15 = 0x08;
     FlushPipeline();
 }

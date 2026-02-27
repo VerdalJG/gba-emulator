@@ -2,6 +2,7 @@
 #include "Core/GBA_Memory_Helpers.hpp"
 #include "Core/GBA_Bus.hpp"
 
+#include "Utils/Integers.hpp"
 #include "Utils/Logger.hpp"
 
 EmulatorCore::EmulatorCore(Logger* logger) : 
@@ -16,8 +17,8 @@ EmulatorCore::EmulatorCore(Logger* logger) :
     timerController(this, io.GetTimerRegisters()), 
     interruptController(this, io.GetInterruptRegisters()), 
     keypad(this, io.GetKeypadRegisters()),  
-    hle(this, memory, io), 
-    cpu(this, bus)
+    cpu(this, bus),
+    hle(this, memory, io, cpu)
 {
     if (logger)
     {
@@ -44,7 +45,7 @@ EmulatorCore::EmulatorCore(Logger* logger) :
 
 bool EmulatorCore::InitializeCPU()
 {
-    cpu.WriteRegister(GBA_CPU::PC_INDEX, 0);
+    cpu.Reset();
 
     // SDL_SetAppMetadata("GBAEmu", "Version 0.1", "GBAEmulator");
 
@@ -126,7 +127,7 @@ void EmulatorCore::Step()
     while (!ppu.FrameReady())
     {
         cpu.Step();
-        uint32_t cycles = cpu.GetCurrentInstructionCycles();
+        u32 cycles = cpu.GetCurrentInstructionCycles();
         dmaController.Step(cycles);
         ppu.Step(cycles);
         apu.Step(cycles);

@@ -196,7 +196,8 @@ void GBA_CPU::Execute()
     }
 
     // Check condition for ARM
-    if (!IsThumbMode()) // current = line 76 // bits = 0xe5c44208
+    // Checking with bios currently: https://github.com/camthesaxman/gba_bios/blob/master/asm/bios.s
+    if (!IsThumbMode()) // current = line 105 // bits = 0xe129f000 // op = msr cpsr_fc, r0 // Check mode switch regs
     {
         Condition condition = GetConditionType(pipeline.stage[2].rawBits);
 

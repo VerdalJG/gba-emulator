@@ -178,7 +178,6 @@ void GBA_CPU::Decode()
     
     if (IsThumbMode()) 
     {
-        // Thumb mode does not use condition bits
         pipeline.stage[1].opcode = Decode_Thumb(instructionBits);
     }
     else // ARM Mode
@@ -197,7 +196,7 @@ void GBA_CPU::Execute()
 
     // Check condition for ARM
     // Checking with bios currently: https://github.com/camthesaxman/gba_bios/blob/master/asm/bios.s
-    if (!IsThumbMode()) // current = line 105 // bits = 0xe129f000 // op = msr cpsr_fc, r0 // Check mode switch regs
+    if (!IsThumbMode()) // current = passed 125 // bits = 0xe28f0f96 // op = ??
     {
         Condition condition = GetConditionType(pipeline.stage[2].rawBits);
 
@@ -205,16 +204,25 @@ void GBA_CPU::Execute()
         {
             pipeline.stage[2].opcode = ARM_Opcode::ARM_Suppressed;
         }
-    }
 
-    if (pipeline.stage[2].opcode == ARM_Opcode::ARM_Suppressed) // Condition failed, no-op
+        // TODO: FIX
+        if (pipeline.stage[2].opcode == ARM_Opcode::ARM_Suppressed) // Condition failed, no-op
+        {
+            AdvanceProgramCounter();
+            return;
+        }
+    }
+    else // In theory thumb 16 bits always encodes to an opcode, invalid can never happen but we log just in case
     {
-        AdvanceProgramCounter();
-        return;
+        if (pipeline.stage[2].opcode == Thumb_Opcode::Thumb_Invalid)
+        {
+            Log("Thumb invalid instruction", LogType::Error);
+            AdvanceProgramCounter();
+            return;
+        }
     }
 
     // Execute the instruction
-
     if (IsThumbMode())
     {
         Thumb_Handler function = thumbDispatchTable[pipeline.stage[2].opcode];

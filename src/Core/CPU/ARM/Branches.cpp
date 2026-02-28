@@ -27,8 +27,8 @@ void GBA_CPU::ARM_Branch(u32 instruction)
 
 void GBA_CPU::ARM_BranchAndExchange(u32 instruction)
 {
-    u32 rmIndex = ExtractBits<3, 0>(instruction);
-    u32 rn = ReadRegister(rmIndex);
+    u32 rnIndex = ExtractBits<3, 0>(instruction);
+    u32 rn = ReadRegister(rnIndex);
 
     // Switch to thumb based on Rn bit 0
     cpuState.cpsr.fields.thumb = rn & 1;

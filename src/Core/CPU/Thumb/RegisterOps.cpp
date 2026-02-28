@@ -56,30 +56,41 @@ void GBA_CPU::Thumb_ImmediateOp(u16 instruction)
 {
     const u16 opcode = ExtractBits<12, 11>(instruction);
     const u16 rdIndex = ExtractBits<10, 8>(instruction);
-
     const u16 immediate_8 = ExtractBits<7, 0>(instruction);
 
     switch (opcode)
     {
         case 0b00: // MOV
+        {
             cpuState.registers[rdIndex] = immediate_8;
-            UpdateNZFlags(0);
+            UpdateNZFlags(immediate_8);
+            break;
+        }
 
         case 0b01: // CMP
+        {
             SUB(cpuState.registers[rdIndex], immediate_8, true);
-        
+            break;
+        }
+            
         case 0b10: // ADD
+        {
             cpuState.registers[rdIndex] = ADD(cpuState.registers[rdIndex], immediate_8, true);
-
+            break;
+        }
+            
         case 0b11: // SUB
+        {
             cpuState.registers[rdIndex] = SUB(cpuState.registers[rdIndex], immediate_8, true);
+            break;
+        }
     }
 
     pipeline.access = Access::Code | Access::Sequential;
     AdvanceProgramCounter();
 }
 
-inline void GBA_CPU::Thumb_ALU(u16 instruction)
+void GBA_CPU::Thumb_ALU(u16 instruction)
 {
     const u16 opcode = ExtractBits<9, 6>(instruction);
 
@@ -251,8 +262,8 @@ void GBA_CPU::Thumb_HiRegisterOp(u16 instruction)
     }
 
     // MSB allows for access to hi registers
-    const u16 rsIndex = (msbRs << 4) | ExtractBits<5, 3>(instruction);
-    const u16 rdIndex = (msbRd << 4) | ExtractBits<2, 0>(instruction);
+    const u16 rsIndex = (msbRs << 3) | ExtractBits<5, 3>(instruction);
+    const u16 rdIndex = (msbRd << 3) | ExtractBits<2, 0>(instruction);
 
     u32 rs = cpuState.registers[rsIndex];
     u32 rd = cpuState.registers[rdIndex];

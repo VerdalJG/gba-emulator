@@ -293,15 +293,11 @@ void GBA_CPU::ARM_PSRTransfer(u32 instruction)
             {
                 SwitchMode(newMode);
             }
+        }
 
-            psr.value = newValue;
-        }
-        else
-        {
-            psr.value = newValue;
-        }
+        psr.value = newValue;
     }
-    else // MRS - Move PSR to General purpose register
+    else // MRS - Move to General purpose register from PSR
     {
         u32 rdIndex = ExtractBits<15, 12>(instruction);
         assert(rdIndex != 15 && "Rd cannot be 15 for MRS");

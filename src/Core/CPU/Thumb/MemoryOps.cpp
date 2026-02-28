@@ -31,7 +31,7 @@ void GBA_CPU::Thumb_LoadStoreRegisterOffset(u16 instruction)
     u32 rb = ReadRegister(rbIndex);
     u32 rd = ReadRegister(rdIndex);
 
-    u32 address =  rb + ro;
+    u32 address = rb + ro;
 
     
 

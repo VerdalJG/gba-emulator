@@ -6,13 +6,13 @@
 Thumb_Opcode GBA_CPU::Decode_Thumb(u16 instruction)
 {
     // 1. Move shifted register
-    if (ExtractBits<15, 10>(instruction) < 0b00011)
+    if (ExtractBits<15, 11>(instruction) < 0b00011)
     {
         return Thumb_Opcode::Thumb_MoveShiftedRegister;
     }
 
     // 2. Add/Subtract
-    if (ExtractBits<15, 10>(instruction) == 0b00011)
+    if (ExtractBits<15, 11>(instruction) == 0b00011)
     {
         return Thumb_Opcode::Thumb_AddSubtract;
     }

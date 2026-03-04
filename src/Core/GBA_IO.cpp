@@ -324,7 +324,7 @@ void GBA_IO::SetupLCDWriteCallbacks()
         [this](u32 address, u32 value)
         {
             // TODO: Update PPU display control
-            printf("DISPCNT changed to: %u", value);
+            printf("DISPCNT changed to: %u\n", value);
             // ppu.SetDisplayControl(value);
         };
 

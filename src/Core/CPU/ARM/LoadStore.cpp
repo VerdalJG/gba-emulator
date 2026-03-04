@@ -380,7 +380,10 @@ void GBA_CPU::ARM_BlockDataTransfer(u32 instruction)
         accessType = Access::Sequential;
     }
 
-    AdvanceProgramCounter();
+    if (!load || !pcInRegisterList)
+    {
+        AdvanceProgramCounter();
+    }
 
     if (load)
     {

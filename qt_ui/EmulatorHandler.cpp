@@ -123,7 +123,7 @@ void EmulatorHandler::RunLoop()
     {
         emulatorCore->Step();
         RenderFrame();
-        QThread::msleep(16); // This is practically Vsync
+        //QThread::msleep(16); // This is practically Vsync
     }
 }
 

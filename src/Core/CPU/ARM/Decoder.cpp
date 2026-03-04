@@ -1,5 +1,5 @@
 #include "Core/GBA_CPU.hpp"
-#include "Core/CPU/ARM/Opcodes.hpp"
+#include "Core/CPU/ARMOpcodes.hpp"
 
 #include "Utils/BitOperations.hpp"
 
@@ -79,7 +79,7 @@ ARM_Opcode GBA_CPU::Decode_ARM_Pattern00(u32 instruction)
     }
 
     // ARM 9. Data processing register shift by immediate
-    if (IsBitSet<4>(instruction))
+    if (!IsBitSet<4>(instruction))
     {
         return ARM_Opcode::ARM_DataProcessing; // Shift by immediate
     }

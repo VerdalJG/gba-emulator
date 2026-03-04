@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/GBA_CPU.hpp"
-#include "Core/CPU/ARM/Opcodes.hpp"
-#include "Core/CPU/Thumb/Opcodes.hpp"
+#include "Core/CPU/ARMOpcodes.hpp"
+#include "Core/CPU/ThumbOpcodes.hpp"
 #include "Core/CPU/Conditions.hpp"
 
 inline constexpr std::array<ARM_Handler, ARM_Opcode_Count> GBA_CPU::GenerateARMInstructionTable()

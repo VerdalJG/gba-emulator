@@ -71,9 +71,9 @@ void ApplyShift(int shiftOp, u32& value, u32 shift, u32& carry, bool immediate)
 {
     switch (static_cast<ShiftType>(shiftOp))
     {
-        case ShiftType::LSL: LSL(value, shift, carry);
-        case ShiftType::LSR: LSR(value, shift, carry, immediate);
-        case ShiftType::ASR: ASR(value, shift, carry, immediate);
-        case ShiftType::ROR: ROR(value, shift, carry, immediate);
+        case ShiftType::LSL: return LSL(value, shift, carry);
+        case ShiftType::LSR: return LSR(value, shift, carry, immediate);
+        case ShiftType::ASR: return ASR(value, shift, carry, immediate);
+        case ShiftType::ROR: return ROR(value, shift, carry, immediate);
     }
 }

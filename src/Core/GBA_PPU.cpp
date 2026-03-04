@@ -96,6 +96,12 @@ void GBA_PPU::RenderFrame()
                 (r << 16) | // Red
                 (g << 8) | // Green
                 b; // Blue
+
+            if (pixelIndex < 10)
+            {
+                printf("VRAM[%u] = %u\n", pixelIndex, colorIndex);
+                printf("Palette[0] = %04X\n", Read16_Bus(0x05000000));
+            } 
         }
     }
 

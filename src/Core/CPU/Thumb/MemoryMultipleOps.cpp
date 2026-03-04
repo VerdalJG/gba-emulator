@@ -9,10 +9,8 @@ void GBA_CPU::Thumb_PushPopRegisters(u16 instruction)
     const bool bit_pc_lr = IsBitSet<8>(instruction);
     u16 registerList = ExtractBits<7, 0>(instruction);
 
-    AdvanceProgramCounter();
-
     // Handle special case for empty register lists.
-    if (registerList == 0 && !bit_pc_lr)
+    if (registerList == 0 && !bit_pc_lr) // If bit_pc_lr is set, it is effectively not an empty list
     {
         if (pop)
         {
@@ -28,6 +26,8 @@ void GBA_CPU::Thumb_PushPopRegisters(u16 instruction)
         }
         return;
     }
+
+    AdvanceProgramCounter();
 
     if (pop)
     {

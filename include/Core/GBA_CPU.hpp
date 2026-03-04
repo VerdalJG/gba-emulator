@@ -1,8 +1,8 @@
 #pragma once
 #include "Core/CPU/Registers.hpp"
 #include "Core/CPU/InstructionPipeline.hpp"
-#include "Core/CPU/ARM/Opcodes.hpp"
-#include "Core/CPU/Thumb/Opcodes.hpp"
+#include "Core/CPU/ARMOpcodes.hpp"
+#include "Core/CPU/ThumbOpcodes.hpp"
 #include "Core/CPU/Conditions.hpp"
 #include "Core/GBA_Bus.hpp"
 
@@ -79,6 +79,7 @@ private:
     Pipeline pipeline;
     
     bool halted = false;
+    bool skipBios = true;
 
     void Fetch();
     void Decode();
@@ -180,11 +181,8 @@ private:
 
 /* TODO NEXT:
 
-- Ensure any sort of read/writes are properly called/handled. (at call sites)
-- Fix cpu.read/write function signatures
-- Ensure cycles are added correctly and handled
-- Start working on IO and PPU
-- Thumb instruction set (surely fast)
+- Centralize Read and Write functions with a templated version in the bus
+- Do everything necessary for png183 tests
 
 
 TESTING REPOSITORIES:

@@ -4,6 +4,7 @@
 #include "Core/GBA_WaitstateController.hpp"
 #include "Core/GBA_Bus.hpp"
 #include "Core/CPU/Shifts.hpp"
+#include "Core/GBA_IO_Helpers.hpp"
 
 #include "Utils/BitOperations.hpp"
 
@@ -16,6 +17,22 @@ GBA_CPU::GBA_CPU(EmulatorCore* core, GBA_Bus& bus) : core(core), bus(bus)
 
 void GBA_CPU::Reset()
 {
+    if (skipBios)
+    {
+        cpuState.Reset();
+        SwitchMode(Mode::SYS);
+        cpuState.cpsr.fields.thumb = 0;
+        cpuState.cpsr.fields.irq_disable = 0;
+        cpuState.cpsr.fields.fiq_disable = 0;
+        cpuState.r13 = 0x03007F00;
+        cpuState.bankedR13_R14[BANK_SVC][BANK_R13] = 0x03007FE0;
+        cpuState.bankedR13_R14[BANK_IRQ][BANK_R13] = 0x03007FA0;
+        cpuState.r15 = 0x08000000;
+        FlushPipeline();
+        Write32(0x04000000, 0, 0); // Set DISPCNT to 0
+        return;
+    }
+    
     // Reset all registers and set CPSR to it's reset value (0x000000D3)
     cpuState.Reset();
     SwitchMode(Mode::SVC);
@@ -188,15 +205,14 @@ void GBA_CPU::Decode()
 
 void GBA_CPU::Execute()
 {
-    if (!pipeline.stage[2].valid) // No-op
+    if (!pipeline.stage[2].valid) // No-op // 0x08000290
     {
         AdvanceProgramCounter();
         return;
     }
 
     // Check condition for ARM
-    // Checking with bios currently: https://github.com/camthesaxman/gba_bios/blob/master/asm/bios.s
-    if (!IsThumbMode()) // current = passed 125 // bits = 0xe28f0f96 // op = ??
+    if (!IsThumbMode())
     {
         Condition condition = GetConditionType(pipeline.stage[2].rawBits);
 
@@ -205,7 +221,6 @@ void GBA_CPU::Execute()
             pipeline.stage[2].opcode = ARM_Opcode::ARM_Suppressed;
         }
 
-        // TODO: FIX
         if (pipeline.stage[2].opcode == ARM_Opcode::ARM_Suppressed) // Condition failed, no-op
         {
             AdvanceProgramCounter();
@@ -365,3 +380,139 @@ void GBA_CPU::InvalidateSequentiality()
 {
     bus.InvalidateSequentiality();
 }
+
+/*
+64 - pc at 0x70, z flag set to 0
+65 - r14 is now 0x4
+66 - r12 is now 0x04000000
+67 - r12 is now 0x80
+68 - r12 is not eq 1, nzcv = 0
+69 - mrseq, does not pass
+70 - orreq, does not pass
+71 - msreq, does not pass
+72 - beq, does not pass
+73 - r0 is 0xdf, df is 1101 1111
+74 - put r0 into cpsr, switch to SYS from SVC, bank r14_SVC
+75 - r4 is now 0x04000000
+76 - store 0 into IME io register
+77 - BRANCH AND LINK PC IS NOW 000000E0, r14_SYS = 0xa0
+
+PC is 0x000000E0
+99 - r0 is 0xd3
+100 - put r0 into cpsr, switch to SVC from SYS, bank r14_SYS(0xa0), load r14_SVC
+101 - load r13, r13 is now 0x03007fe0
+102 - r14 is now 0
+103 - spsr_SVC = 0
+104 - r0 is now 0xd2
+105 - Switch to IRQ mode, bank r13_SVC(0x03007fe0)
+106 - Set r13_IRQ to 0x03007FA0
+107 - lr is now 0 
+108 - SPSR_IRQ = 0 now
+109 - r0 = 0x5f
+110 - cpsr = 0x5f, 0101 1111 (IRQ enable), switch back to SYS mode, r13_IRQ banked
+111 - r13_SYS = 0x03007F00
+113 - r0 = 0x0000011D (0x0000011C + 1)
+114 - bx to r0 and switch to thumb
+
+PC is 0x0000011C
+117 - r0 = 0 and cpsr flags set (z = 1, all others = 0)
+118 - r1 = 0xFFFFFE00
+
+PC is 0x00000120 (512 bytes clearing in IWRAM loop)
+120 - Store r0 (0) at [IO_Region + r1 (0xFFFFFe00)] = at 0x03FFFE00 (IWRAM)
+123 - add r1 +=4 and set flags (increment until r1 overflows)
+124 - branch if n != v, loop back to 0x00000120 
+125 - once loop is complete, BX (branch&exchange) to r14 (0xa0 - line 78)
+c and z flag is set after loop, switch back to ARM mode
+
+PC is 0x000000A0
+78 - r0 = PC(0xA8) + 0x258 (add) = 0x300
+79 - store 0x300 at [r13(0x03007F00) + 0xfc] = 0x03007FFC
+80 - load [address = 0x0000027C] (value = 0x00001929) into r0
+81 - r14_SYS = PC (0xb4 + 0)
+82 - BX to r0 (0x1929) (switch to thumb)
+
+PC is 0x00001928 (halfword align) - LINE 1194
+B5F0 - push (STM) {r4-r7, lr}, r13_SYS = 0x03007EEC (TODO: Maybe advancing PC early)
+B08D - sub sp #52
+???? - mov r1, #0
+cpuState.r15 == 0x1928
+*/
+
+/*
+
+macro m_test_init 
+{
+        m_text_init
+        {
+            stmfd   sp!, {r0-r1, lr}
+            mov     r0, 4                   ; Background mode 4
+            orr     r0, 1 shl 10            ; Background 2
+            mov     r1, MEM_IO
+            strh    r0, [r1, REG_DISPCNT]
+            ldmfd   sp!, {r0-r1, pc}
+        }
+
+        m_text_color 0xFFFF, 0
+        {
+            m_half  r0, color
+            {
+                mov     reg (r0), color (0xFFFF) and 0xFF
+                orr     reg (r0), color (0xFFFF) and 0xFF00
+            }
+            mov     r1, index (0)
+            bl      text_color
+            {
+                ; r0:   color
+                ; r1:   index
+                stmfd   sp!, {r0-r2, lr}
+                lsl     r1, 1
+                mov     r2, MEM_PALETTE
+                strh    r0, [r2, r1]
+                ldmfd   sp!, {r0-r2, pc}
+            }
+        }
+
+        m_text_color 0x0000, 1
+        {
+            m_half  r0, color
+            {
+                mov     reg (r0), color (0x0000) and 0xFF
+                orr     reg (r0), color (0x0000) and 0xFF00
+            }
+            mov     r1, index (1)
+            bl      text_color
+            {
+                ; r0:   color
+                ; r1:   index
+                stmfd   sp!, {r0-r2, lr}
+                lsl     r1, 1
+                mov     r2, MEM_PALETTE
+                strh    r0, [r2, r1]
+                ldmfd   sp!, {r0-r2, pc}
+            }
+        }
+
+        m_text_color 0xFFFF, 2
+        {
+            m_half  r0, color
+            {
+                mov     reg (r0), color (0xFFFF) and 0xFF
+                orr     reg (r0), color (0xFFFF) and 0xFF00
+            }
+            mov     r1, index (2)
+            bl      text_color
+            {
+                ; r0:   color
+                ; r1:   index
+                stmfd   sp!, {r0-r2, lr}
+                lsl     r1, 1
+                mov     r2, MEM_PALETTE
+                strh    r0, [r2, r1]
+                ldmfd   sp!, {r0-r2, pc}
+            }
+        }
+}
+
+
+*/

@@ -1,5 +1,5 @@
 #include "Core/GBA_CPU.hpp"
-#include "Core/CPU/Thumb/Opcodes.hpp"
+#include "Core/CPU/ThumbOpcodes.hpp"
 
 #include "Utils/BitOperations.hpp"
 

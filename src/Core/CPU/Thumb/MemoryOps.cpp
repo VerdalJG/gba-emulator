@@ -33,8 +33,6 @@ void GBA_CPU::Thumb_LoadStoreRegisterOffset(u16 instruction)
 
     u32 address = rb + ro;
 
-    
-
     switch (opcode)
     {
         case 0: // STR

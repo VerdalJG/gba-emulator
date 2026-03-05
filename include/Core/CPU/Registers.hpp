@@ -44,7 +44,7 @@ enum BankedRegister
 union StatusRegister
 {
     StatusRegister() {}
-    StatusRegister(uint32_t val) { value = val; }
+    StatusRegister(u32 val) { value = val; }
 
     struct 
     {

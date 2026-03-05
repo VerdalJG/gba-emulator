@@ -1,6 +1,8 @@
 #pragma once
 #include "Integers.hpp"
 
+#define BIT(x) (1u << (x))
+
 /// @brief Returns a range of bits
 /// @tparam hi Index of upper bit (inclusive)
 /// @tparam lo Index of lower bit (inclusive)

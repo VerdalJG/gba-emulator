@@ -33,11 +33,11 @@ void GBA_CPU::ARM_Multiply(u32 instruction)
     {
         u32 rn = ReadRegister(rnIndex);
         result += rn;
-        // TODO: Add one I cycle
+        AddInternalCycles(1);
     }
     
     u32 mulCycles = CalculateMultiplierCycles(rs);
-    // TODO: Add cycles properly
+    AddInternalCycles(mulCycles);
 
     cpuState.registers[rdIndex] = static_cast<u32>(result);
 
@@ -105,7 +105,7 @@ void GBA_CPU::ARM_MultiplyLong(u32 instruction)
         u64 accumulator = (static_cast<u64>(rdHi) << 32) | rdLo;
         product += accumulator;
 
-        // TODO: Add one extra I cycle
+        AddInternalCycles(1);
     }
 
     rdLo = static_cast<u32>(product);
@@ -126,7 +126,7 @@ void GBA_CPU::ARM_MultiplyLong(u32 instruction)
     pipeline.access = Access::Code | Access::Nonsequential;
 
     u32 mulCycles = CalculateMultiplierCycles(rs);
-    // TODO: Add one I cycle;
+    AddInternalCycles(1);
     // TODO: Process cycles properly
 
     if (rdHiIndex == 15 || rdLoIndex == 15)

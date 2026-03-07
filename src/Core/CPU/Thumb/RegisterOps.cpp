@@ -127,7 +127,8 @@ void GBA_CPU::Thumb_ALU(u16 instruction)
             LSL(rd, shiftAmount, carry);
             cpuState.registers[rdIndex] = rd;
 
-            // TODO: add one cycle + pipeline affected
+            // TODO: pipeline affected?
+            AddInternalCycles(1);
             UpdateNZFlags(rd);
             cpuState.cpsr.fields.c = carry;
             break;
@@ -140,7 +141,8 @@ void GBA_CPU::Thumb_ALU(u16 instruction)
             LSR(rd, shiftAmount, carry, false);
             cpuState.registers[rdIndex] = rd;
 
-            // TODO: add one cycle + pipeline affected
+            // TODO: pipeline affected?
+            AddInternalCycles(1);
             UpdateNZFlags(rd);
             cpuState.cpsr.fields.c = carry;
             break;
@@ -153,7 +155,8 @@ void GBA_CPU::Thumb_ALU(u16 instruction)
             ASR(rd, shiftAmount, carry, false);
             cpuState.registers[rdIndex] = rd;
 
-            // TODO: add one cycle + pipeline affected
+            // TODO: pipeline affected?
+            AddInternalCycles(1);
             UpdateNZFlags(rd);
             cpuState.cpsr.fields.c = carry;
             break;
@@ -178,7 +181,8 @@ void GBA_CPU::Thumb_ALU(u16 instruction)
             ROR(rd, shiftAmount, carry, false);
             cpuState.registers[rdIndex] = rd;
             
-            // TODO: add one cycle + pipeline affected
+            // TODO: Pipeline affected?
+            AddInternalCycles(1);
             UpdateNZFlags(rd);
             cpuState.cpsr.fields.c = carry;
             break;
@@ -223,7 +227,7 @@ void GBA_CPU::Thumb_ALU(u16 instruction)
             UpdateNZFlags(result);
 
             u32 cycles = CalculateMultiplierCycles(rs);
-            // TODO: Add mI cycles properly
+            AddInternalCycles(cycles);
             break;
         }
             

@@ -121,9 +121,8 @@ void EmulatorHandler::RunLoop()
 {
     while (isRunning)
     {
-        emulatorCore->Step();
+        emulatorCore->RunFrame();
         RenderFrame();
-        //QThread::msleep(16); // This is practically Vsync
     }
 }
 

@@ -38,8 +38,6 @@ void GBA_CPU::ARM_DataProcessing(u32 instruction)
     else // Register Op2
     {
         const uint shiftOp = ExtractBits<6, 5>(instruction);
-
-
         const u32 rmIndex = ExtractBits<3, 0>(instruction);
         u32 rm = ReadRegister(rmIndex);
 
@@ -56,12 +54,12 @@ void GBA_CPU::ARM_DataProcessing(u32 instruction)
 
             AdvanceProgramCounter();
 
-            // TODO: Add one I cycle
-
+            AddInternalCycles(1);
             pipeline.access = Access::Code | Access::Nonsequential;
         }
 
         ApplyShift(shiftOp, rm, shift, carry, shiftByImmediate);
+            
         op1 = rn;
         op2 = rm;
     }
@@ -214,8 +212,10 @@ void GBA_CPU::ARM_DataProcessing(u32 instruction)
             cpuState.cpsr.value = spsr.value;
         }
 
+        bool writesRd = opcode < ARM_ALUOp::TST || opcode > ARM_ALUOp::CMN;
+
         // Flush pipeline if R15 is changed. Luckily the 4 opcodes that do not update Rd are grouped
-        if (opcode >= ARM_ALUOp::TST && opcode <= ARM_ALUOp::CMN)
+        if (writesRd)
         {
             FlushPipeline();
         }

@@ -39,7 +39,7 @@ public:
     GBA_PPU& GetPPU() { return ppu; }
     void SetPostStatusCallback(std::function<void(const std::string&)> callback);
 
-    void Step();
+    void RunFrame();
     void Tick();
     void Render();
     void HandleSDLEvents();

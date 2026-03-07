@@ -73,7 +73,7 @@ ARM_Opcode GBA_CPU::Decode_ARM_Pattern00(u32 instruction)
     }
 
     // ARM 8. PSR transfer register
-    if (ExtractBits<24, 23>(instruction) == 0b10 && ExtractBits<11, 4>(instruction) == 0)
+    if (ExtractBits<24, 23>(instruction) == 0b10 && ExtractBits<11, 4>(instruction) == 0 && !IsBitSet<20>(instruction))
     {
         return ARM_Opcode::ARM_PSRTransfer; // Register
     }

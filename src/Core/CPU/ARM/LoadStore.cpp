@@ -36,7 +36,7 @@ void GBA_CPU::ARM_SingleDataSwap(u32 instruction)
     pipeline.access = Access::Code | Access::Nonsequential;
     AdvanceProgramCounter();
 
-    // TODO: Add one I cycle
+    AddInternalCycles(1);
 
     cpuState.registers[rdIndex] = readValue;
 
@@ -119,7 +119,7 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
         if (rdIndex == 15) readValue &= (IsThumbMode() ? ~1u : ~3u);
         cpuState.registers[rdIndex] = readValue;
 
-        // TODO: Add one I cycle
+        AddInternalCycles(1);
         pipeline.access = Access::Code | Access::Sequential;
     }
     else // Store
@@ -221,7 +221,8 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
         }
 
         cpuState.registers[rdIndex] = readValue;
-        // TODO: Add one I cycle
+
+        AddInternalCycles(1);
         pipeline.access = Access::Code | Access::Sequential;
     }
     else // STRH
@@ -387,7 +388,7 @@ void GBA_CPU::ARM_BlockDataTransfer(u32 instruction)
 
     if (load)
     {
-        // TODO: Add one I cycle
+        AddInternalCycles(1);
 
         if (shouldSwitchMode)
         {

@@ -38,7 +38,8 @@ void GBA_CPU::Reset()
     SwitchMode(Mode::SVC);
     FlushPipeline();
 
-    totalCycles = 0;
+    globalCycles = 0;
+    cycles = 0;
 }
 
 void GBA_CPU::Step()
@@ -49,7 +50,7 @@ void GBA_CPU::Step()
         return; // No instructions/cycles during cpu halt
     }
 
-    //currentInstructionCycles = 0;
+    cycles = 0;
 
     AdvanceInstructionPipeline();
 
@@ -205,7 +206,7 @@ void GBA_CPU::Decode()
 
 void GBA_CPU::Execute()
 {
-    if (!pipeline.stage[2].valid) // No-op // 0x08000290
+    if (!pipeline.stage[2].valid) // No-op // 0x080016ec vblank? // 0x0800179c test failed after first swi?
     {
         AdvanceProgramCounter();
         return;
@@ -253,19 +254,14 @@ void GBA_CPU::Execute()
 
 bool GBA_CPU::ConditionPassed(Condition condition)
 {
-    uint cpsrValue = (cpuState.cpsr.value >> 28);
-    uint tableIndex = (static_cast<int>(condition) << 4) | cpsrValue;
-
-    return conditionTable[tableIndex];
+    uint conditionBits = (cpuState.cpsr.value >> 28);
+    return conditionTable[(static_cast<int>(condition) << 4) | conditionBits];
 }
 
 void GBA_CPU::AddCycles(u32 cycles)
 {
-    if (cycles == 0) return;
-
-    currentInstructionCycles += cycles;
-    currentFrameCycles += cycles;
-    totalCycles += cycles;
+    this->cycles += cycles;
+    globalCycles += cycles;
 }
 
 EmulatorCore* GBA_CPU::GetCore()
@@ -514,5 +510,19 @@ macro m_test_init
         }
 }
 
+swi at failed test line 95: pc == 0x0800179c
+0x08001798 is return address from swi
+0x190 is return from exception handler line 199 bios
+0x080017a8 is return address from second swi
+
+cpuState.r15 == 0x3bc first instruction of DIV routine
+
+cpuState.r15 == 0x3c4 eors ip line 406
+
+test 104 fails
+
+DIV routine is now fine, at 0x080017b8 - m_text_pos 60, 76, line 102 of macros.inc
+
+0x080017c0 m_text char first in failed tests
 
 */

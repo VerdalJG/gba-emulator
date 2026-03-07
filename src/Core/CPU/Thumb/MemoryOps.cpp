@@ -16,7 +16,7 @@ void GBA_CPU::Thumb_LoadPCRelative(u16 instruction)
 
     pipeline.access = Access::Code | Access::Sequential;
     AdvanceProgramCounter();
-    // TODO: Add one I cycle
+    AddInternalCycles(1);
 }
 
 void GBA_CPU::Thumb_LoadStoreRegisterOffset(u16 instruction)
@@ -50,14 +50,14 @@ void GBA_CPU::Thumb_LoadStoreRegisterOffset(u16 instruction)
         case 2: // LDR
         {
             cpuState.registers[rdIndex] = Read32_Rotated(address, Access::Data | Access::Nonsequential);
-            // TODO: Add one I cycle
+            AddInternalCycles(1);
             break;
         }
 
         case 3: // LDRB
         {
             cpuState.registers[rdIndex] = Read8(address, Access::Data | Access::Nonsequential);
-            // TODO: Add one I cycle
+            AddInternalCycles(1);
             break;
         }
     }
@@ -99,21 +99,21 @@ void GBA_CPU::Thumb_LoadStoreSignExtended(u16 instruction)
         case 1: // LDRSB
         {
             cpuState.registers[rdIndex] = Read8_Signed(address, Access::Data | Access::Nonsequential);
-            // TODO: Add one I cycle
+            AddInternalCycles(1);
             break;
         }
 
         case 2: // LDRH
         {
             cpuState.registers[rdIndex] = Read32_Rotated(address, Access::Data | Access::Nonsequential);
-            // TODO: Add one I cycle
+            AddInternalCycles(1);
             break;
         }
 
         case 3: // LDRSH
         {
             cpuState.registers[rdIndex] = Read16_Signed(address, Access::Data | Access::Nonsequential);
-            // TODO: Add one I cycle
+            AddInternalCycles(1);
             break;
         }
     }
@@ -158,7 +158,7 @@ void GBA_CPU::Thumb_LoadStoreImmediateOffset(u16 instruction)
         case 1: // LDR
         {
             cpuState.registers[rdIndex] = Read32_Rotated(address, Access::Data | Access::Nonsequential);
-            // TODO: Add one I cycle
+            AddInternalCycles(1);
         }
 
         case 2: // STRB
@@ -169,7 +169,7 @@ void GBA_CPU::Thumb_LoadStoreImmediateOffset(u16 instruction)
         case 3: // LDRB
         {
             cpuState.registers[rdIndex] = Read8(address, Access::Data | Access::Nonsequential);
-            // TODO: Add one I cycle
+            AddInternalCycles(1);
         }
     }
 
@@ -203,7 +203,7 @@ void GBA_CPU::Thumb_LoadStoreHalfword(u16 instruction)
     {
         cpuState.registers[rdIndex] = Read16_Rotated(address, Access::Data | Access::Nonsequential);
         pipeline.access = Access::Code | Access::Sequential;
-        // TODO: Add one I cycle
+        AddInternalCycles(1);
     }
     else // STRH
     {
@@ -233,7 +233,7 @@ void GBA_CPU::Thumb_LoadStoreSPRelative(u16 instruction)
     {
         cpuState.registers[rdIndex] = Read32_Rotated(address, Access::Data | Access::Nonsequential);
         pipeline.access = Access::Code | Access::Sequential;
-        // TODO: Add one I cycle
+        AddInternalCycles(1);
     }
 
     AdvanceProgramCounter();

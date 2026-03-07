@@ -73,6 +73,20 @@ void GBA_PPU::RenderFrame()
 
     const uint32_t vramBase = frame1 ? 0x0600A000 : 0x06000000;
 
+    // TODO: Remove
+    for (int i = 0; i < 16; i++)
+    {
+        printf("PAL[%d] = %04X\n", i, Read16_Bus(0x05000000 + i*2));
+    }
+
+    uint32_t center = 80 * 240 + 120;
+
+    for (int i = 0; i < 32; i++)
+    {
+        uint8_t v = Read8_Bus(vramBase + center + i);
+        printf("VRAM[%d] = %02X\n", center + i, v);
+    }
+
     // Construct frame buffer (pixels)
     for (uint32_t y = 0; y < GBA_HEIGHT; y++)
     {
@@ -96,12 +110,6 @@ void GBA_PPU::RenderFrame()
                 (r << 16) | // Red
                 (g << 8) | // Green
                 b; // Blue
-
-            if (pixelIndex < 10)
-            {
-                printf("VRAM[%u] = %u\n", pixelIndex, colorIndex);
-                printf("Palette[0] = %04X\n", Read16_Bus(0x05000000));
-            } 
         }
     }
 
@@ -119,15 +127,50 @@ bool GBA_PPU::FrameReady()
     return false;
 }
 
-void GBA_PPU::Step(uint32_t cycles) 
+void GBA_PPU::Step(u32 cycles) 
 {
-    frameCycleCounter += cycles;
+    dotCycle += cycles;
 
-    if (frameCycleCounter >= CYCLES_PER_FRAME)
+    while (dotCycle >= 1232)
     {
-        frameCycleCounter -= CYCLES_PER_FRAME;
-        RenderFrame();
-        frameReady = true;
+        dotCycle -= 1232;
+        scanline++;
+
+        if (scanline == 160)
+        {
+            RenderFrame();
+        }
+
+        if (scanline == 228)
+        {
+            scanline = 0;
+        }
     }
+
+    // Update VCOUNT
+    lcdRegisters.VCOUNT.value = scanline;
+
+    // Update DISPSTAT flags
+    u16 stat = lcdRegisters.DISPSTAT.value & ~0x7;
+
+    if (scanline >= 160)
+        stat |= 1;      // VBlank
+
+    if (dotCycle >= 960)
+        stat |= 2;      // HBlank
+
+    if (scanline == ((lcdRegisters.DISPSTAT.value >> 8) & 0xFF))
+        stat |= 4;      // VCount match
+
+    lcdRegisters.DISPSTAT.value = stat;
+
+    // frameCycleCounter += cycles;
+
+    // if (frameCycleCounter >= CYCLES_PER_FRAME)
+    // {
+    //     frameCycleCounter -= CYCLES_PER_FRAME;
+    //     RenderFrame();
+    //     frameReady = true;
+    // }
 }
 

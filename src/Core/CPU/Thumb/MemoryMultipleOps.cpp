@@ -56,7 +56,7 @@ void GBA_CPU::Thumb_PushPopRegisters(u16 instruction)
 
         assert(endAddress == address);
         cpuState.r13 = endAddress;
-        // TODO: Add one I cycle
+        AddInternalCycles(1);
         pipeline.access = Access::Code | Access::Sequential;
     }
     else
@@ -145,7 +145,7 @@ void GBA_CPU::Thumb_LoadStoreMultiple(u16 instruction)
         }
         
         pipeline.access = Access::Code | Access::Sequential;
-        // TODO: Add one I cycle
+        AddInternalCycles(1);
     }
     else
     {

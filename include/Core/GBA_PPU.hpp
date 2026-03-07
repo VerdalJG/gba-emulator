@@ -34,7 +34,7 @@ public:
 
     bool FrameReady();
 
-    void Step(uint32_t cycles);
+    void Step(u32 cycles);
     PPUState GetState() const { return state; }
     bool IsAccessingVideoMemory() const { return state == PPUState::ActiveDisplay; }
 
@@ -45,8 +45,8 @@ private:
 
     PPUState state = PPUState::VBlank;
 
-    uint32_t currentLine = 0;
-    uint32_t cycleInLine = 0;
+    u32 scanline = 0;        // 0–227
+    u32 dotCycle = 0;        // 0–1231
 
     EmulatorCore* core;
     GBA_Bus& bus;

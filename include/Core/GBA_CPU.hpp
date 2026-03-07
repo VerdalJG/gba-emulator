@@ -47,11 +47,8 @@ public:
 
     bool GetHalted() { return halted; }
     void SetHalted(bool shouldHalt) { halted = shouldHalt; }
-
     
-    u32 GetTotalCycles() { return totalCycles; }
-    u32 GetCurrentInstructionCycles() { return currentInstructionCycles; }
-    u32 GetCurrentFrameCycles() { return currentFrameCycles; }
+
 
     EmulatorCore* GetCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
@@ -73,6 +70,11 @@ public:
     u32 Read16_Signed(u32 address, uint access);
 
     void InvalidateSequentiality(); 
+
+    u32 GetCycles() { return cycles; }
+    u64 GetGlobalCycles() { return globalCycles; }
+    // TODO: In the future may have interactions with DMA?
+    void AddInternalCycles(uint numCycles) { cycles += numCycles; }
 
 private:
     CPU_Registers cpuState;
@@ -108,9 +110,9 @@ private:
     EmulatorCore* core;
     GBA_Bus& bus;
 
-    u32 totalCycles;
-    u32 currentInstructionCycles;
-    u32 currentFrameCycles;
+    u64 globalCycles;
+    u32 cycles;
+
     bool nextInstructionFetchIsSequential = false;
     bool nextDataAccessIsSequential = false;
     void AddCycles(u32 cycles);

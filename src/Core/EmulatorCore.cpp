@@ -122,12 +122,12 @@ void EmulatorCore::Shutdown()
     // SDL_Quit(); // Quit SDL subsystems
 }
 
-void EmulatorCore::Step()
+void EmulatorCore::RunFrame()
 {
     while (!ppu.FrameReady())
     {
         cpu.Step();
-        u32 cycles = cpu.GetCurrentInstructionCycles();
+        u32 cycles = cpu.GetCycles();
         dmaController.Step(cycles);
         ppu.Step(cycles);
         apu.Step(cycles);

@@ -7,7 +7,7 @@
 struct IORegisterBase
 {
     u32 address;
-    BusAccessSize width;
+    size_t width;
     bool readable;
     bool writeable;
 };

@@ -76,7 +76,7 @@ enum class GBA_MemoryRegionType
     Invalid
 };
 
-enum class BusAccessSize
+enum size_t
 {
     Byte = 1,
     Halfword = 2,
@@ -104,15 +104,6 @@ struct MemReadResult
     bool valid;
 };
 
-// Access masks
-constexpr u8 R8 = static_cast<u8>(BusAccessSize::Byte);
-constexpr u8 R16 = static_cast<u8>(BusAccessSize::Halfword);
-constexpr u8 R32 = static_cast<u8>(BusAccessSize::Word);
-constexpr u8 R8_16 = R8 | R16;
-constexpr u8 R16_32 = R16 | R32;
-constexpr u8 RALL = R8 | R16 | R32;
-constexpr u8 RNONE = 0;
-
 #define OPEN_BUS {0, false}
 
 struct GBA_MemoryRegion
@@ -120,39 +111,23 @@ struct GBA_MemoryRegion
     u32 start;
     u32 end;
     u32 physicalSize;
-    BusAccessSize busWidth;
+    size_t busWidth;
     Mirroring mirroring;
-
-    // Bitmask for R/W permissions 8/16/32
-    u8 readMask : 3;
-    u8 writeMask : 3;
 
     GBA_MemoryRegionType type;
 
-    GBA_MemoryRegion(u32 start, u32 end, u32 physicalSize, BusAccessSize busWidth, 
+    GBA_MemoryRegion(u32 start, u32 end, u32 physicalSize, size_t busWidth, 
         u8 readMask, u8 writeMask, GBA_MemoryRegionType type, Mirroring mirroring) :
-        start(start), end(end), physicalSize(physicalSize), busWidth(busWidth), readMask(readMask), 
-        writeMask(writeMask), type(type), mirroring(mirroring)
+        start(start), end(end), physicalSize(physicalSize), busWidth(busWidth), 
+        type(type), mirroring(mirroring)
     {}
 
-    bool IsValidAccess(u32 address, AccessType access, BusAccessSize accessSize) const
+    template <typename T>
+    bool IsValidAccess(u32 address) const
     {
-        size_t sizeBytes = static_cast<size_t>(accessSize);
-        
-        bool withinBounds = (address >= start) && ((address + (sizeBytes - 1)) <= end);
-        
-        bool isRead = access == AccessType::Read;
-        bool allowed = isRead ? (readMask & sizeBytes) : (writeMask & sizeBytes);
-
-        return withinBounds && allowed;
-    }
-
-    int AccessesRequired(BusAccessSize size) const
-    {
-        u32 access = static_cast<u32>(size);
-        u32 bus = static_cast<u32>(busWidth);
-
-        return (access + bus - 1) / bus;
+        size_t accessSize = sizeof(T);
+        bool withinBounds = (address >= start) && ((address + (accessSize - 1)) <= end);
+        return withinBounds;
     }
 
     /*

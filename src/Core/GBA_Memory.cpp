@@ -364,8 +364,11 @@ void GBA_Memory::ClearAddressRange(uint32_t startAddress, uint32_t endAddress)
     assert(region == GetRegionFromAddress(endAddress) && "Start address and end address must pertain to the same region");
 
     // Ensure region is writeable (cannot clear BIOS nor ROM)
-    if (region->writeMask == RNONE) return;
+    if (region->type == GBA_MemoryRegionType::BIOS) return;
     if (region->type == GBA_MemoryRegionType::IO) return;
+    if (region->type == GBA_MemoryRegionType::ROM0) return;
+    if (region->type == GBA_MemoryRegionType::ROM1) return;
+    if (region->type == GBA_MemoryRegionType::ROM2) return;
 
     std::span<uint8_t> regionData = GetRegionDataMutable(region->type); 
 

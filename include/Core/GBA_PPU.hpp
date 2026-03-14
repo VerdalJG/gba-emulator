@@ -36,6 +36,7 @@ public:
 
     void Step(u32 cycles);
     PPUState GetState() const { return state; }
+    bool IsForcedBlankEnabled() { return lcdRegisters.DISPCNT.value & (1 << 7); }
     bool IsAccessingVideoMemory() const { return state == PPUState::ActiveDisplay; }
 
     bool IsWithinVRAM_OBJBoundary(u32 address);

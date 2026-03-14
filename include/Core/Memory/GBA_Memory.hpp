@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/GBA_Memory_Helpers.hpp"
+#include "Core/Memory/GBA_Memory_Helpers.hpp"
 
 #include "Utils/Logger.hpp"
 

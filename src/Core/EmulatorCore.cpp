@@ -1,5 +1,5 @@
 #include "Core/EmulatorCore.hpp"
-#include "Core/GBA_Memory_Helpers.hpp"
+#include "Core/Memory/GBA_Memory_Helpers.hpp"
 #include "Core/GBA_Bus.hpp"
 
 #include "Utils/Integers.hpp"

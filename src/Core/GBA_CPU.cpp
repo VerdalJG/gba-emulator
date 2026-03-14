@@ -1,7 +1,7 @@
 #include "Core/GBA_CPU.hpp"
-#include "Core/GBA_Memory.hpp"
+#include "Core/Memory/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
-#include "Core/GBA_WaitstateController.hpp"
+#include "Core/Memory/GBA_WaitstateController.hpp"
 #include "Core/GBA_Bus.hpp"
 #include "Core/CPU/Shifts.hpp"
 #include "Core/GBA_IO_Helpers.hpp"
@@ -278,58 +278,42 @@ void GBA_CPU::Log(const std::string& message, LogType logType, const char *funct
 
 u32 GBA_CPU::Read8(u32 address, uint access)
 {
-    u32 cycles = 0;
-    u32 readValue = bus.Read8(address, BusRequester::CPU, &cycles);
-    AddCycles(cycles);
-    return readValue;
+    return bus.Read<u8>(address, BusRequester::CPU);
 }
 
 u32 GBA_CPU::Read16(u32 address, uint access)
 {
-    u32 cycles = 0;
-    u32 readValue = bus.Read16(address, BusRequester::CPU, &cycles);
-    AddCycles(cycles);
-    return readValue;
+    return bus.Read<u16>(address, BusRequester::CPU);
 }
 
 u32 GBA_CPU::Read32(u32 address, uint access)
 {
-    u32 cycles = 0;
-    u32 readValue = bus.Read32(address, BusRequester::CPU, &cycles);
-    AddCycles(cycles);
-    return readValue;
+    return bus.Read<u32>(address, BusRequester::CPU);
 }
 
 void GBA_CPU::Write8(u32 address, u8 value, uint access)
 {
-    u32 cycles = 0;
-    bus.Write8(address, value, BusRequester::CPU, &cycles);
-    AddCycles(cycles);
+    bus.Write<u8>(address, value, BusRequester::CPU);
 }
 
 void GBA_CPU::Write16(u32 address, u16 value, uint access)
 {
-    u32 cycles = 0;
-    bus.Write16(address, value, BusRequester::CPU, &cycles);
-    AddCycles(cycles);
+    bus.Write<u16>(address, value, BusRequester::CPU);
 }
 
 void GBA_CPU::Write32(u32 address, u32 value, uint access)
 {
-    u32 cycles = 0;
-    bus.Write32(address, value, BusRequester::CPU, &cycles);
-    AddCycles(cycles);
+    bus.Write<u32>(address, value, BusRequester::CPU);
 }
 
 u32 GBA_CPU::Read16_Rotated(u32 address, uint access) 
 {
-    u32 cycles = 0;
-    u32 value = bus.Read16(address, BusRequester::CPU, &cycles);
-    AddCycles(cycles);
+    u32 value = bus.Read<u16>(address, BusRequester::CPU);
+    uint carry = GetCPSR_C(); // Used as dummy value
 
     if (address & 1) // ROR 8 if misaligned
     {
-        value = (value >> 8) | (value << 24);
+        ROR(value, 8, carry, false);
     }
 
     return value;
@@ -337,36 +321,31 @@ u32 GBA_CPU::Read16_Rotated(u32 address, uint access)
 
 u32 GBA_CPU::Read32_Rotated(u32 address, uint access) 
 {
-    u32 cycles = 0;
-    u32 value = bus.Read32(address, BusRequester::CPU, &cycles);
+    u32 value = bus.Read<u32>(address, BusRequester::CPU);
     u32 shift = (address & 3) * 8;
-    
-    AddCycles(cycles);
-    return value >> shift | (value << (32 - shift));
+    uint carry = GetCPSR_C(); // Used as dummy value
+
+    ROR(value, shift, carry, false); // Rotate based on alignment
+
+    return value;
 }
 
 u32 GBA_CPU::Read8_Signed(u32 address, uint access) 
 { 
-    u32 cycles = 0;
-    u8 value = bus.Read8(address, BusRequester::CPU, &cycles);
-    AddCycles(cycles);
+    u8 value = bus.Read<u8>(address, BusRequester::CPU);
     return SignExtend_8(value); 
 }
 
 u32 GBA_CPU::Read16_Signed(u32 address, uint access) 
 { 
-    u32 cycles = 0;
-
     if (address & 1) // Misaligned
     {
-        u8 value = bus.Read8(address, BusRequester::CPU, &cycles);
-        AddCycles(cycles);
+        u8 value = bus.Read<u8>(address, BusRequester::CPU);
         return SignExtend_8(value);
     }
     else
     {
-        u16 value = bus.Read16(address, BusRequester::CPU, &cycles);
-        AddCycles(cycles);
+        u16 value = bus.Read<u16>(address, BusRequester::CPU);
         return SignExtend_16(value);
     }
 }

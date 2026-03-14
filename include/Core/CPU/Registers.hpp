@@ -1,5 +1,6 @@
 #pragma once
 #include "Utils/Integers.hpp"
+
 #include <array>
 
 enum class Mode : uint

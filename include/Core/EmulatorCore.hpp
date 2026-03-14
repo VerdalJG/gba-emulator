@@ -2,7 +2,7 @@
 #include "Core/GBA_HLE.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/GBA_Bus.hpp"
-#include "Core/GBA_Memory.hpp"
+#include "Core/Memory/GBA_Memory.hpp"
 #include "Core/GBA_InterruptController.hpp"
 #include "Core/GBA_PPU.hpp"
 #include "Core/GBA_TimerController.hpp"

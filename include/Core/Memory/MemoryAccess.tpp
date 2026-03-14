@@ -84,6 +84,8 @@ void GBA_Bus::Write(u32 address, T value, BusRequester requester)
         HandleAccessCycles(alignedAddress, region->type, accessSize, accesses, requester);
     }
 
+    
+
     switch(region->type)
     {
         case RegionType::EWRAM: memory.Write<T>(alignedAddress); break;
@@ -154,9 +156,11 @@ T GBA_Bus::ReadPaletteRAM(u32 address, BusRequester requester)
 {
     if (requester == BusRequester::PPU)
     {
-        // TODO: These memory regions can be accessed during H-Blank or V-Blank only 
+        // Can be accessed during H-Blank or V-Blank only 
         // (unless display is disabled by Forced Blank bit in DISPCNT register).
-        if (ppu->GetState() == PPUState::ActiveDisplay) 
+
+        // bool displayEnabled = ppu->lcdRegisters.DISPCNT.forcedBlank;
+        if (/* !displayEnabled &&*/ ppu->GetState() == PPUState::ActiveDisplay)
         {
             return OpenBus();
         }
@@ -170,7 +174,11 @@ T GBA_Bus::ReadVRAM(u32 address, BusRequester requester)
 {
     if (requester == BusRequester::PPU)
     {
-        if (ppu->GetState() == PPUState::ActiveDisplay)
+        // Can be accessed during H-Blank or V-Blank only 
+        // (unless display is disabled by Forced Blank bit in DISPCNT register).
+
+        // bool displayEnabled = ppu->lcdRegisters.DISPCNT.forcedBlank;
+        if (/* !displayEnabled &&*/ && ppu->GetState() == PPUState::ActiveDisplay)
         {
             return OpenBus();
         }
@@ -186,7 +194,9 @@ T GBA_Bus::ReadOAM(u32 address, BusRequester requester)
     {
         // TODO: There is an additional restriction for OAM memory: 
         // Accesses during H-Blank are allowed only if 'H-Blank Interval Free' in DISPCNT is set
-        if (ppu->GetState() == PPUState::ActiveDisplay)
+
+        //DisplayControl dispcnt = ppu->lcdRegisters.DISPCNT;
+        if (/*!dispcnt.hBlankIntervalFree ||*/ (/*!dispcnt.forcedBlank &&*/ ppu->GetState() == PPUState::ActiveDisplay))
         {
             return OpenBus();
         }
@@ -203,8 +213,78 @@ T GBA_Bus::ReadSRAM(u32 address)
     // TODO: Maybe put SRAM/flash in ROM class?
     u32 value = memory.Read<T>(address);
 
+    /*
+    Accessing SRAM Area by 16bit/32bit
+    Reading retrieves 8bit value from specified address, multiplied by 0101h (LDRH) or by 01010101h 
+    (LDR). Writing changes the 8bit value at the specified address only, being set to LSB of 
+    (source_data ROR (address*8)).
+    */
+
     if constexpr(sizeof(T) == AccessSize::Halfword) value *= 0x0101;
     if constexpr(sizeof(T) == AccessSize::Word) value *= 0x01010101;
 
     return value;
+}
+
+template <typename T> 
+void GBA_Bus::WritePaletteRAM(u32 address, T value) 
+{
+    /*
+    
+    Writing 8bit Data to Video Memory
+    Video Memory (BG, OBJ, OAM, Palette) can be written to in 16bit and 32bit units only. 
+    Attempts to write 8bit data (by STRB opcode) won't work:
+
+    Writes to OBJ (6010000h-6017FFFh) (or 6014000h-6017FFFh in Bitmap mode) and to 
+    OAM (7000000h-70003FFh) are ignored, the memory content remains unchanged.
+
+    Writes to BG (6000000h-600FFFFh) (or 6000000h-6013FFFh in Bitmap mode) and to 
+    Palette (5000000h-50003FFh) are writing the new 8bit value to BOTH upper and lower 8bits 
+    of the addressed halfword, ie. "[addr AND NOT 1]=data*101h".
+    
+    */
+}
+
+template <typename T> 
+void GBA_Bus::WriteVRAM(u32 address, T value) 
+{
+    /*
+    
+    Writing 8bit Data to Video Memory
+    Video Memory (BG, OBJ, OAM, Palette) can be written to in 16bit and 32bit units only. 
+    Attempts to write 8bit data (by STRB opcode) won't work:
+
+    Writes to OBJ (6010000h-6017FFFh) (or 6014000h-6017FFFh in Bitmap mode) and to 
+    OAM (7000000h-70003FFh) are ignored, the memory content remains unchanged.
+
+    Writes to BG (6000000h-600FFFFh) (or 6000000h-6013FFFh in Bitmap mode) and to 
+    Palette (5000000h-50003FFh) are writing the new 8bit value to BOTH upper and lower 8bits 
+    of the addressed halfword, ie. "[addr AND NOT 1]=data*101h".
+    
+    */
+}
+
+template <typename T> 
+void GBA_Bus::WriteOAM(u32 address, T value) 
+{
+    /*
+    
+    Writing 8bit Data to Video Memory
+    Video Memory (BG, OBJ, OAM, Palette) can be written to in 16bit and 32bit units only. 
+    Attempts to write 8bit data (by STRB opcode) won't work:
+
+    Writes to OBJ (6010000h-6017FFFh) (or 6014000h-6017FFFh in Bitmap mode) and to 
+    OAM (7000000h-70003FFh) are ignored, the memory content remains unchanged.
+
+    Writes to BG (6000000h-600FFFFh) (or 6000000h-6013FFFh in Bitmap mode) and to 
+    Palette (5000000h-50003FFh) are writing the new 8bit value to BOTH upper and lower 8bits 
+    of the addressed halfword, ie. "[addr AND NOT 1]=data*101h".
+    
+    */
+}
+
+template <typename T> 
+void GBA_Bus::WriteSRAM(u32 address, T value) 
+{
+
 }

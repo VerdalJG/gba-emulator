@@ -2,7 +2,7 @@
 #include "QtUtils.hpp"
 
 #include "Core/EmulatorCore.hpp"
-#include "Core/GBA_Memory.hpp"
+#include "Core/Memory/GBA_Memory.hpp"
 #include "Core/GBA_PPU.hpp"
 
 #include "Utils/Logger.hpp"

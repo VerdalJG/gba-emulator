@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/GBA_Memory_Helpers.hpp"
-#include "Core/GBA_WaitstateController.hpp"
+#include "Core/Memory/GBA_Memory_Helpers.hpp"
+#include "Core/Memory/GBA_WaitstateController.hpp"
 
 #include "Utils/Integers.hpp"
 
@@ -42,7 +42,6 @@ class GBA_Bus
 {
 public:
     GBA_Bus(EmulatorCore* core, GBA_Memory& memory, GBA_IO& io);
-
     void AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, GBA_CPU* cpu);
 
     template <typename T>
@@ -91,11 +90,21 @@ private:
     template <typename T>
     T ReadSRAM(u32 address);
 
-    
+    template <typename T>
+    void WritePaletteRAM(u32 address, T value);
+
+    template <typename T>
+    void WriteVRAM(u32 address, T value);
+
+    template <typename T>
+    void WriteOAM(u32 address, T value);
+
+    template <typename T>
+    void WriteSRAM(u32 address, T value);
 
     u32 OpenBus(u32 address);
     void HandleAccessCycles(u32 address, MemoryRegion* region, AccessSize size, uint accesses, BusRequester requester);
-    u32 ComputeAccessOffset(u32 address, MemoryRegion* type);
+    u32 GetMirroredAddress(u32 address, MemoryRegion* region);
     const RegionType GetRegionType(u32 address) const;
 
     u32 biosLatch = 0;
@@ -110,4 +119,4 @@ private:
     GBA_WaitstateController waitstateController;
 };
 
-#include "MemoryAccess.tpp"
+#include "Core/Memory/MemoryAccess.tpp"

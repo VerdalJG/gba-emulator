@@ -1,4 +1,4 @@
-#include "Core/GBA_Memory.hpp"
+#include "Core/Memory/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_ROM.hpp"
 #include "Core/GBA_IO.hpp"
@@ -34,20 +34,8 @@ const MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) const
         case 0x0C: case 0x0D: return &rom2Region;
         case 0x0E: return &sramRegion;
 
-        default: return nullptr; // Unused or invalid address, handle accordingly
+        default: return nullptr; // Unused or invalid address
     }
-
-    // TODO:
-    // Reading from BIOS region:
-
-    // If reading from bios memory the GBA allows to read opcodes or data only if the program counter 
-    // is located inside of the BIOS area. If the program counter is not in the BIOS area,
-    // reading will return the most recent successfully fetched BIOS opcode
-
-    // Reading from Unused memory regions
-
-    // Accessing unused memory at 00004000h-01FFFFFFh, and 10000000h-FFFFFFFFh (and 02000000h-03FFFFFFh when RAM is 
-    // disabled via Port 4000800h) returns the recently pre-fetched opcode.
 }
 
 const MemoryRegion* GBA_Memory::GetRegionFromType(RegionType type) const
@@ -70,7 +58,6 @@ const MemoryRegion* GBA_Memory::GetRegionFromType(RegionType type) const
         default: return nullptr;
     }
 }
-
 
 
 std::span<const uint8_t> GBA_Memory::GetRegionData(RegionType type) const 
@@ -291,20 +278,20 @@ void GBA_Memory::ClearRegion(RegionType type)
 
 void GBA_Memory::Clear8(uint32_t address)
 {
-    RegionType region = GetRegionTypeFromAddress(address);
-    Write8(address, 0, region);
+    //RegionType region = GetRegionTypeFromAddress(address);
+    //Write8(address, 0, region);
 }
 
 void GBA_Memory::Clear16(uint32_t address)
 {
-    RegionType region = GetRegionTypeFromAddress(address);
-    Write16(address, 0, region);
+    //RegionType region = GetRegionTypeFromAddress(address);
+    //Write16(address, 0, region);
 }
 
 void GBA_Memory::Clear32(uint32_t address)
 {
-    RegionType region = GetRegionTypeFromAddress(address);
-    Write32(address, 0, region);
+    //RegionType region = GetRegionTypeFromAddress(address);
+    //Write32(address, 0, region);
 }
 
 void GBA_Memory::ClearAddressRange(uint32_t startAddress, uint32_t endAddress)

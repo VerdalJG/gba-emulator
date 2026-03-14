@@ -1,8 +1,8 @@
 #include "Core/GBA_IO.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_IO_Helpers.hpp"
-#include "Core/GBA_WaitstateController.hpp"
-#include "Core/GBA_Memory_Helpers.hpp"
+#include "Core/Memory/GBA_WaitstateController.hpp"
+#include "Core/Memory/GBA_Memory_Helpers.hpp"
 
 GBA_IO::GBA_IO(EmulatorCore* core) : core(core)
 {

@@ -1,12 +1,13 @@
 #include "Core/GBA_Bus.hpp"
-#include "Core/GBA_Memory_Helpers.hpp"
-#include "Core/GBA_Memory.hpp"
+#include "Core/Memory/GBA_Memory_Helpers.hpp"
+#include "Core/Memory/GBA_Memory.hpp"
 #include "Core/GBA_PPU.hpp"
 #include "Core/GBA_APU.hpp"
 #include "Core/GBA_DMAController.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/GBA_IO.hpp"
 #include "Core/EmulatorCore.hpp"
+#include "GBA_Bus.hpp"
 
 
 GBA_Bus::GBA_Bus(EmulatorCore* core, GBA_Memory& memory, GBA_IO& io) : core(core), memory(memory), io(io)
@@ -183,6 +184,52 @@ void GBA_Bus::HandleAccessCycles(u32 address, MemoryRegion* region, AccessSize s
     }
 
     cpu->AddCycles(cycles);
+}
+
+u32 GBA_Bus::GetMirroredAddress(u32 address, MemoryRegion* region) 
+{
+    u32 offset = 0;
+    if (region->mirroring == Mirroring::Mirror) // EWRAM, IWRAM, OAM, Palette RAM, 
+    {
+        offset = (address - region->start) & (region->physicalSize - 1);
+    }
+    else if (region->mirroring == Mirroring::NoMirror) // ROM, BIOS
+    {
+        offset = (address - region->start);
+    }
+    else // SpecialMirror (VRAM, SRAM, IO) - IO mirroring handled inside IO class
+    {
+        if (type == RegionType::VRAM)
+        {
+            uint32_t relativeAddress = (address - VRAM_START);
+
+            // Mirror every 128 KB (64KB + 32KB + 32KB(mirror of first 32KB))
+            uint32_t windowOffset = relativeAddress & (VRAM_MIRROR_SIZE - 1);
+
+            // Handle 32KB mirror case inside of the 128KB
+            if (windowOffset >= VRAM_TOTAL_SIZE)
+            {
+                // Mirror OBJ VRAM (-0x8000)
+                windowOffset -= VRAM_OBJ_SIZE;
+            }
+
+            // Now it is guranteed to be within 0x18000 window
+            offset = windowOffset;
+        }
+
+        if (type == RegionType::SRAM)
+        {
+            uint32_t relativeAddress = address - SRAM_START;
+            
+            // Mirror across 32MB region
+            offset = relativeAddress & (SRAM_SIZE - 1);
+
+            // Mirror upper 32KB onto the lower 32KB
+            offset &= (SRAM_MIRROR_SIZE - 1);
+        }
+    }
+
+    return region->start + offset;
 }
 
 const RegionType GBA_Bus::GetRegionType(u32 address) const 

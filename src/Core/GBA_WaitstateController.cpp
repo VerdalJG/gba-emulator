@@ -31,31 +31,31 @@ void GBA_WaitstateController::SetWaitstateConfig(uint16_t waitcnt)
 }
 
 
-int GBA_WaitstateController::GetCycles(GBA_MemoryRegionType region, bool isSequential) const
+int GBA_WaitstateController::GetCycles(RegionType region, bool isSequential) const
 {
     switch (region)
     {
-        case GBA_MemoryRegionType::SRAM:
+        case RegionType::SRAM:
             return 1 + sram_cycles;
 
-        case GBA_MemoryRegionType::ROM0:
+        case RegionType::ROM0:
             return 1 + (isSequential ? sequentialAccess[0] : nonSequentialAccess[0]);
 
-        case GBA_MemoryRegionType::ROM1:
+        case RegionType::ROM1:
             return 1 + (isSequential ? sequentialAccess[1] : nonSequentialAccess[1]);
 
-        case GBA_MemoryRegionType::ROM2:
+        case RegionType::ROM2:
             return 1 + (isSequential ? sequentialAccess[2] : nonSequentialAccess[2]);
 
-        case GBA_MemoryRegionType::EWRAM:
+        case RegionType::EWRAM:
             return 3;
 
-        case GBA_MemoryRegionType::OAM:
-        case GBA_MemoryRegionType::VRAM:
-        case GBA_MemoryRegionType::PaletteRAM:
+        case RegionType::OAM:
+        case RegionType::VRAM:
+        case RegionType::PaletteRAM:
             return 1; // TODO: Add +1 cycle if GBA accesses video memory at the same time
 
-        case GBA_MemoryRegionType::Invalid:
+        case RegionType::Invalid:
             return 0;
 
         default:

@@ -54,11 +54,11 @@ void GBA_HLE::HLE_RegisterRamReset()
 {
     uint32_t mask = cpu.ReadRegister(0);
 
-    if (mask & (1 << 0)) memory.ClearRegion(GBA_MemoryRegionType::EWRAM);
-    if (mask & (1 << 1)) memory.ClearRegion(GBA_MemoryRegionType::IWRAM);
-    if (mask & (1 << 2)) memory.ClearRegion(GBA_MemoryRegionType::PaletteRAM);
-    if (mask & (1 << 3)) memory.ClearRegion(GBA_MemoryRegionType::VRAM);
-    if (mask & (1 << 4)) memory.ClearRegion(GBA_MemoryRegionType::OAM);
+    if (mask & (1 << 0)) memory.ClearRegion(RegionType::EWRAM);
+    if (mask & (1 << 1)) memory.ClearRegion(RegionType::IWRAM);
+    if (mask & (1 << 2)) memory.ClearRegion(RegionType::PaletteRAM);
+    if (mask & (1 << 3)) memory.ClearRegion(RegionType::VRAM);
+    if (mask & (1 << 4)) memory.ClearRegion(RegionType::OAM);
 
     // These only clear some specific parts of the memory regions
     // if (mask & (1 << 5)) io.ResetSIORegisters();

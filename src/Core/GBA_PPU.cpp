@@ -73,20 +73,6 @@ void GBA_PPU::RenderFrame()
 
     const uint32_t vramBase = frame1 ? 0x0600A000 : 0x06000000;
 
-    // TODO: Remove
-    for (int i = 0; i < 16; i++)
-    {
-        printf("PAL[%d] = %04X\n", i, Read16_Bus(0x05000000 + i*2));
-    }
-
-    uint32_t center = 80 * 240 + 120;
-
-    for (int i = 0; i < 32; i++)
-    {
-        uint8_t v = Read8_Bus(vramBase + center + i);
-        printf("VRAM[%d] = %02X\n", center + i, v);
-    }
-
     // Construct frame buffer (pixels)
     for (uint32_t y = 0; y < GBA_HEIGHT; y++)
     {
@@ -174,3 +160,14 @@ void GBA_PPU::Step(u32 cycles)
     // }
 }
 
+bool GBA_PPU::IsWithinVRAM_OBJBoundary(u32 address) 
+{ 
+    uint mode = lcdRegisters.DISPCNT.value & 7;
+    u32 vramBoundary = VRAM_START + VRAM_BG_SIZE;
+    if (mode >= 3)
+    {
+        vramBoundary += VRAM_BOUNDARY_BITMAP_OFFSET;
+    }
+
+    return address > vramBoundary;
+}

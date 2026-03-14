@@ -3,8 +3,6 @@
 
 #include "Utils/Integers.hpp"
 
-
-
 inline u32 GBA_CPU::ADD(u32 op1, u32 op2, bool set_flags)
 {
     u32 result = op1 + op2;

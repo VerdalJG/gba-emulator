@@ -38,6 +38,8 @@ public:
     PPUState GetState() const { return state; }
     bool IsAccessingVideoMemory() const { return state == PPUState::ActiveDisplay; }
 
+    bool IsWithinVRAM_OBJBoundary(u32 address);
+
 private:
     uint32_t frameBuffer[240 * 160]; // ARGB8888
     uint32_t frameCycleCounter = 0;

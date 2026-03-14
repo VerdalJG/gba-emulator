@@ -38,6 +38,8 @@ public:
     // void ResetSoundRegisters();
     // void ResetOtherIORegisters();
 
+    bool IsValidIORegister(u32 address);
+
     IO_LCDRegisters& GetLCDRegisters() { return lcdRegisters; }
     IO_SoundRegisters& GetSoundRegisters() { return soundRegisters; }
     IO_DMARegisters& GetDMARegisters() { return dmaRegisters; }
@@ -76,7 +78,7 @@ private:
     IO_MiscRegisters miscRegisters;
 
     // Address - Register map
-    std::unordered_map<u32, IORegister*> ioMap;
+    std::array<IORegister*, 0x800> ioRegisters;
 };
 
 

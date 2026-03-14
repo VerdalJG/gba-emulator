@@ -251,7 +251,6 @@ void GBA_CPU::Execute()
     }
 }
 
-
 bool GBA_CPU::ConditionPassed(Condition condition)
 {
     uint conditionBits = (cpuState.cpsr.value >> 28);
@@ -280,7 +279,7 @@ void GBA_CPU::Log(const std::string& message, LogType logType, const char *funct
 u32 GBA_CPU::Read8(u32 address, uint access)
 {
     u32 cycles = 0;
-    u32 readValue = bus.Read8(Align<u8>(address), BusRequester::CPU, &cycles);
+    u32 readValue = bus.Read8(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
@@ -288,7 +287,7 @@ u32 GBA_CPU::Read8(u32 address, uint access)
 u32 GBA_CPU::Read16(u32 address, uint access)
 {
     u32 cycles = 0;
-    u32 readValue = bus.Read16(Align<u16>(address), BusRequester::CPU, &cycles);
+    u32 readValue = bus.Read16(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
@@ -296,7 +295,7 @@ u32 GBA_CPU::Read16(u32 address, uint access)
 u32 GBA_CPU::Read32(u32 address, uint access)
 {
     u32 cycles = 0;
-    u32 readValue = bus.Read32(Align<u32>(address), BusRequester::CPU, &cycles);
+    u32 readValue = bus.Read32(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return readValue;
 }
@@ -304,28 +303,28 @@ u32 GBA_CPU::Read32(u32 address, uint access)
 void GBA_CPU::Write8(u32 address, u8 value, uint access)
 {
     u32 cycles = 0;
-    bus.Write8(Align<u8>(address), value, BusRequester::CPU, &cycles);
+    bus.Write8(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
 void GBA_CPU::Write16(u32 address, u16 value, uint access)
 {
     u32 cycles = 0;
-    bus.Write16(Align<u16>(address), value, BusRequester::CPU, &cycles);
+    bus.Write16(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
 void GBA_CPU::Write32(u32 address, u32 value, uint access)
 {
     u32 cycles = 0;
-    bus.Write32(Align<u32>(address), value, BusRequester::CPU, &cycles);
+    bus.Write32(address, value, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 }
 
 u32 GBA_CPU::Read16_Rotated(u32 address, uint access) 
 {
     u32 cycles = 0;
-    u32 value = bus.Read16(Align<u16>(address), BusRequester::CPU, &cycles);
+    u32 value = bus.Read16(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
 
     if (address & 1) // ROR 8 if misaligned
@@ -339,7 +338,7 @@ u32 GBA_CPU::Read16_Rotated(u32 address, uint access)
 u32 GBA_CPU::Read32_Rotated(u32 address, uint access) 
 {
     u32 cycles = 0;
-    u32 value = bus.Read32(Align<u32>(address), BusRequester::CPU, &cycles);
+    u32 value = bus.Read32(address, BusRequester::CPU, &cycles);
     u32 shift = (address & 3) * 8;
     
     AddCycles(cycles);
@@ -349,7 +348,7 @@ u32 GBA_CPU::Read32_Rotated(u32 address, uint access)
 u32 GBA_CPU::Read8_Signed(u32 address, uint access) 
 { 
     u32 cycles = 0;
-    u8 value = bus.Read8(Align<u8>(address), BusRequester::CPU, &cycles);
+    u8 value = bus.Read8(address, BusRequester::CPU, &cycles);
     AddCycles(cycles);
     return SignExtend_8(value); 
 }
@@ -360,13 +359,13 @@ u32 GBA_CPU::Read16_Signed(u32 address, uint access)
 
     if (address & 1) // Misaligned
     {
-        u8 value = bus.Read8(Align<u8>(address), BusRequester::CPU, &cycles);
+        u8 value = bus.Read8(address, BusRequester::CPU, &cycles);
         AddCycles(cycles);
         return SignExtend_8(value);
     }
     else
     {
-        u16 value = bus.Read16(Align<u16>(address), BusRequester::CPU, &cycles);
+        u16 value = bus.Read16(address, BusRequester::CPU, &cycles);
         AddCycles(cycles);
         return SignExtend_16(value);
     }

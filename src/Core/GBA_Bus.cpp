@@ -4,430 +4,34 @@
 #include "Core/GBA_PPU.hpp"
 #include "Core/GBA_APU.hpp"
 #include "Core/GBA_DMAController.hpp"
+#include "Core/GBA_CPU.hpp"
+#include "Core/GBA_IO.hpp"
 #include "Core/EmulatorCore.hpp"
 
 
-GBA_Bus::GBA_Bus(EmulatorCore* core, GBA_Memory& memory) : core(core), memory(memory)
+GBA_Bus::GBA_Bus(EmulatorCore* core, GBA_Memory& memory, GBA_IO& io) : core(core), memory(memory), io(io)
 {
     
 }
 
-void GBA_Bus::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma) 
+void GBA_Bus::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, GBA_CPU* cpu) 
 {
     this->ppu = ppu;
     this->apu = apu;
     this->dma = dma;
+    this->cpu = cpu;
 }
 
-uint8_t GBA_Bus::Read8(uint32_t address, BusRequester requester, uint32_t* cycles) 
+void GBA_Bus::UpdateLatestAccessValues(u32 value, u32 address, RegionType region, AccessSize accessSize) 
 {
-    // Get the region
-    GBA_MemoryRegionType regionType = memory.GetRegionTypeFromAddress(address);
-    const GBA_MemoryRegion* region = memory.GetRegionFromType(regionType);
-
-    if (cycles) // DMA and CPU are the ones that control cycles
-    {
-        // Cycle calculation
-        bool isSequential = IsSequential(address, size_t::Byte, regionType);
-        *cycles = waitstateController.GetCycles(regionType, isSequential);
-
-        // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-        if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-        {
-            if (region->IsVideoMemory()) *cycles += 1;
-        }
-    }
-
-    // Open-bus access
-    if (!region || !region->IsValidAccess(address, AccessType::Read, size_t::Byte))
-    {
-        const std::string message = "Invalid Read8 at address: " + std::to_string(address);
-        core->Log(message, LogType::Warning);
-        
-        UpdateLatestAccessValues(address, regionType, size_t::Byte, false);
-        return lastValue & 0xFF; // Return the low 8 bits
-    }
-
-    // Perform read
-    MemReadResult<uint8_t> readResult = memory.Read8(address, regionType);
-    uint8_t finalValue = 0;
-
-    if (readResult.valid)
-    {
-        // Update last value
-        lastValue = (lastValue & ~0xFFu) | readResult.value;
-        finalValue = readResult.value;
-    }
-    else // Unused address detected
-    {
-        // Open-bus
-        finalValue = lastValue & 0xFF;
-    }
-
-    UpdateLatestAccessValues(address, regionType, size_t::Byte, readResult.valid);
-    return finalValue;
-}
-
-uint16_t GBA_Bus::Read16(uint32_t address, BusRequester requester, uint32_t* cycles) 
-{ 
-    // Get the region
-    GBA_MemoryRegionType regionType = memory.GetRegionTypeFromAddress(address);
-    const GBA_MemoryRegion* region = memory.GetRegionFromType(regionType);
-
-    if (cycles) // DMA and CPU are the ones that control cycles
-    {
-        // Cycle calculation
-        bool isSequential = IsSequential(address, size_t::Halfword, regionType);
-        *cycles = waitstateController.GetCycles(regionType, isSequential);
-
-        // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-        if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-        {
-            if (region->IsVideoMemory()) *cycles += 1;
-        }
-    }
-
-    // Open-bus access
-    if (!region || !region->IsValidAccess(address, AccessType::Read, size_t::Halfword))
-    {
-        const std::string message = "Invalid Read16 at address: " + std::to_string(address);
-        core->Log(message, LogType::Warning);
-        
-        UpdateLatestAccessValues(address, regionType, size_t::Halfword, false);
-        return lastValue & 0xFFFF; // Return the low 16 bits
-    }
-
-    // Perform read
-    MemReadResult<uint16_t> readResult = memory.Read16(address, regionType);
-    uint16_t finalValue = 0;
-
-    if (readResult.valid)
-    {
-        // Update last value
-        lastValue = (lastValue & ~0xFFFFu) | readResult.value;
-        finalValue = readResult.value;
-    }
-    else // Unused address detected
-    {
-        // Open-bus
-        finalValue = lastValue & 0xFFFF;
-    }
-
-    UpdateLatestAccessValues(address, regionType, size_t::Halfword, readResult.valid);
-    return finalValue;
-}
-
-uint32_t GBA_Bus::Read32(uint32_t address, BusRequester requester, uint32_t* cycles) 
-{ 
-    // Get the region
-    GBA_MemoryRegionType regionType = memory.GetRegionTypeFromAddress(address);
-    const GBA_MemoryRegion* region = memory.GetRegionFromType(regionType);
-
-    // Open-bus access
-    if (!region || !region->IsValidAccess(address, AccessType::Read, size_t::Word))
-    {
-        const std::string message = "Invalid Read32 at address: " + std::to_string(address);
-        core->Log(message, LogType::Warning);
-
-        if (cycles) // DMA and CPU are the ones that control cycles
-        {
-            // Cycle calculation
-            bool isSequential = IsSequential(address, size_t::Word, regionType);
-            *cycles = waitstateController.GetCycles(regionType, isSequential);
-
-            // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-            if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-            {
-                if (region->IsVideoMemory()) *cycles += 1;
-            }
-        }
-        return lastValue; // Return the full value
-    }
-
-    // Some regions have a 16-bit bus and need 2 accesses to perform a 32 bit read
-    int accesses = region->AccessesRequired(size_t::Word);
-    if (cycles) *cycles = 0;
-
-    // -------- Case A: native 32-bit bus --------
-    if (accesses == 1)
-    {
-        if (cycles) // DMA and CPU are the ones that control cycles
-        {
-            // Cycle calculation
-            bool isSequential = IsSequential(address, size_t::Word, regionType);
-            *cycles = waitstateController.GetCycles(regionType, isSequential);
-
-            // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-            if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-            {
-                if (region->IsVideoMemory()) *cycles += 1;
-            }
-        }
-
-        MemReadResult<uint32_t> readResult = memory.Read32(address, regionType);
-        uint32_t finalValue = 0;
-
-        if (readResult.valid)
-        {
-            // Update last value
-            lastValue = readResult.value;
-            finalValue = readResult.value;
-        }
-        else // Unused address detected
-        {
-            // Open-bus
-            finalValue = lastValue;
-        }
-
-        UpdateLatestAccessValues(address, regionType, size_t::Word, readResult.valid);
-        return finalValue;
-    }
-
-    // -------- Case B: 16-bit bus --------
-    uint32_t finalValue = 0;
-
-    // First halfword
-    {
-        if (cycles) // DMA and CPU are the ones that control cycles
-        {
-            // Cycle calculation
-            bool isSequential = IsSequential(address, size_t::Word, regionType);
-            *cycles += waitstateController.GetCycles(regionType, isSequential);
-
-            // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-            if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-            {
-                if (region->IsVideoMemory()) *cycles += 1;
-            }
-        }
-
-        MemReadResult<uint16_t> lowReadResult = memory.Read16(address, regionType);
-        uint16_t low = 0;
-
-        if (lowReadResult.valid)
-        {
-            // Update last value
-            lastValue = (lastValue & 0xFFFF0000u) | lowReadResult.value;
-            low = lowReadResult.value;
-        }
-        else // Unused address detected
-        {
-            // Open-bus
-            low = lastValue & 0xFFFF;
-        }
-        finalValue |= low;
-        UpdateLatestAccessValues(address, regionType, size_t::Halfword, lowReadResult.valid);
-    }
-
-    // Second halfword
-    {
-        uint32_t address2 = address + 2;
-
-        if (cycles) // DMA and CPU are the ones that control cycles
-        {
-            // Cycle calculation
-            bool isSequential = IsSequential(address, size_t::Word, regionType);
-            *cycles += waitstateController.GetCycles(regionType, isSequential);
-
-            // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-            if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-            {
-                if (region->IsVideoMemory()) *cycles += 1;
-            }
-        }
-
-        MemReadResult<uint16_t> highReadResult = memory.Read16(address2, regionType);
-        uint16_t high = 0;
-
-        if (highReadResult.valid)
-        {
-            // Update last value
-            lastValue = (lastValue & 0x0000FFFFu) | (static_cast<uint32_t>(highReadResult.value) << 16);
-            high = highReadResult.value;
-        }
-        else // Unused address detected
-        {
-            // Open-bus
-            high = static_cast<uint16_t>((lastValue >> 16) & 0xFFFF);
-        }
-        finalValue |= static_cast<uint32_t>(high) << 16;
-        UpdateLatestAccessValues(address2, regionType, size_t::Halfword, highReadResult.valid);
-    }
-
-    return finalValue;
-}
-
-void GBA_Bus::Write8(uint32_t address, uint8_t value, BusRequester requester, uint32_t* cycles) 
-{
-    GBA_MemoryRegionType regionType = memory.GetRegionTypeFromAddress(address);
-    const GBA_MemoryRegion* region = memory.GetRegionFromType(regionType);
-
-    if (cycles) // DMA and CPU are the ones that control cycles
-    {
-        // Cycle calculation
-        bool isSequential = IsSequential(address, size_t::Byte, regionType);
-        *cycles = waitstateController.GetCycles(regionType, isSequential);
-
-        // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-        if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-        {
-            if (region->IsVideoMemory()) *cycles += 1;
-        }
-    }
-
-    // Drive the bus
-    lastValue = (lastValue & ~0xFFu) | value;
-
-    if (region && region->IsValidAccess(address, AccessType::Write, size_t::Byte))
-    {
-        memory.Write8(address, value, regionType);
-    }
-
-    UpdateLatestAccessValues(address, regionType, size_t::Byte, true);
-}
-
-void GBA_Bus::Write16(uint32_t address, uint16_t value, BusRequester requester, uint32_t* cycles) 
-{
-    GBA_MemoryRegionType regionType = memory.GetRegionTypeFromAddress(address);
-    const GBA_MemoryRegion* region = memory.GetRegionFromType(regionType);
-
-    if (cycles) // DMA and CPU are the ones that control cycles
-    {
-        // Cycle calculation
-        bool isSequential = IsSequential(address, size_t::Halfword, regionType);
-        *cycles = waitstateController.GetCycles(regionType, isSequential);
-
-        // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-        if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-        {
-            if (region->IsVideoMemory()) *cycles += 1;
-        }
-    }
-
-    // Drive the bus
-    lastValue = (lastValue & ~0xFFFFu) | value;
-
-    if (region && region->IsValidAccess(address, AccessType::Write, size_t::Halfword))
-    {
-        memory.Write16(address, value, regionType);
-    }
-
-    UpdateLatestAccessValues(address, regionType, size_t::Halfword, true);
-}
-
-void GBA_Bus::Write32(uint32_t address, uint32_t value, BusRequester requester, uint32_t* cycles) 
-{
-    GBA_MemoryRegionType regionType = memory.GetRegionTypeFromAddress(address);
-    const GBA_MemoryRegion* region = memory.GetRegionFromType(regionType);
-
-    if (!region || !region->IsValidAccess(address, AccessType::Write, size_t::Word))
-    {
-        if (cycles) // DMA and CPU are the ones that control cycles
-        {
-            // Cycle calculation
-            bool isSequential = IsSequential(address, size_t::Word, regionType);
-            *cycles = waitstateController.GetCycles(regionType, isSequential);
-
-            // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-            if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-            {
-                if (region->IsVideoMemory()) *cycles += 1;
-            }
-        }
-
-        lastValue = value;
-        UpdateLatestAccessValues(address, regionType, size_t::Word, true);
-        return;
-    }
-
-    int accesses = region->AccessesRequired(size_t::Word);
-    if (cycles) *cycles = 0;
-
-    // -------- Case A: native 32-bit bus --------
-    if (accesses == 1)
-    {
-        if (cycles) // DMA and CPU are the ones that control cycles
-        {
-            // Cycle calculation
-            bool isSequential = IsSequential(address, size_t::Word, regionType);
-            *cycles = waitstateController.GetCycles(regionType, isSequential);
-
-            // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-            if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-            {
-                if (region->IsVideoMemory()) *cycles += 1;
-            }
-        }
-
-        lastValue = value;
-        memory.Write32(address, value, regionType);
-
-        UpdateLatestAccessValues(address, regionType, size_t::Word, true);
-        return;
-    }
-
-    // -------- Case B: 16-bit bus --------
-    // First halfword
-    {
-        if (cycles) // DMA and CPU are the ones that control cycles
-        {
-            // Cycle calculation
-            bool isSequential = IsSequential(address, size_t::Word, regionType);
-            *cycles += waitstateController.GetCycles(regionType, isSequential);
-
-            // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-            if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-            {
-                if (region->IsVideoMemory()) *cycles += 1;
-            }
-        }
-
-        uint16_t low = value & 0xFFFF;
-        lastValue = (lastValue & 0xFFFF0000u) | low;
-
-        memory.Write16(address, low, regionType);
-        UpdateLatestAccessValues(address, regionType, size_t::Halfword, true);
-    }
-
-    // Second halfword
-    {
-        uint32_t address2 = address + 2;
-
-        if (cycles) // DMA and CPU are the ones that control cycles
-        {
-            // Cycle calculation
-            bool isSequential = IsSequential(address, size_t::Word, regionType);
-            *cycles += waitstateController.GetCycles(regionType, isSequential);
-
-            // The CPU must wait 1 cycle if the ppu is currently accessing video memory
-            if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
-            {
-                if (region->IsVideoMemory()) *cycles += 1;
-            }
-        }
-
-        uint16_t high = value >> 16;
-        lastValue = (lastValue & 0x0000FFFFu) | (static_cast<uint32_t>(high) << 16);
-
-        memory.Write16(address2, high, regionType);
-        UpdateLatestAccessValues(address2, regionType, size_t::Halfword, true);
-    }
-}
-
-void GBA_Bus::UpdateLatestAccessValues(uint32_t address, 
-    GBA_MemoryRegionType region, size_t accessSize, bool isValid) 
-{
+    lastAccess.value = value;
     lastAccess.address = address;
     lastAccess.region = region;
     lastAccess.size = accessSize;
-    lastAccess.advancesBus = isValid;
 }
 
-bool GBA_Bus::IsSequential(uint32_t address, size_t accessSize, GBA_MemoryRegionType region) 
+bool GBA_Bus::IsSequential(u32 address, AccessSize accessSize, RegionType region) 
 { 
-    if (!lastAccess.advancesBus)
-        return false;
-
     if (GetBusDomain(lastAccess.region) != GetBusDomain(region))
         return false;
 
@@ -437,12 +41,14 @@ bool GBA_Bus::IsSequential(uint32_t address, size_t accessSize, GBA_MemoryRegion
     if (address != lastAccess.address + static_cast<size_t>(accessSize))
         return false;
 
-        // --- Game Pak ROM 128 KB boundary rule ---
+    // --- Game Pak ROM 128 KB boundary rule ---
     if (GetBusDomain(region) == BusDomain::GamePakROM)
     {
-        constexpr uint32_t BLOCK_MASK = ~0x1FFFFu; // 128 KB
+        constexpr u32 BLOCK_MASK = ~0x1FFFFu; // 128 KB
         if ((address & BLOCK_MASK) != (lastAccess.address & BLOCK_MASK))
+        {
             return false;
+        }
     }
 
     return true;
@@ -450,19 +56,151 @@ bool GBA_Bus::IsSequential(uint32_t address, size_t accessSize, GBA_MemoryRegion
 
 void GBA_Bus::InvalidateSequentiality() 
 {
-    lastAccess.advancesBus = false;
+    accessForcedNonSequential = true;
 }
 
-BusDomain GBA_Bus::GetBusDomain(GBA_MemoryRegionType region) const
+BusDomain GBA_Bus::GetBusDomain(RegionType region) const
 {
     switch (region)
     {
-        case GBA_MemoryRegionType::ROM0:
-        case GBA_MemoryRegionType::ROM1:
-        case GBA_MemoryRegionType::ROM2:
+        case RegionType::ROM0:
+        case RegionType::ROM1:
+        case RegionType::ROM2:
             return BusDomain::GamePakROM;
 
         default:
             return BusDomain::Other;
+    }
+}
+
+u32 GBA_Bus::OpenBus(u32 address) 
+{ 
+    RegionType region = GetRegionType(address);
+
+    const std::string message = "Open bus read at address: " + std::to_string(address);
+    core->Log(message, LogType::Warning);
+
+    // Calculate shift in case of mis-aligned address (word alignment)
+    uint shift = (address & 3) * 8;
+
+    // TODO: DMA Open bus implementation
+
+    u32 result;
+
+    if (cpu->IsThumbMode())
+    {
+        // LSW and MSW mean less/most significant halfword
+        u32 lsw;
+        u32 msw;
+
+        u32 pc = cpu->ReadRegister(15);
+
+        switch (region)
+        {
+            // 16-bit bus
+            case RegionType::EWRAM:
+            case RegionType::PaletteRAM:
+            case RegionType::VRAM:
+            case RegionType::ROM0:
+            case RegionType::ROM1:
+            case RegionType::ROM2:
+            {
+                lsw = cpu->GetPipelineOpcode(0);
+                msw = cpu->GetPipelineOpcode(0);
+                break;
+            }
+
+            // 32-bit bus
+            case RegionType::BIOS:
+            case RegionType::OAM:
+            {
+                if ((pc & 3) == 0) // Aligned
+                {
+                    // $+6 isn't fetched yet so we duplicate the halfword
+                    lsw = cpu->GetPipelineOpcode(0);
+                    msw = cpu->GetPipelineOpcode(0);
+                }
+                else // Misaligned
+                {
+                    lsw = cpu->GetPipelineOpcode(0);
+                    msw = cpu->GetPipelineOpcode(1); 
+                }
+                break;
+            }
+
+            // Special case
+            case RegionType::IWRAM:
+            {
+                if ((pc & 3) == 0) // Aligned
+                {
+                    lsw = cpu->GetPipelineOpcode(0);
+                    msw = cpu->GetPipelineOpcode(1);
+                }
+                else // Misaligned
+                {
+                    lsw = cpu->GetPipelineOpcode(1);
+                    msw = cpu->GetPipelineOpcode(0);
+                }
+                break;
+            }
+        }
+        result = (msw << 16) | lsw;
+    }
+    else // ARM
+    {
+        result = cpu->GetPipelineOpcode(0); // Get instruction in the Fetch slot
+    }
+
+    return result >> shift;
+}
+
+void GBA_Bus::HandleAccessCycles(u32 address, MemoryRegion* region, AccessSize size, uint accesses, BusRequester requester) 
+{
+    bool sequential;
+
+    if (accessForcedNonSequential)
+    {
+        sequential = false;
+        accessForcedNonSequential = false;
+    }
+    else
+    {
+        sequential = IsSequential(address, size, region->type);
+    }
+    
+    u32 cycles = waitstateController.GetCycles(region->type, sequential);
+
+    // The CPU must wait 1 cycle if the ppu is currently accessing video memory
+    if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
+    {
+        if (region->IsVideoMemory()) cycles += accesses;
+    }
+
+    // Sometimes an access can be split up into 4 8-bit reads or 2 16-bit reads 
+    for (uint i = 1; i < accesses; i++)
+    {
+        cycles += waitstateController.GetCycles(region->type, true);
+    }
+
+    cpu->AddCycles(cycles);
+}
+
+const RegionType GBA_Bus::GetRegionType(u32 address) const 
+{
+    switch (address >> 24)
+    {
+        case 0x00: return RegionType::BIOS;
+        case 0x02: return RegionType::EWRAM;
+        case 0x03: return RegionType::IWRAM;
+        case 0x04: return RegionType::IO;
+        case 0x05: return RegionType::PaletteRAM;
+        case 0x06: return RegionType::VRAM;
+        case 0x07: return RegionType::OAM;
+        case 0x08: case 0x09: return RegionType::ROM0;
+        case 0x0A: case 0x0B: return RegionType::ROM1;
+        case 0x0C: case 0x0D: return RegionType::ROM2;
+        case 0x0E: return RegionType::SRAM;
+
+        default: return RegionType::Invalid;
     }
 }

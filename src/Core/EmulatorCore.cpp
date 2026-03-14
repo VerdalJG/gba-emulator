@@ -9,8 +9,8 @@ EmulatorCore::EmulatorCore(Logger* logger) :
     logger(logger), 
     io(this), 
     rom(this), 
-    memory(this, rom, io),
-    bus(this, memory),
+    memory(this, rom),
+    bus(this, memory, io),
     ppu(this, bus, io.GetLCDRegisters()),
     apu(this, bus, io.GetSoundRegisters()), 
     dmaController(this, bus, io.GetDMARegisters()), 
@@ -39,7 +39,8 @@ EmulatorCore::EmulatorCore(Logger* logger) :
     bus.AttachSubsystems(
         &ppu,
         &apu,
-        &dmaController
+        &dmaController,
+        &cpu
     );
 }
 

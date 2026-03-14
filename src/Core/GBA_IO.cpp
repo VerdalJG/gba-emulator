@@ -2,9 +2,11 @@
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_IO_Helpers.hpp"
 #include "Core/GBA_WaitstateController.hpp"
+#include "Core/GBA_Memory_Helpers.hpp"
 
 GBA_IO::GBA_IO(EmulatorCore* core) : core(core)
 {
+    std::fill(std::begin(ioRegisters), std::end(ioRegisters), nullptr);
     PopulateIORegistersMap();
     SetupCallbacks();
 }
@@ -24,7 +26,7 @@ void GBA_IO::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma
 
 MemReadResult<u8> GBA_IO::Read8(u32 address) 
 {
-    IORegister* reg = ioMap[address];
+    IORegister* reg = ioRegisters[address];
     if (!reg || !reg->readable) return OPEN_BUS;
 
     // Accounting for little-endianess
@@ -38,7 +40,7 @@ MemReadResult<u8> GBA_IO::Read8(u32 address)
 
 MemReadResult<u16> GBA_IO::Read16(u32 address)
 {
-    IORegister* reg = ioMap[address];
+    IORegister* reg = ioRegisters[address];
     if (!reg || !reg->readable) return OPEN_BUS;
 
     uint byteOffset = (address - reg->address);
@@ -62,7 +64,7 @@ MemReadResult<u32> GBA_IO::Read32(u32 address)
 
 void GBA_IO::Write8(u32 address, u8 value) 
 {
-    IORegister* reg = ioMap[address];
+    IORegister* reg = ioRegisters[address];
     if (!reg || !reg->writeable) return;
 
     u32 shift = (address - reg->address) * 8;
@@ -74,7 +76,7 @@ void GBA_IO::Write8(u32 address, u8 value)
 
 void GBA_IO::Write16(u32 address, u16 value) 
 {
-    IORegister* reg = ioMap[address];
+    IORegister* reg = ioRegisters[address];
     if (!reg || !reg->writeable) return;
 
     u32 shift = (address - reg->address) * 8;
@@ -90,15 +92,29 @@ void GBA_IO::Write32(u32 address, u32 value)
     Write16(address + 2, value >> 16);
 }
 
+bool GBA_IO::IsValidIORegister(u32 address) 
+{ 
+    constexpr u32 boundary = IO_START + IO_SIZE;
+    if (address <= boundary)
+    {
+        return ioRegisters[address - IO_START] != nullptr; // Found a register
+    }
+
+    if ((address & 0xFFFF) == 0x0800)
+    {
+        return true; // This maps to Internal memory control, it is an undocumented register but it is a valid register
+    }
+
+    return false;
+}
+
 void GBA_IO::PopulateIORegistersMap()
 {
-    ioMap.clear();
-
     auto addRegister = [this](IORegister& reg) -> void 
     {
         for (int i = 0; i < static_cast<size_t>(reg.width); i++)
         {
-            ioMap[reg.address + i] = &reg;
+            ioRegisters[reg.address + i] = &reg;
         }
     };
 

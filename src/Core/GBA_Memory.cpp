@@ -7,8 +7,8 @@
 #include <assert.h>
 
 
-GBA_Memory::GBA_Memory(EmulatorCore *core, GBA_ROM& rom, GBA_IO& io)
-    : core(core), rom(rom), io(io), 
+GBA_Memory::GBA_Memory(EmulatorCore *core, GBA_ROM& rom)
+    : core(core), rom(rom), 
     bios(std::make_unique<std::vector<uint8_t>>(BIOS_SIZE)), 
     ewram(std::make_unique<std::vector<uint8_t>>(EWRAM_SIZE)), 
     iwram(std::make_unique<std::vector<uint8_t>>(IWRAM_SIZE)), 
@@ -18,7 +18,7 @@ GBA_Memory::GBA_Memory(EmulatorCore *core, GBA_ROM& rom, GBA_IO& io)
     sram(std::make_unique<std::vector<uint8_t>>(SRAM_SIZE))
 {}
 
-const GBA_MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) const
+const MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) const
 {
     switch (address >> 24)
     {
@@ -50,89 +50,71 @@ const GBA_MemoryRegion* GBA_Memory::GetRegionFromAddress(uint32_t address) const
     // disabled via Port 4000800h) returns the recently pre-fetched opcode.
 }
 
-const GBA_MemoryRegion* GBA_Memory::GetRegionFromType(GBA_MemoryRegionType type) const
+const MemoryRegion* GBA_Memory::GetRegionFromType(RegionType type) const
 {
     switch (type)
     {
-        case GBA_MemoryRegionType::BIOS: return &biosRegion;
-        case GBA_MemoryRegionType::EWRAM: return &ewramRegion;
-        case GBA_MemoryRegionType::IWRAM: return &iwramRegion;
-        case GBA_MemoryRegionType::IO: return &ioRegion;
-        case GBA_MemoryRegionType::PaletteRAM: return &paletteRamRegion;
-        case GBA_MemoryRegionType::VRAM: return &vramRegion;
-        case GBA_MemoryRegionType::OAM: return &oamRegion;
-        case GBA_MemoryRegionType::ROM0: return &rom0Region;
-        case GBA_MemoryRegionType::ROM1: return &rom1Region;
-        case GBA_MemoryRegionType::ROM2: return &rom2Region;
-        case GBA_MemoryRegionType::SRAM: return &sramRegion;
-        case GBA_MemoryRegionType::Invalid: return nullptr;
+        case RegionType::BIOS: return &biosRegion;
+        case RegionType::EWRAM: return &ewramRegion;
+        case RegionType::IWRAM: return &iwramRegion;
+        case RegionType::IO: return &ioRegion;
+        case RegionType::PaletteRAM: return &paletteRamRegion;
+        case RegionType::VRAM: return &vramRegion;
+        case RegionType::OAM: return &oamRegion;
+        case RegionType::ROM0: return &rom0Region;
+        case RegionType::ROM1: return &rom1Region;
+        case RegionType::ROM2: return &rom2Region;
+        case RegionType::SRAM: return &sramRegion;
+        case RegionType::Invalid: return nullptr;
 
         default: return nullptr;
     }
 }
 
-const GBA_MemoryRegionType GBA_Memory::GetRegionTypeFromAddress(uint32_t address) const 
-{
-    switch (address >> 24)
-    {
-        case 0x00: return GBA_MemoryRegionType::BIOS;
-        case 0x02: return GBA_MemoryRegionType::EWRAM;
-        case 0x03: return GBA_MemoryRegionType::IWRAM;
-        case 0x04: return GBA_MemoryRegionType::IO;
-        case 0x05: return GBA_MemoryRegionType::PaletteRAM;
-        case 0x06: return GBA_MemoryRegionType::VRAM;
-        case 0x07: return GBA_MemoryRegionType::OAM;
-        case 0x08: case 0x09: return GBA_MemoryRegionType::ROM0;
-        case 0x0A: case 0x0B: return GBA_MemoryRegionType::ROM1;
-        case 0x0C: case 0x0D: return GBA_MemoryRegionType::ROM2;
-        case 0x0E: return GBA_MemoryRegionType::SRAM;
 
-        default: return GBA_MemoryRegionType::Invalid;
-    }
-}
 
-std::span<const uint8_t> GBA_Memory::GetRegionData(GBA_MemoryRegionType type) const 
+std::span<const uint8_t> GBA_Memory::GetRegionData(RegionType type) const 
 {
     switch (type)
     {
-        case GBA_MemoryRegionType::BIOS: return *bios;
-        case GBA_MemoryRegionType::EWRAM: return *ewram;
-        case GBA_MemoryRegionType::IWRAM: return *iwram;
-        case GBA_MemoryRegionType::PaletteRAM: return *paletteRam;
-        case GBA_MemoryRegionType::VRAM: return *vram;
-        case GBA_MemoryRegionType::OAM: return *oam;
-        case GBA_MemoryRegionType::ROM0: return rom0View;
-        case GBA_MemoryRegionType::ROM1: return rom1View;
-        case GBA_MemoryRegionType::ROM2: return rom2View;
-        case GBA_MemoryRegionType::SRAM: return *sram;
+        case RegionType::BIOS: return *bios;
+        case RegionType::EWRAM: return *ewram;
+        case RegionType::IWRAM: return *iwram;
+        case RegionType::PaletteRAM: return *paletteRam;
+        case RegionType::VRAM: return *vram;
+        case RegionType::OAM: return *oam;
+        case RegionType::ROM0: return rom0View;
+        case RegionType::ROM1: return rom1View;
+        case RegionType::ROM2: return rom2View;
+        case RegionType::SRAM: return *sram;
 
         default: return {}; // Empty span
     }
 }
 
-std::span<uint8_t> GBA_Memory::GetRegionDataMutable(GBA_MemoryRegionType type) 
+std::span<uint8_t> GBA_Memory::GetRegionDataMutable(RegionType type) 
 {
     switch (type)
     {
-        case GBA_MemoryRegionType::BIOS: return *bios;
-        case GBA_MemoryRegionType::EWRAM: return *ewram;
-        case GBA_MemoryRegionType::IWRAM: return *iwram;
-        case GBA_MemoryRegionType::PaletteRAM: return *paletteRam;
-        case GBA_MemoryRegionType::VRAM: return *vram;
-        case GBA_MemoryRegionType::OAM: return *oam;
-        case GBA_MemoryRegionType::ROM0: return {}; // ROM is not mutable
-        case GBA_MemoryRegionType::ROM1: return {}; // ROM is not mutable
-        case GBA_MemoryRegionType::ROM2: return {}; // ROM is not mutable
-        case GBA_MemoryRegionType::SRAM: return *sram;
+        case RegionType::BIOS: return *bios;
+        case RegionType::EWRAM: return *ewram;
+        case RegionType::IWRAM: return *iwram;
+        case RegionType::PaletteRAM: return *paletteRam;
+        case RegionType::VRAM: return *vram;
+        case RegionType::OAM: return *oam;
+        case RegionType::ROM0: return {}; // ROM is not mutable
+        case RegionType::ROM1: return {}; // ROM is not mutable
+        case RegionType::ROM2: return {}; // ROM is not mutable
+        case RegionType::SRAM: return *sram;
 
         default: return {}; // Empty span
     }
 }
 
-uint32_t GBA_Memory::ComputeAccessOffset(uint32_t address, GBA_MemoryRegionType type) 
+uint32_t GBA_Memory::ComputeAccessOffset(uint32_t address, RegionType type) 
 {
     uint32_t offset = 0;
-    const GBA_MemoryRegion* region = GetRegionFromType(type);
+    const MemoryRegion* region = GetRegionFromType(type);
     if (region->mirroring == Mirroring::Mirror) // EWRAM, IWRAM, OAM, Palette RAM, 
     {
         offset = (address - region->start) & (region->physicalSize - 1);
@@ -143,7 +125,7 @@ uint32_t GBA_Memory::ComputeAccessOffset(uint32_t address, GBA_MemoryRegionType 
     }
     else // SpecialMirror (VRAM, SRAM, IO) - IO mirroring handled inside IO class
     {
-        if (type == GBA_MemoryRegionType::VRAM)
+        if (type == RegionType::VRAM)
         {
             uint32_t relativeAddress = (address - VRAM_START);
 
@@ -161,7 +143,7 @@ uint32_t GBA_Memory::ComputeAccessOffset(uint32_t address, GBA_MemoryRegionType 
             offset = windowOffset;
         }
 
-        if (type == GBA_MemoryRegionType::SRAM)
+        if (type == RegionType::SRAM)
         {
             uint32_t relativeAddress = address - SRAM_START;
             
@@ -178,15 +160,10 @@ uint32_t GBA_Memory::ComputeAccessOffset(uint32_t address, GBA_MemoryRegionType 
 
 // Defensive checks are performed at the bus level, 
 // the function assumes the access is valid at this point
-MemReadResult<uint8_t> GBA_Memory::Read8(uint32_t address, GBA_MemoryRegionType regionType)
+MemReadResult<uint8_t> GBA_Memory::Read8(uint32_t address, RegionType regionType)
 {
-    if (regionType == GBA_MemoryRegionType::IO)
-    {
-        return io.Read8(address);
-    }
-
     uint32_t offset = ComputeAccessOffset(address, regionType);
-    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    const MemoryRegion* region = GetRegionFromType(regionType);
     
     if (offset >= region->physicalSize)
     {
@@ -199,15 +176,10 @@ MemReadResult<uint8_t> GBA_Memory::Read8(uint32_t address, GBA_MemoryRegionType 
 
 // Defensive checks are performed at the bus level, 
 // the function assumes the access is valid at this point
-MemReadResult<uint16_t> GBA_Memory::Read16(uint32_t address, GBA_MemoryRegionType regionType)
-{
-    if (regionType == GBA_MemoryRegionType::IO)
-    {
-        return io.Read16(address);
-    }
-    
+MemReadResult<uint16_t> GBA_Memory::Read16(uint32_t address, RegionType regionType)
+{  
     uint32_t offset = ComputeAccessOffset(address, regionType);
-    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    const MemoryRegion* region = GetRegionFromType(regionType);
     
     if (offset + (sizeof(uint16_t) - 1) >= region->physicalSize)
     {
@@ -224,15 +196,10 @@ MemReadResult<uint16_t> GBA_Memory::Read16(uint32_t address, GBA_MemoryRegionTyp
 
 // Defensive checks are performed at the bus level, 
 // the function assumes the access is valid at this point
-MemReadResult<uint32_t> GBA_Memory::Read32(uint32_t address, GBA_MemoryRegionType regionType)
+MemReadResult<uint32_t> GBA_Memory::Read32(uint32_t address, RegionType regionType)
 {
-    if (regionType == GBA_MemoryRegionType::IO)
-    {
-        return io.Read32(address);
-    }
-
     uint32_t offset = ComputeAccessOffset(address, regionType);
-    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    const MemoryRegion* region = GetRegionFromType(regionType);
     
     if (offset + (sizeof(uint32_t) - 1) >= region->physicalSize)
     {
@@ -251,15 +218,10 @@ MemReadResult<uint32_t> GBA_Memory::Read32(uint32_t address, GBA_MemoryRegionTyp
 
 // Defensive checks are performed at the bus level, 
 // the function assumes the access is valid at this point
-void GBA_Memory::Write8(uint32_t address, uint8_t value, GBA_MemoryRegionType regionType)
+void GBA_Memory::Write8(uint32_t address, uint8_t value, RegionType regionType)
 {
-    if (regionType == GBA_MemoryRegionType::IO)
-    {
-        return io.Write8(address, value);
-    }
-
     uint32_t offset = ComputeAccessOffset(address, regionType);
-    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    const MemoryRegion* region = GetRegionFromType(regionType);
     
     if (offset >= region->physicalSize) return;
 
@@ -269,15 +231,10 @@ void GBA_Memory::Write8(uint32_t address, uint8_t value, GBA_MemoryRegionType re
 
 // Defensive checks are performed at the bus level, 
 // the function assumes the access is valid at this point
-void GBA_Memory::Write16(uint32_t address, uint16_t value, GBA_MemoryRegionType regionType)
+void GBA_Memory::Write16(uint32_t address, uint16_t value, RegionType regionType)
 {
-    if (regionType == GBA_MemoryRegionType::IO)
-    {
-        return io.Write16(address, value);
-    }
-
     uint32_t offset = ComputeAccessOffset(address, regionType);
-    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    const MemoryRegion* region = GetRegionFromType(regionType);
     
     if (offset + (sizeof(uint16_t) - 1) >= region->physicalSize) return;
 
@@ -288,15 +245,10 @@ void GBA_Memory::Write16(uint32_t address, uint16_t value, GBA_MemoryRegionType 
 
 // Defensive checks are performed at the bus level, 
 // the function assumes the access is valid at this point
-void GBA_Memory::Write32(uint32_t address, uint32_t value, GBA_MemoryRegionType regionType)
+void GBA_Memory::Write32(uint32_t address, uint32_t value, RegionType regionType)
 {
-    if (regionType == GBA_MemoryRegionType::IO)
-    {
-        return io.Write32(address, value);
-    }
-
     uint32_t offset = ComputeAccessOffset(address, regionType);
-    const GBA_MemoryRegion* region = GetRegionFromType(regionType);
+    const MemoryRegion* region = GetRegionFromType(regionType);
     
     if (offset + (sizeof(uint32_t) - 1) >= region->physicalSize) return;
 
@@ -331,7 +283,7 @@ void GBA_Memory::LoadBIOS(const std::vector<uint8_t>& biosData)
     std::copy(biosData.begin(), biosData.end(), bios->begin());
 }
 
-void GBA_Memory::ClearRegion(GBA_MemoryRegionType type)
+void GBA_Memory::ClearRegion(RegionType type)
 {
     std::span<uint8_t> regionData = GetRegionDataMutable(type); 
     std::fill(regionData.begin(), regionData.end(), 0);
@@ -339,19 +291,19 @@ void GBA_Memory::ClearRegion(GBA_MemoryRegionType type)
 
 void GBA_Memory::Clear8(uint32_t address)
 {
-    GBA_MemoryRegionType region = GetRegionTypeFromAddress(address);
+    RegionType region = GetRegionTypeFromAddress(address);
     Write8(address, 0, region);
 }
 
 void GBA_Memory::Clear16(uint32_t address)
 {
-    GBA_MemoryRegionType region = GetRegionTypeFromAddress(address);
+    RegionType region = GetRegionTypeFromAddress(address);
     Write16(address, 0, region);
 }
 
 void GBA_Memory::Clear32(uint32_t address)
 {
-    GBA_MemoryRegionType region = GetRegionTypeFromAddress(address);
+    RegionType region = GetRegionTypeFromAddress(address);
     Write32(address, 0, region);
 }
 
@@ -359,16 +311,16 @@ void GBA_Memory::ClearAddressRange(uint32_t startAddress, uint32_t endAddress)
 {
     assert(startAddress <= endAddress && "Start address must be lower than the end address");
 
-    const GBA_MemoryRegion* region = GetRegionFromAddress(startAddress);
+    const MemoryRegion* region = GetRegionFromAddress(startAddress);
     assert(region && "Invalid start address");
     assert(region == GetRegionFromAddress(endAddress) && "Start address and end address must pertain to the same region");
 
     // Ensure region is writeable (cannot clear BIOS nor ROM)
-    if (region->type == GBA_MemoryRegionType::BIOS) return;
-    if (region->type == GBA_MemoryRegionType::IO) return;
-    if (region->type == GBA_MemoryRegionType::ROM0) return;
-    if (region->type == GBA_MemoryRegionType::ROM1) return;
-    if (region->type == GBA_MemoryRegionType::ROM2) return;
+    if (region->type == RegionType::BIOS) return;
+    if (region->type == RegionType::IO) return;
+    if (region->type == RegionType::ROM0) return;
+    if (region->type == RegionType::ROM1) return;
+    if (region->type == RegionType::ROM2) return;
 
     std::span<uint8_t> regionData = GetRegionDataMutable(region->type); 
 

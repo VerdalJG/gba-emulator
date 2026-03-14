@@ -48,8 +48,6 @@ public:
     bool GetHalted() { return halted; }
     void SetHalted(bool shouldHalt) { halted = shouldHalt; }
     
-
-
     EmulatorCore* GetCore();
     void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
 
@@ -69,11 +67,13 @@ public:
     u32 Read8_Signed(u32 address, uint access);
     u32 Read16_Signed(u32 address, uint access);
 
-    void InvalidateSequentiality(); 
+    void InvalidateSequentiality();
+    u32 GetPipelineOpcode(uint slot) { return pipeline.stage[slot].rawBits; }
 
     u32 GetCycles() { return cycles; }
     u64 GetGlobalCycles() { return globalCycles; }
     // TODO: In the future may have interactions with DMA?
+    void AddCycles(u32 cycles);
     void AddInternalCycles(uint numCycles) { cycles += numCycles; }
 
 private:
@@ -115,7 +115,6 @@ private:
 
     bool nextInstructionFetchIsSequential = false;
     bool nextDataAccessIsSequential = false;
-    void AddCycles(u32 cycles);
 
     // ARM instructions:
     void ARM_DataProcessing(u32 instruction);

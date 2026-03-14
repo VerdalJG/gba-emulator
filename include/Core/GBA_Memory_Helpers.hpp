@@ -24,6 +24,8 @@ constexpr u32 PALETTE_RAM_END = 0x05FFFFFF;
 constexpr u32 VRAM_START = 0x06000000;
 constexpr u32 VRAM_END = 0x06FFFFFF;
 
+constexpr u32 VRAM_BOUNDARY_BITMAP_OFFSET = 0x4000; 
+
 constexpr u32 OAM_START = 0x07000000;
 constexpr u32 OAM_END = 0x07FFFFFF;
 
@@ -60,7 +62,7 @@ enum class AccessType
    Write
 };
 
-enum class GBA_MemoryRegionType
+enum class RegionType
 {
     BIOS,
     EWRAM,
@@ -76,7 +78,7 @@ enum class GBA_MemoryRegionType
     Invalid
 };
 
-enum size_t
+enum AccessSize
 {
     Byte = 1,
     Halfword = 2,
@@ -106,53 +108,47 @@ struct MemReadResult
 
 #define OPEN_BUS {0, false}
 
-struct GBA_MemoryRegion
+struct MemoryRegion
 {
     u32 start;
     u32 end;
     u32 physicalSize;
-    size_t busWidth;
+    AccessSize busWidth;
     Mirroring mirroring;
+    RegionType type;
 
-    GBA_MemoryRegionType type;
-
-    GBA_MemoryRegion(u32 start, u32 end, u32 physicalSize, size_t busWidth, 
-        u8 readMask, u8 writeMask, GBA_MemoryRegionType type, Mirroring mirroring) :
-        start(start), end(end), physicalSize(physicalSize), busWidth(busWidth), 
-        type(type), mirroring(mirroring)
+    MemoryRegion(u32 start, u32 end, u32 size, AccessSize busWidth, RegionType type, Mirroring mirroring) :
+        start(start), end(end), physicalSize(size), busWidth(busWidth), type(type), mirroring(mirroring)
     {}
 
     template <typename T>
     bool IsValidAccess(u32 address) const
     {
-        size_t accessSize = sizeof(T);
+        AccessSize accessSize = sizeof(T);
         bool withinBounds = (address >= start) && ((address + (accessSize - 1)) <= end);
         return withinBounds;
     }
-
-    /*
-    VRAM, OAM, and Palette RAM Access
-    - These memory regions can be accessed during H-Blank or V-Blank only 
-    (unless display is disabled by Forced Blank bit in DISPCNT register).
-    
-    - There is an additional restriction for OAM memory: Accesses during H-Blank are allowed only if 
-    'H-Blank Interval Free' in DISPCNT is set (which'd reduce number of display-able OBJs though).
-    
-    - The CPU appears to be able to access VRAM/OAM/Palette at any time, a waitstate (one clock cycle) 
-    being inserted automatically in case that the display controller was accessing memory simultaneously. 
-    (Ie. unlike as in old 8bit gameboy, the data will not get lost.)
-    */
+   
     bool IsVideoMemory() const
     {       
-        return  type == GBA_MemoryRegionType::PaletteRAM ||
-                type == GBA_MemoryRegionType::VRAM ||
-                type == GBA_MemoryRegionType::OAM;
+        return type == RegionType::PaletteRAM || type == RegionType::VRAM || type == RegionType::OAM;
     }
     
     bool IsROMRegion() const
     {
-        return  type == GBA_MemoryRegionType::ROM0 ||
-                type == GBA_MemoryRegionType::ROM1 ||
-                type == GBA_MemoryRegionType::ROM2;
+        return type == RegionType::ROM0 || type == RegionType::ROM1 || type == RegionType::ROM2;
     }
 };
+
+/*
+VRAM, OAM, and Palette RAM Access
+- These memory regions can be accessed during H-Blank or V-Blank only 
+(unless display is disabled by Forced Blank bit in DISPCNT register).
+
+- There is an additional restriction for OAM memory: Accesses during H-Blank are allowed only if 
+'H-Blank Interval Free' in DISPCNT is set (which'd reduce number of display-able OBJs though).
+
+- The CPU appears to be able to access VRAM/OAM/Palette at any time, a waitstate (one clock cycle) 
+being inserted automatically in case that the display controller was accessing memory simultaneously. 
+(Ie. unlike as in old 8bit gameboy, the data will not get lost.)
+*/

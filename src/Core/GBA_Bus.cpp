@@ -7,7 +7,6 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/GBA_IO.hpp"
 #include "Core/EmulatorCore.hpp"
-#include "GBA_Bus.hpp"
 
 
 GBA_Bus::GBA_Bus(EmulatorCore* core, GBA_Memory& memory, GBA_IO& io) : core(core), memory(memory), io(io)
@@ -144,6 +143,13 @@ u32 GBA_Bus::OpenBus(u32 address)
                 }
                 break;
             }
+
+            default: // Fallback for invalid regions
+            {
+                lsw = cpu->GetPipelineOpcode(0);
+                msw = cpu->GetPipelineOpcode(0);
+                break;
+            }
         }
         result = (msw << 16) | lsw;
     }
@@ -188,23 +194,20 @@ void GBA_Bus::HandleAccessCycles(u32 address, MemoryRegion* region, AccessSize s
 
 u32 GBA_Bus::GetMirroredAddress(u32 address, MemoryRegion* region) 
 {
-    u32 offset = 0;
     if (region->mirroring == Mirroring::Mirror) // EWRAM, IWRAM, OAM, Palette RAM, 
     {
-        offset = (address - region->start) & (region->physicalSize - 1);
+        return region->start + (address & (region->physicalSize - 1));
     }
     else if (region->mirroring == Mirroring::NoMirror) // ROM, BIOS
     {
-        offset = (address - region->start);
+        return address;
     }
     else // SpecialMirror (VRAM, SRAM, IO) - IO mirroring handled inside IO class
     {
-        if (type == RegionType::VRAM)
+        if (region->type == RegionType::VRAM)
         {
-            uint32_t relativeAddress = (address - VRAM_START);
-
             // Mirror every 128 KB (64KB + 32KB + 32KB(mirror of first 32KB))
-            uint32_t windowOffset = relativeAddress & (VRAM_MIRROR_SIZE - 1);
+            uint32_t windowOffset = address & (VRAM_MIRROR_SIZE - 1);
 
             // Handle 32KB mirror case inside of the 128KB
             if (windowOffset >= VRAM_TOTAL_SIZE)
@@ -214,22 +217,16 @@ u32 GBA_Bus::GetMirroredAddress(u32 address, MemoryRegion* region)
             }
 
             // Now it is guranteed to be within 0x18000 window
-            offset = windowOffset;
+            return region->start + windowOffset;
         }
 
-        if (type == RegionType::SRAM)
-        {
-            uint32_t relativeAddress = address - SRAM_START;
-            
-            // Mirror across 32MB region
-            offset = relativeAddress & (SRAM_SIZE - 1);
-
-            // Mirror upper 32KB onto the lower 32KB
-            offset &= (SRAM_MIRROR_SIZE - 1);
+        if (region->type == RegionType::SRAM)
+        {   
+            // Mirror across 32MB region and then mirror upper 32KB onto the lower 32KB
+            return (address & (SRAM_SIZE - 1)) & (SRAM_MIRROR_SIZE - 1);
         }
     }
-
-    return region->start + offset;
+    return address; // Fallback
 }
 
 const RegionType GBA_Bus::GetRegionType(u32 address) const 

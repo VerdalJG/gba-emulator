@@ -23,40 +23,38 @@ public:
     ~GBA_Memory() = default;
     GBA_Memory(const GBA_Memory&) = delete; // Disable copy constructor
  
-    const MemoryRegion* GetRegionFromAddress(uint32_t address) const;
+    const MemoryRegion* GetRegionFromAddress(u32 address) const;
     const MemoryRegion* GetRegionFromType(RegionType type) const;
-    std::span<const uint8_t> GetRegionData(RegionType type) const;
-    std::span<uint8_t> GetRegionDataMutable(RegionType type);
-    uint32_t ComputeAccessOffset(uint32_t address, RegionType regionType);
-    
-    MemReadResult<uint8_t> Read8(uint32_t address, RegionType regionType);
-    MemReadResult<uint16_t> Read16(uint32_t address, RegionType regionType);
-    MemReadResult<uint32_t> Read32(uint32_t address, RegionType regionType);
 
-    void Write8(uint32_t address, uint8_t value, RegionType regionType);
-    void Write16(uint32_t address, uint16_t value, RegionType regionType);
-    void Write32(uint32_t address, uint32_t value, RegionType regionType);
+    std::span<const u8> GetRegionData(RegionType type) const;
+    std::span<u8> GetRegionDataMutable(RegionType type);
+    
+    template<typename T>
+    T Read(u32 address);
+
+    template<typename T>
+    void Write(u32 address, T value);
 
     void ClearRegion(RegionType type);
-    void Clear8(uint32_t address);
-    void Clear16(uint32_t address);
-    void Clear32(uint32_t address);
-    void ClearAddressRange(uint32_t startAddress, uint32_t endAddress);
+    void Clear8(u32 address);
+    void Clear16(u32 address);
+    void Clear32(u32 address);
+    void ClearAddressRange(u32 startAddress, u32 endAddress);
 
     void InitROMBanks();
-    void LoadBIOS(const std::vector<uint8_t>& biosData);
+    void LoadBIOS(const std::vector<u8>& biosData);
     
 private:
-    std::unique_ptr<std::vector<uint8_t>> bios;
-    std::unique_ptr<std::vector<uint8_t>> ewram;
-    std::unique_ptr<std::vector<uint8_t>> iwram;
-    std::unique_ptr<std::vector<uint8_t>> paletteRam;
-    std::unique_ptr<std::vector<uint8_t>> vram;
-    std::unique_ptr<std::vector<uint8_t>> oam;
-    std::span<const uint8_t> rom0View;
-    std::span<const uint8_t> rom1View;
-    std::span<const uint8_t> rom2View;
-    std::unique_ptr<std::vector<uint8_t>> sram;
+    std::unique_ptr<std::vector<u8>> bios;
+    std::unique_ptr<std::vector<u8>> ewram;
+    std::unique_ptr<std::vector<u8>> iwram;
+    std::unique_ptr<std::vector<u8>> paletteRam;
+    std::unique_ptr<std::vector<u8>> vram;
+    std::unique_ptr<std::vector<u8>> oam;
+    std::span<const u8> rom0View;
+    std::span<const u8> rom1View;
+    std::span<const u8> rom2View;
+    std::unique_ptr<std::vector<u8>> sram;
     
     // General internal memory
     MemoryRegion biosRegion = MemoryRegion(BIOS_START, BIOS_END, BIOS_SIZE, AccessSize::Word, RegionType::BIOS, Mirroring::NoMirror);
@@ -85,5 +83,7 @@ private:
     EmulatorCore* core;
     GBA_ROM& rom;
 };
+
+#include "Core/Memory/MemoryAccess.tpp"
 
 // https://problemkaputt.de/gbatek-gba-memory-map.htm REFERENCE

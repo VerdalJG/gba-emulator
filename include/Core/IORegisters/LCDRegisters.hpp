@@ -2,8 +2,44 @@
 
 #include "Core/IORegisters/IORegisterBase.hpp"
 
+#include <array>
+
+class GBA_PPU;
+
+struct IO_LCDRegisters
+{
+    DisplayControl dispcnt;
+    DisplayStatus dispstat;
+    VerticalCounter vcount;
+    std::array<BackgroundControl, 4> bgcnt;
+
+    std::array<BackgroundOffset, 4> bghofs; // Background X-offsets
+    std::array<BackgroundOffset, 4> bgvofs; // Background Y-offsets
+
+    BackgroundRefPointCoords bg2Coords; // BG2 Reference point Coordinates (low 16 bits and high 12 bits)
+    BackgroundScalingParameters bg2Params; // BG2 Scaling params A-D
+    
+    BackgroundRefPointCoords bg3Coords; // BG3 Reference point Coordinates (low 16 bits and high 12 bits)
+    BackgroundScalingParameters bg3Params; // BG3 Scaling params A-D
+
+    
+
+};
+
 struct DisplayControl : IORegisterBase
 {
+    DisplayControl();
+
+    void Reset();
+    void ResetToPostBIOSValue();
+
+    u8 Read8(int byteToRead);
+    u16 Read16();
+
+    void Write8(int byteToWrite, u8 value);
+    void Write16(u16 value);
+
+private:
     union
     {
         struct 
@@ -21,12 +57,37 @@ struct DisplayControl : IORegisterBase
         } fields;
         u16 value;
     };
-
-    void Reset();
-
-    u8 Read8(int byteToRead);
-    u16 Read16();
-
-    void Write8(int byteToWrite, u8 value);
-    void Write16(u16 value);
 };
+
+struct DisplayStatus : IORegisterBase
+{
+
+};
+
+struct VerticalCounter : IORegisterBase
+{
+
+};
+
+struct BackgroundControl : IORegisterBase
+{
+
+};
+
+struct BackgroundOffset : IORegisterBase
+{
+
+};
+
+struct BackgroundRefPointCoords : IORegisterBase
+{
+
+};
+
+struct BackgroundScalingParameters : IORegisterBase
+{
+
+};
+
+
+

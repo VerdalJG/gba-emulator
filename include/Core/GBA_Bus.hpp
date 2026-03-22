@@ -44,12 +44,6 @@ public:
     GBA_Bus(EmulatorCore* core, GBA_Memory& memory, GBA_IO& io);
     void AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, GBA_CPU* cpu);
 
-    template <typename T>
-    T Read(u32 address, BusRequester requester);
-
-    template <typename T>
-    void Write(u32 address, T value, BusRequester requester);
-
     // Open bus tracking
     void UpdateLatestAccessValues(u32 value, u32 address, RegionType regionType, AccessSize accessSize);
     bool IsSequential(u32 address, AccessSize size, RegionType region);
@@ -74,7 +68,39 @@ private:
     LastBusAccess lastAccess;
     bool accessForcedNonSequential = false;
 
-    // These regions have special behavior when reading/writing
+    u32 OpenBus(u32 address);
+    void HandleAccessCycles(u32 address, MemoryRegion* region, AccessSize size, uint accesses, BusRequester requester);
+    u32 GetMirroredAddress(u32 address, MemoryRegion* region);
+    const RegionType GetRegionType(u32 address) const;
+
+    u32 biosLatch = 0;
+    
+    EmulatorCore* core;
+    GBA_CPU* cpu;
+    GBA_PPU* ppu;
+    GBA_APU* apu;
+    GBA_DMAController* dma;
+    GBA_Memory& memory;
+    GBA_IO& io;
+    GBA_WaitstateController waitstateController;
+
+    // Templated Memory Accessors:
+public:
+    template <typename T>
+    T Read(u32 address, BusRequester requester);
+
+    template <typename T>
+    void Write(u32 address, T value, BusRequester requester);
+
+private:
+    /*
+        These regions have special behavior when reading/writing:
+        - BIOS
+        - Video Memory (Palette, Video, Object-Attribute RAM)
+        - SRAM
+        - IO (handled inside IO class)
+    */ 
+
     template <typename T>
     T ReadBIOS(u32 address);
 
@@ -101,22 +127,6 @@ private:
 
     template <typename T>
     void WriteSRAM(u32 address, T value);
-
-    u32 OpenBus(u32 address);
-    void HandleAccessCycles(u32 address, MemoryRegion* region, AccessSize size, uint accesses, BusRequester requester);
-    u32 GetMirroredAddress(u32 address, MemoryRegion* region);
-    const RegionType GetRegionType(u32 address) const;
-
-    u32 biosLatch = 0;
-    
-    EmulatorCore* core;
-    GBA_CPU* cpu;
-    GBA_PPU* ppu;
-    GBA_APU* apu;
-    GBA_DMAController* dma;
-    GBA_Memory& memory;
-    GBA_IO& io;
-    GBA_WaitstateController waitstateController;
 };
 
-#include "Core/Memory/MemoryAccess.tpp"
+#include "Core/Memory/BusMemoryAccess.tpp"

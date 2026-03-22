@@ -4,10 +4,14 @@
 
 #include "Utils/Integers.hpp"
 
+#include <string>
+
+
 struct IORegisterBase
 {
+    std::string name;
     u32 address;
-    size_t width;
-    bool readable;
-    bool writeable;
+    AccessSize width;
+    bool readable; // Refers to the cpu's ability to read the IO register
+    bool writeable; // Refers to the cpu's ability to write the IO register
 };

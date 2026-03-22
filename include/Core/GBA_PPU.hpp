@@ -1,5 +1,6 @@
 #pragma once    
 #include "Core/GBA_IO_Helpers.hpp"
+#include "Core/IORegisters/LCDRegisters.hpp"
 
 #include <cstdint>
 
@@ -21,7 +22,7 @@ class GBA_PPU
 {
 public:
     GBA_PPU() = delete;
-    explicit GBA_PPU(EmulatorCore* core, GBA_Bus& bus, IO_LCDRegisters& lcdRegisters);
+    explicit GBA_PPU(EmulatorCore* core, GBA_Bus& bus);
     ~GBA_PPU() = default;
 
     uint8_t Read8_Bus(uint32_t address);
@@ -53,7 +54,7 @@ private:
 
     EmulatorCore* core;
     GBA_Bus& bus;
-    IO_LCDRegisters& lcdRegisters;
+    IO_LCDRegisters lcdRegisters;
 };
 
 

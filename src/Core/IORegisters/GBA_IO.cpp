@@ -1,6 +1,7 @@
 #include "Core/GBA_IO.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_IO_Helpers.hpp"
+#include "Core/GBA_CPU.hpp"
 #include "Core/Memory/GBA_WaitstateController.hpp"
 #include "Core/Memory/GBA_Memory_Helpers.hpp"
 
@@ -8,10 +9,9 @@ GBA_IO::GBA_IO(EmulatorCore* core) : core(core)
 {
     std::fill(std::begin(ioRegisters), std::end(ioRegisters), nullptr);
     PopulateIORegistersMap();
-    SetupCallbacks();
 }
 
-void GBA_IO::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, 
+void GBA_IO::AttachSubsystems(GBA_CPU* cpu, GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, 
     GBA_TimerController* timers, GBA_InterruptController* interrupts, GBA_Keypad* keypad,
     GBA_WaitstateController* waitstates) 
 {
@@ -24,7 +24,7 @@ void GBA_IO::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma
     this->waitstates = waitstates;
 }
 
-MemReadResult<u8> GBA_IO::Read8(u32 address) 
+u8 GBA_IO::Read8(u32 address) 
 {
     IORegister* reg = ioRegisters[address];
     if (!reg || !reg->readable) return OPEN_BUS;
@@ -38,7 +38,7 @@ MemReadResult<u8> GBA_IO::Read8(u32 address)
     return { read, true };
 }
 
-MemReadResult<u16> GBA_IO::Read16(u32 address)
+u16 GBA_IO::Read16(u32 address)
 {
     IORegister* reg = ioRegisters[address];
     if (!reg || !reg->readable) return OPEN_BUS;
@@ -51,7 +51,7 @@ MemReadResult<u16> GBA_IO::Read16(u32 address)
     return { read, true };
 }
 
-MemReadResult<u32> GBA_IO::Read32(u32 address) 
+u32 GBA_IO::Read32(u32 address) 
 {
     auto lo = Read16(address);
     auto hi = Read16(address + 2);
@@ -117,6 +117,8 @@ void GBA_IO::PopulateIORegistersMap()
             ioRegisters[reg.address + i] = &reg;
         }
     };
+
+    
 
     // ===============================
     // LCD Registers
@@ -271,149 +273,149 @@ void GBA_IO::PopulateIORegistersMap()
     addRegister(miscRegisters.HALTCNT);
 }
 
-void GBA_IO::SetupCallbacks() 
-{
-    SetupLCDReadCallbacks();
-    SetupLCDWriteCallbacks();
+// void GBA_IO::SetupCallbacks() 
+// {
+//     SetupLCDReadCallbacks();
+//     SetupLCDWriteCallbacks();
 
-    // SetupTimerReadCallbacks();
-    // SetupTimerWriteCallbacks();
+//     // SetupTimerReadCallbacks();
+//     // SetupTimerWriteCallbacks();
 
-    // SetupDMAReadCallbacks();
-    // SetupDMAWriteCallbacks();
+//     // SetupDMAReadCallbacks();
+//     // SetupDMAWriteCallbacks();
 
-    // SetupSoundReadCallbacks();
-    // SetupSoundWriteCallbacks();
+//     // SetupSoundReadCallbacks();
+//     // SetupSoundWriteCallbacks();
 
-    // SetupInterruptCallbacks();
-}
+//     // SetupInterruptCallbacks();
+// }
 
-void GBA_IO::SetupLCDReadCallbacks() 
-{
-    // DISPCNT — readable, static
-    // No callback needed (direct storage)
+// void GBA_IO::SetupLCDReadCallbacks() 
+// {
+//     // DISPCNT — readable, static
+//     // No callback needed (direct storage)
 
-    // DISPSTAT — readable, contains live flags (VBlank/HBlank/VCount)
-    lcdRegisters.DISPSTAT.onRead =
-        [this](u32 address) -> u32
-        {
-            // TODO: Replace with real PPU state
-            // Bits 0-2 are status flags, rest is writable configuration
-            return lcdRegisters.DISPSTAT.value;
-        };
+//     // DISPSTAT — readable, contains live flags (VBlank/HBlank/VCount)
+//     lcdRegisters.DISPSTAT.onRead =
+//         [this](u32 address) -> u32
+//         {
+//             // TODO: Replace with real PPU state
+//             // Bits 0-2 are status flags, rest is writable configuration
+//             return lcdRegisters.DISPSTAT.value;
+//         };
 
-    // VCOUNT — live scanline counter
-    lcdRegisters.VCOUNT.onRead =
-        [this](u32 address) -> u32
-        {
-            // TODO: Hook to PPU current scanline
-            return lcdRegisters.VCOUNT.value;
-        };
+//     // VCOUNT — live scanline counter
+//     lcdRegisters.VCOUNT.onRead =
+//         [this](u32 address) -> u32
+//         {
+//             // TODO: Hook to PPU current scanline
+//             return lcdRegisters.VCOUNT.value;
+//         };
 
-    // BGxCNT — readable, static
-    // No callback needed
+//     // BGxCNT — readable, static
+//     // No callback needed
 
-    // BGxHOFS / BGxVOFS — readable, static
-    // No callback needed
+//     // BGxHOFS / BGxVOFS — readable, static
+//     // No callback needed
 
-    // BGxPA/B/C/D — readable, affine params
-    // No callback needed
+//     // BGxPA/B/C/D — readable, affine params
+//     // No callback needed
 
-    // BGxX / BGxY — readable, latched affine reference
-    // Some emulators return internal latched value here
-    // For now, stored value is acceptable
+//     // BGxX / BGxY — readable, latched affine reference
+//     // Some emulators return internal latched value here
+//     // For now, stored value is acceptable
 
-    // WININ / WINOUT — readable
-    // No callback needed
+//     // WININ / WINOUT — readable
+//     // No callback needed
 
-    // MOSAIC — readable
-    // No callback needed
+//     // MOSAIC — readable
+//     // No callback needed
 
-    // BLDCNT / BLDALPHA / BLDY — readable
-    // No callback needed
-}
+//     // BLDCNT / BLDALPHA / BLDY — readable
+//     // No callback needed
+// }
 
-void GBA_IO::SetupLCDWriteCallbacks() 
-{
-    // DISPCNT — controls display
-    lcdRegisters.DISPCNT.onWrite =
-        [this](u32 address, u32 value)
-        {
-            // TODO: Update PPU display control
-            printf("DISPCNT changed to: %u\n", value);
-            // ppu.SetDisplayControl(value);
-        };
+// void GBA_IO::SetupLCDWriteCallbacks() 
+// {
+//     // DISPCNT — controls display
+//     lcdRegisters.DISPCNT.onWrite =
+//         [this](u32 address, u32 value)
+//         {
+//             // TODO: Update PPU display control
+//             printf("DISPCNT changed to: %u\n", value);
+//             // ppu.SetDisplayControl(value);
+//         };
 
-    // GREENSWAP — undocumented green swap
-    lcdRegisters.GREENSWAP.onWrite =
-        [this](u32 address, u32 value)
-        {
-            // TODO: Apply green swap effect in PPU
-            // ppu.SetGreenSwap(value);
-        };
+//     // GREENSWAP — undocumented green swap
+//     lcdRegisters.GREENSWAP.onWrite =
+//         [this](u32 address, u32 value)
+//         {
+//             // TODO: Apply green swap effect in PPU
+//             // ppu.SetGreenSwap(value);
+//         };
 
-    // DISPSTAT — interrupt and scanline control
-    lcdRegisters.DISPSTAT.onWrite =
-        [this](u32 address, u32 value)
-        {
-            // TODO: Update HBlank/VBlank/LYC interrupt enables
-            // ppu.SetDispStatInterrupts(value);
-        };
+//     // DISPSTAT — interrupt and scanline control
+//     lcdRegisters.DISPSTAT.onWrite =
+//         [this](u32 address, u32 value)
+//         {
+//             // TODO: Update HBlank/VBlank/LYC interrupt enables
+//             // ppu.SetDispStatInterrupts(value);
+//         };
 
-    // VCOUNT — read-only in hardware, write ignored
-    lcdRegisters.VCOUNT.onWrite =
-        [](u32, u32) { /* ignored */ };
+//     // VCOUNT — read-only in hardware, write ignored
+//     lcdRegisters.VCOUNT.onWrite =
+//         [](u32, u32) { /* ignored */ };
 
-    // BGxCNT — background control
-    lcdRegisters.BG0CNT.onWrite =
-        [this](u32, u32 value)
-        {
-            // TODO: ppu.SetBGControl(0, value);
-        };
-    lcdRegisters.BG1CNT.onWrite =
-        [this](u32, u32 value)
-        {
-            // TODO: ppu.SetBGControl(1, value);
-        };
-    lcdRegisters.BG2CNT.onWrite =
-        [this](u32, u32 value)
-        {
-            // TODO: ppu.SetBGControl(2, value);
-        };
-    lcdRegisters.BG3CNT.onWrite =
-        [this](u32, u32 value)
-        {
-            // TODO: ppu.SetBGControl(3, value);
-        };
+//     // BGxCNT — background control
+//     lcdRegisters.BG0CNT.onWrite =
+//         [this](u32, u32 value)
+//         {
+//             // TODO: ppu.SetBGControl(0, value);
+//         };
+//     lcdRegisters.BG1CNT.onWrite =
+//         [this](u32, u32 value)
+//         {
+//             // TODO: ppu.SetBGControl(1, value);
+//         };
+//     lcdRegisters.BG2CNT.onWrite =
+//         [this](u32, u32 value)
+//         {
+//             // TODO: ppu.SetBGControl(2, value);
+//         };
+//     lcdRegisters.BG3CNT.onWrite =
+//         [this](u32, u32 value)
+//         {
+//             // TODO: ppu.SetBGControl(3, value);
+//         };
 
-    // BGxHOFS / BGxVOFS — background offsets
-    lcdRegisters.BG0HOFS.onWrite = 
-        [this](u32, u32 value)
-        {
-            // TODO: ppu.SetBGOffset(0, value, lcdRegisters.BG0VOFS.value);
-        };
-    lcdRegisters.BG0VOFS.onWrite = 
-        [this](u32, u32 value)
-        {
-            // TODO: ppu.SetBGOffset(0, lcdRegisters.BG0HOFS.value, value);
-        };
+//     // BGxHOFS / BGxVOFS — background offsets
+//     lcdRegisters.BG0HOFS.onWrite = 
+//         [this](u32, u32 value)
+//         {
+//             // TODO: ppu.SetBGOffset(0, value, lcdRegisters.BG0VOFS.value);
+//         };
+//     lcdRegisters.BG0VOFS.onWrite = 
+//         [this](u32, u32 value)
+//         {
+//             // TODO: ppu.SetBGOffset(0, lcdRegisters.BG0HOFS.value, value);
+//         };
 
-    // …and similarly for BG1HOFS/VOFS, BG2HOFS/VOFS, BG3HOFS/VOFS
+//     // …and similarly for BG1HOFS/VOFS, BG2HOFS/VOFS, BG3HOFS/VOFS
 
-    // WIN0H / WIN1H / WIN0V / WIN1V — window dimensions
-    lcdRegisters.WIN0H.onWrite =
-        [this](u32, u32 value)
-        {
-            // TODO: ppu.SetWindow0H(value);
-        };
+//     // WIN0H / WIN1H / WIN0V / WIN1V — window dimensions
+//     lcdRegisters.WIN0H.onWrite =
+//         [this](u32, u32 value)
+//         {
+//             // TODO: ppu.SetWindow0H(value);
+//         };
 
-    // BLDCNT / BLDALPHA / BLDY — blending control
-    lcdRegisters.BLDCNT.onWrite =
-        [this](u32, u32 value)
-        {
-            // TODO: ppu.SetBlending(value);
-        };
-}
+//     // BLDCNT / BLDALPHA / BLDY — blending control
+//     lcdRegisters.BLDCNT.onWrite =
+//         [this](u32, u32 value)
+//         {
+//             // TODO: ppu.SetBlending(value);
+//         };
+// }
 
 // void GBA_Memory::ResetSIORegisters()
 // {

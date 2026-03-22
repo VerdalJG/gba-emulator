@@ -1,30 +1,29 @@
 #include "Core/GBA_PPU.hpp"
 #include "Core/GBA_Bus.hpp"
-#include "Core/GBA_Memory_Helpers.hpp"
+#include "Core/Memory/GBA_Memory_Helpers.hpp"
 
 #include <assert.h>
 
-GBA_PPU::GBA_PPU(EmulatorCore *core, GBA_Bus& bus, IO_LCDRegisters& lcdRegisters) : 
+GBA_PPU::GBA_PPU(EmulatorCore *core, GBA_Bus& bus) : 
     core(core), 
-    bus(bus),
-    lcdRegisters(lcdRegisters)
+    bus(bus)
 {
     assert(core != nullptr && "PPU must have valid EmulatorCore object");
 }
 
 uint8_t GBA_PPU::Read8_Bus(uint32_t address) 
 { 
-    return bus.Read8(address, BusRequester::PPU, nullptr);
+    return bus.Read<u8>(address, BusRequester::PPU);
 }
 
 uint16_t GBA_PPU::Read16_Bus(uint32_t address) 
 { 
-    return bus.Read16(address, BusRequester::PPU, nullptr);
+    return bus.Read<u16>(address, BusRequester::PPU);
 }
 
 uint32_t GBA_PPU::Read32_Bus(uint32_t address) 
 { 
-    return bus.Read32(address, BusRequester::PPU, nullptr);
+    return bus.Read<u32>(address, BusRequester::PPU);
 }
 
 void GBA_PPU::RenderFrame() 
@@ -149,15 +148,6 @@ void GBA_PPU::Step(u32 cycles)
         stat |= 4;      // VCount match
 
     lcdRegisters.DISPSTAT.value = stat;
-
-    // frameCycleCounter += cycles;
-
-    // if (frameCycleCounter >= CYCLES_PER_FRAME)
-    // {
-    //     frameCycleCounter -= CYCLES_PER_FRAME;
-    //     RenderFrame();
-    //     frameReady = true;
-    // }
 }
 
 bool GBA_PPU::IsWithinVRAM_OBJBoundary(u32 address) 

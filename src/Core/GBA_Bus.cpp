@@ -5,7 +5,7 @@
 #include "Core/GBA_APU.hpp"
 #include "Core/GBA_DMAController.hpp"
 #include "Core/GBA_CPU.hpp"
-#include "Core/GBA_IO.hpp"
+#include "Core/IO/GBA_IO.hpp"
 #include "Core/EmulatorCore.hpp"
 
 

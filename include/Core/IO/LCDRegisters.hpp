@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/IORegisters/IORegisterBase.hpp"
+#include "Core/IO/IORegisterBase.hpp"
 
 #include <array>
 

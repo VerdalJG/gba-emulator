@@ -30,6 +30,21 @@ struct IORegister
     WriteHandler onWrite = nullptr;
 };
 
+struct HalfwordPermissions
+{
+    uint readMask;
+    uint writeMask;
+
+    constexpr bool CanReadLo() const { return readMask & 0b01; }
+    constexpr bool CanReadHi() const { return readMask & 0b10; }
+
+    constexpr bool CanWriteLo() const { return writeMask & 0b01; }
+    constexpr bool CanWriteHi() const { return writeMask & 0b10; }
+
+    constexpr bool CanReadHalf() const { return readMask == 0b11; }
+    constexpr bool CanWriteHalf() const { return writeMask == 0b11; }
+};
+
 struct IO_LCDRegisters
 {
     IORegister DISPCNT   { 0x04000000, AccessSize::Halfword, true, true, 0x0080 }; // LCD Control

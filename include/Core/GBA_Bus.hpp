@@ -58,6 +58,7 @@ public:
     void InvalidateSequentiality();
 
     GBA_WaitstateController& GetWaitstateController() { return waitstateController; }
+    u32 OpenBus(u32 address);
 
 private:
     // This is done because ROM0 uses the same bus as ROM1 and ROM2, preventing adjacent accesses
@@ -68,7 +69,7 @@ private:
     LastBusAccess lastAccess;
     bool accessForcedNonSequential = false;
 
-    u32 OpenBus(u32 address);
+    
     void HandleAccessCycles(u32 address, MemoryRegion* region, AccessSize size, uint accesses, BusRequester requester);
     u32 GetMirroredAddress(u32 address, MemoryRegion* region);
     const RegionType GetRegionType(u32 address) const;

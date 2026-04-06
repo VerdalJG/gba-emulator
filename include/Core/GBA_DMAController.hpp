@@ -1,5 +1,5 @@
 #pragma once  
-#include "Core/GBA_IO_Helpers.hpp"
+#include "Core/IO/GBA_IO_Helpers.hpp"
 
 #include <cstdint>
 
@@ -10,7 +10,7 @@ class GBA_DMAController
 {
 public:
     GBA_DMAController() = delete;
-    explicit GBA_DMAController(EmulatorCore* core, GBA_Bus& bus, IO_DMARegisters& dmaRegisters);
+    explicit GBA_DMAController(EmulatorCore* core, GBA_Bus& bus);
     ~GBA_DMAController() = default;
 
     uint8_t Read8_Bus(uint32_t address);

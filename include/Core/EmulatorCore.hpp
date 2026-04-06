@@ -9,7 +9,7 @@
 #include "Core/GBA_DMAController.hpp"
 #include "Core/GBA_APU.hpp"
 #include "Core/GBA_ROM.hpp"
-#include "Core/GBA_IO.hpp"
+#include "Core/IO/GBA_IO.hpp"
 #include "Core/GBA_Keypad.hpp"
 
 #include <string>

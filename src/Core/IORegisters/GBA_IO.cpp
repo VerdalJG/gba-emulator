@@ -1,20 +1,23 @@
-#include "Core/GBA_IO.hpp"
+#include "Core/IO/GBA_IO.hpp"
 #include "Core/EmulatorCore.hpp"
-#include "Core/GBA_IO_Helpers.hpp"
+#include "Core/IO/GBA_IO_Helpers.hpp"
 #include "Core/GBA_CPU.hpp"
 #include "Core/Memory/GBA_WaitstateController.hpp"
 #include "Core/Memory/GBA_Memory_Helpers.hpp"
+#include "Core/IO/IO_Addresses.hpp"
+#include "Core/IO/TableGeneration.hpp"
+#include "Core/GBA_Bus.hpp"
 
 GBA_IO::GBA_IO(EmulatorCore* core) : core(core)
 {
-    std::fill(std::begin(ioRegisters), std::end(ioRegisters), nullptr);
-    PopulateIORegistersMap();
+    ioPermissions = BuildIOPermissionTable();
 }
 
 void GBA_IO::AttachSubsystems(GBA_CPU* cpu, GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, 
     GBA_TimerController* timers, GBA_InterruptController* interrupts, GBA_Keypad* keypad,
-    GBA_WaitstateController* waitstates) 
+    GBA_WaitstateController* waitstates, GBA_Bus* bus) 
 {
+    this->cpu = cpu;
     this->ppu = ppu;
     this->apu = apu;
     this->dma = dma;
@@ -22,273 +25,45 @@ void GBA_IO::AttachSubsystems(GBA_CPU* cpu, GBA_PPU* ppu, GBA_APU* apu, GBA_DMAC
     this->interrupts = interrupts;
     this->keypad = keypad;
     this->waitstates = waitstates;
+    this->bus = bus;
 }
 
 u8 GBA_IO::Read8(u32 address) 
 {
-    IORegister* reg = ioRegisters[address];
-    if (!reg || !reg->readable) return OPEN_BUS;
+    IO_LCDRegisters lcdRegs = ppu->GetLCDRegisters();
 
-    // Accounting for little-endianess
-    uint byteOffset = (address - reg->address);
-    uint bitOffset = byteOffset * 8; 
-    u8 read = static_cast<u8>((reg->value >> bitOffset) & 0xFF);
-
-    if (reg->onRead) reg->onRead(address);
-    return { read, true };
+    switch (address)
+    {
+        case DISPCNT: return lcdRegs.dispcnt.Read8(0);
+        case DISPCNT+1: return lcdRegs.dispcnt.Read8(1);
+    }
+    return bus->OpenBus(address);
 }
 
 u16 GBA_IO::Read16(u32 address)
 {
-    IORegister* reg = ioRegisters[address];
-    if (!reg || !reg->readable) return OPEN_BUS;
-
-    uint byteOffset = (address - reg->address);
-    uint bitOffset = byteOffset * 8; 
-    u16 read = static_cast<u16>((reg->value >> bitOffset) & 0xFFFF);
-
-    if (reg->onRead) reg->onRead(address);
-    return { read, true };
+    
 }
 
 u32 GBA_IO::Read32(u32 address) 
 {
-    auto lo = Read16(address);
-    auto hi = Read16(address + 2);
-
-    u32 value = (hi.value << 16) | lo.value;
-    bool valid = lo.valid && hi.valid;
-
-    return { value, valid };
+    
 }
 
 void GBA_IO::Write8(u32 address, u8 value) 
 {
-    IORegister* reg = ioRegisters[address];
-    if (!reg || !reg->writeable) return;
-
-    u32 shift = (address - reg->address) * 8;
-    reg->value &= ~(0xFFu << shift); // clear the target byte
-    reg->value |= (value << shift); // set the new byte
-
-    if (reg->onWrite) reg->onWrite(address, reg->value);
+    
 }
 
 void GBA_IO::Write16(u32 address, u16 value) 
 {
-    IORegister* reg = ioRegisters[address];
-    if (!reg || !reg->writeable) return;
-
-    u32 shift = (address - reg->address) * 8;
-    reg->value &= ~(0xFFFFu << shift); // clear the target halfword
-    reg->value |= (value << shift); // set the new halfword
-
-    if (reg->onWrite) reg->onWrite(address, reg->value);
+    
 }
 
 void GBA_IO::Write32(u32 address, u32 value) 
 {
-    Write16(address, value & 0xFFFF);
-    Write16(address + 2, value >> 16);
-}
-
-bool GBA_IO::IsValidIORegister(u32 address) 
-{ 
-    constexpr u32 boundary = IO_START + IO_SIZE;
-    if (address <= boundary)
-    {
-        return ioRegisters[address - IO_START] != nullptr; // Found a register
-    }
-
-    if ((address & 0xFFFF) == 0x0800)
-    {
-        return true; // This maps to Internal memory control, it is an undocumented register but it is a valid register
-    }
-
-    return false;
-}
-
-void GBA_IO::PopulateIORegistersMap()
-{
-    auto addRegister = [this](IORegister& reg) -> void 
-    {
-        for (int i = 0; i < static_cast<size_t>(reg.width); i++)
-        {
-            ioRegisters[reg.address + i] = &reg;
-        }
-    };
-
     
-
-    // ===============================
-    // LCD Registers
-    // ===============================
-    addRegister(lcdRegisters.DISPCNT);
-    addRegister(lcdRegisters.GREENSWAP);
-    addRegister(lcdRegisters.DISPSTAT);
-    addRegister(lcdRegisters.VCOUNT);
-
-    addRegister(lcdRegisters.BG0CNT);
-    addRegister(lcdRegisters.BG1CNT);
-    addRegister(lcdRegisters.BG2CNT);
-    addRegister(lcdRegisters.BG3CNT);
-
-    addRegister(lcdRegisters.BG0HOFS);
-    addRegister(lcdRegisters.BG0VOFS);
-    addRegister(lcdRegisters.BG1HOFS);
-    addRegister(lcdRegisters.BG1VOFS);
-    addRegister(lcdRegisters.BG2HOFS);
-    addRegister(lcdRegisters.BG2VOFS);
-    addRegister(lcdRegisters.BG3HOFS);
-    addRegister(lcdRegisters.BG3VOFS);
-
-    addRegister(lcdRegisters.BG2PA);
-    addRegister(lcdRegisters.BG2PB);
-    addRegister(lcdRegisters.BG2PC);
-    addRegister(lcdRegisters.BG2PD);
-
-    addRegister(lcdRegisters.BG2X);
-    addRegister(lcdRegisters.BG2Y);
-
-    addRegister(lcdRegisters.BG3PA);
-    addRegister(lcdRegisters.BG3PB);
-    addRegister(lcdRegisters.BG3PC);
-    addRegister(lcdRegisters.BG3PD);
-
-    addRegister(lcdRegisters.BG3X);
-    addRegister(lcdRegisters.BG3Y);
-
-    addRegister(lcdRegisters.WIN0H);
-    addRegister(lcdRegisters.WIN1H);
-    addRegister(lcdRegisters.WIN0V);
-    addRegister(lcdRegisters.WIN1V);
-
-    addRegister(lcdRegisters.WININ);
-    addRegister(lcdRegisters.WINOUT);
-
-    addRegister(lcdRegisters.MOSAIC);
-
-    addRegister(lcdRegisters.BLDCNT);
-    addRegister(lcdRegisters.BLDALPHA);
-    addRegister(lcdRegisters.BLDY);
-
-    // ===============================
-    // Sound Registers
-    // ===============================
-    addRegister(soundRegisters.SOUND1CNT_L);
-    addRegister(soundRegisters.SOUND1CNT_H);
-    addRegister(soundRegisters.SOUND1CNT_X);
-
-    addRegister(soundRegisters.SOUND2CNT_L);
-    addRegister(soundRegisters.SOUND2CNT_H);
-
-    addRegister(soundRegisters.SOUND3CNT_L);
-    addRegister(soundRegisters.SOUND3CNT_H);
-    addRegister(soundRegisters.SOUND3CNT_X);
-
-    addRegister(soundRegisters.SOUND4CNT_L);
-    addRegister(soundRegisters.SOUND4CNT_H);
-
-    addRegister(soundRegisters.SOUNDCNT_L);
-    addRegister(soundRegisters.SOUNDCNT_H);
-    addRegister(soundRegisters.SOUNDCNT_X);
-
-    addRegister(soundRegisters.SOUNDBIAS);
-    addRegister(soundRegisters.WAVE_RAM);
-
-    addRegister(soundRegisters.FIFO_A);
-    addRegister(soundRegisters.FIFO_B);
-
-    // ===============================
-    // DMA Registers
-    // ===============================
-    addRegister(dmaRegisters.DMA0SAD);
-    addRegister(dmaRegisters.DMA0DAD);
-    addRegister(dmaRegisters.DMA0CNT_L);
-    addRegister(dmaRegisters.DMA0CNT_H);
-
-    addRegister(dmaRegisters.DMA1SAD);
-    addRegister(dmaRegisters.DMA1DAD);
-    addRegister(dmaRegisters.DMA1CNT_L);
-    addRegister(dmaRegisters.DMA1CNT_H);
-
-    addRegister(dmaRegisters.DMA2SAD);
-    addRegister(dmaRegisters.DMA2DAD);
-    addRegister(dmaRegisters.DMA2CNT_L);
-    addRegister(dmaRegisters.DMA2CNT_H);
-
-    addRegister(dmaRegisters.DMA3SAD);
-    addRegister(dmaRegisters.DMA3DAD);
-    addRegister(dmaRegisters.DMA3CNT_L);
-    addRegister(dmaRegisters.DMA3CNT_H);
-
-    // ===============================
-    // Timer Registers
-    // ===============================
-    addRegister(timerRegisters.TM0CNT_L);
-    addRegister(timerRegisters.TM0CNT_H);
-    addRegister(timerRegisters.TM1CNT_L);
-    addRegister(timerRegisters.TM1CNT_H);
-    addRegister(timerRegisters.TM2CNT_L);
-    addRegister(timerRegisters.TM2CNT_H);
-    addRegister(timerRegisters.TM3CNT_L);
-    addRegister(timerRegisters.TM3CNT_H);
-
-    // ===============================
-    // Serial Registers
-    // ===============================
-    addRegister(serialRegisters.SIODATA32);
-    addRegister(serialRegisters.SIOMULTI0);
-    addRegister(serialRegisters.SIOMULTI1);
-    addRegister(serialRegisters.SIOMULTI2);
-    addRegister(serialRegisters.SIOMULTI3);
-    addRegister(serialRegisters.SIOCNT);
-    addRegister(serialRegisters.SIOMLT_SEND);
-    addRegister(serialRegisters.SIODATA8);
-    addRegister(serialRegisters.RCNT);
-    addRegister(serialRegisters.IR);
-    addRegister(serialRegisters.JOYCNT);
-    addRegister(serialRegisters.JOY_RECV);
-    addRegister(serialRegisters.JOY_TRANS);
-    addRegister(serialRegisters.JOYSTAT);
-
-    // ===============================
-    // Keypad Registers
-    // ===============================
-    addRegister(keypadRegisters.KEYINPUT);
-    addRegister(keypadRegisters.KEYCNT);
-
-    // ===============================
-    // Interrupt Registers
-    // ===============================
-    addRegister(interruptRegisters.IE);
-    addRegister(interruptRegisters.IF);
-    addRegister(interruptRegisters.IME);
-
-    // ===============================
-    // Misc Registers
-    // ===============================
-    addRegister(miscRegisters.WAITCNT);
-    addRegister(miscRegisters.POSTFLG);
-    addRegister(miscRegisters.HALTCNT);
 }
-
-// void GBA_IO::SetupCallbacks() 
-// {
-//     SetupLCDReadCallbacks();
-//     SetupLCDWriteCallbacks();
-
-//     // SetupTimerReadCallbacks();
-//     // SetupTimerWriteCallbacks();
-
-//     // SetupDMAReadCallbacks();
-//     // SetupDMAWriteCallbacks();
-
-//     // SetupSoundReadCallbacks();
-//     // SetupSoundWriteCallbacks();
-
-//     // SetupInterruptCallbacks();
-// }
 
 // void GBA_IO::SetupLCDReadCallbacks() 
 // {

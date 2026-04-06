@@ -1,4 +1,4 @@
-#include "Core/IORegisters/LCDRegisters.hpp"
+#include "Core/IO/LCDRegisters.hpp"
 #include "Core/GBA_PPU.hpp"
 
 #include "Utils/BitOperations.hpp"

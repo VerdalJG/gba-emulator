@@ -1,6 +1,6 @@
 #pragma once    
 #include "Core/Memory/GBA_Memory_Helpers.hpp"
-#include "Core/GBA_IO_Helpers.hpp"
+#include "Core/IO/GBA_IO_Helpers.hpp"
 
 #include "Utils/Integers.hpp"
 
@@ -15,6 +15,7 @@ class GBA_TimerController;
 class GBA_InterruptController;
 class GBA_Keypad;
 class GBA_WaitstateController;
+class GBA_Bus;
 
 class GBA_IO
 {
@@ -25,7 +26,7 @@ public:
 
     void AttachSubsystems(GBA_CPU* cpu, GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, 
         GBA_TimerController* timers, GBA_InterruptController* interrupts, GBA_Keypad* keypad, 
-        GBA_WaitstateController* waitstates);
+        GBA_WaitstateController* waitstates, GBA_Bus* bus);
 
     // void ResetSIORegisters();
     // void ResetSoundRegisters();
@@ -41,12 +42,7 @@ private:
     void Write8(u32 address, u8 value);
     void Write16(u32 address, u16 value);
     void Write32(u32 address, u32 value);
-
-    void PopulateIORegistersMap();
-    // void SetupCallbacks();
     
-    // void SetupLCDReadCallbacks();
-    // void SetupLCDWriteCallbacks();
 
     EmulatorCore* core;
 
@@ -59,9 +55,10 @@ private:
     GBA_InterruptController* interrupts;
     GBA_Keypad* keypad;
     GBA_WaitstateController* waitstates;
+    GBA_Bus* bus;
 
-    // Address - Register map
-    std::array<IORegister*, 0x800> ioRegisters;
+    // Halfwords = IO_SIZE / 2;
+    std::array<HalfwordPermissions, IO_SIZE / 2> ioPermissions;
 
 public:
     template <typename T>

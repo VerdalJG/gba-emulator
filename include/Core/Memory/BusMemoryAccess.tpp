@@ -309,8 +309,10 @@ template <typename T>
 void GBA_Bus::WriteSRAM(u32 address, T value) 
 {
     /*
-        Writing changes the 8bit value at the specified address only, being set to LSB of (source_data ROR (address*8)).
+        Writing changes the 8bit value at the specified address only, 
+        being set to LSB of (source_data ROR (address*8)).
     */
+
     uint shift = (address & (sizeof(T) - 1)) * 8;
     uint carry = cpu->GetCPSR_C(); // Dummy value
     ROR(value, shift, carry, false);

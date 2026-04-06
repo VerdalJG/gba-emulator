@@ -3,7 +3,7 @@
 #include "Core/GBA_Bus.hpp"
 
 #include "Utils/Integers.hpp"
-#include "Utils/Logger.hpp"
+#include "Utils/Logger.hpp"z
 
 EmulatorCore::EmulatorCore(Logger* logger) : 
     logger(logger), 
@@ -11,12 +11,12 @@ EmulatorCore::EmulatorCore(Logger* logger) :
     rom(this), 
     memory(this, rom),
     bus(this, memory, io),
-    ppu(this, bus, io.GetLCDRegisters()),
-    apu(this, bus, io.GetSoundRegisters()), 
-    dmaController(this, bus, io.GetDMARegisters()), 
-    timerController(this, io.GetTimerRegisters()), 
-    interruptController(this, io.GetInterruptRegisters()), 
-    keypad(this, io.GetKeypadRegisters()),  
+    ppu(this, bus),
+    apu(this, bus), 
+    dmaController(this, bus), 
+    timerController(this), 
+    interruptController(this), 
+    keypad(this),  
     cpu(this, bus),
     hle(this, memory, io, cpu)
 {
@@ -27,13 +27,15 @@ EmulatorCore::EmulatorCore(Logger* logger) :
     }
 
     io.AttachSubsystems(
+        &cpu,
         &ppu, 
         &apu, 
         &dmaController, 
         &timerController, 
         &interruptController, 
         &keypad, 
-        &bus.GetWaitstateController()
+        &bus.GetWaitstateController(),
+        &bus
     );
 
     bus.AttachSubsystems(

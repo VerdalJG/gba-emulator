@@ -1,6 +1,6 @@
 #pragma once    
-#include "Core/GBA_IO_Helpers.hpp"
-#include "Core/IORegisters/LCDRegisters.hpp"
+#include "Core/IO/GBA_IO_Helpers.hpp"
+#include "Core/IO/LCDRegisters.hpp"
 
 #include <cstdint>
 
@@ -37,10 +37,12 @@ public:
 
     void Step(u32 cycles);
     PPUState GetState() const { return state; }
-    bool IsForcedBlankEnabled() { return lcdRegisters.DISPCNT.value & (1 << 7); }
+    bool IsForcedBlankEnabled() { return lcdRegisters.dispcnt.value & (1 << 7); }
     bool IsAccessingVideoMemory() const { return state == PPUState::ActiveDisplay; }
 
     bool IsWithinVRAM_OBJBoundary(u32 address);
+
+    IO_LCDRegisters& GetLCDRegisters() { return lcdRegisters; }
 
 private:
     uint32_t frameBuffer[240 * 160]; // ARGB8888

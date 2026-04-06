@@ -9,7 +9,6 @@
 
 struct IORegisterBase
 {
-    std::string name;
     u32 address;
     AccessSize width;
     bool readable; // Refers to the cpu's ability to read the IO register

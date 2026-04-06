@@ -1,5 +1,5 @@
 #pragma once    
-#include "Core/GBA_IO_Helpers.hpp"
+#include "Core/IO/GBA_IO_Helpers.hpp"
 
 #include <cstdint>
 
@@ -9,10 +9,10 @@ class GBA_Keypad
 {
 public:
     GBA_Keypad() = delete;
-    explicit GBA_Keypad(EmulatorCore* core, IO_KeypadRegisters& keypadRegisters);
+    explicit GBA_Keypad(EmulatorCore* core);
     ~GBA_Keypad() = default;
 
 private:
     EmulatorCore* core;
-    IO_KeypadRegisters& keypadRegisters;
+    IO_KeypadRegisters keypadRegisters;
 };

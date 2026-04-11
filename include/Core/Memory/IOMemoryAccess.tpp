@@ -21,6 +21,7 @@ T GBA_IO::Read(u32 address)
             {
                 return Read8(address);
             }
+
             return bus->OpenBus(address);
         }
         
@@ -32,6 +33,7 @@ T GBA_IO::Read(u32 address)
             {
                 return Read16(address);
             }
+
             return bus->OpenBus(address);
         }
         
@@ -55,16 +57,13 @@ T GBA_IO::Read(u32 address)
             {
                 return bus->OpenBus(address);
             }
-
-            u32 low = Read16(address);
             
             if (!hiAllowed)
             {
-                return static_cast<T>(low);
+                return static_cast<T>(Read16(address));
             }
 
-            u32 high = Read16(address + 2);
-            return (high << 16) | low;
+            return Read32(address);
         }
     }
 }

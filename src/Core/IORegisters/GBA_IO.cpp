@@ -36,6 +36,13 @@ u8 GBA_IO::Read8(u32 address)
     {
         case DISPCNT: return lcdRegs.dispcnt.Read8(0);
         case DISPCNT+1: return lcdRegs.dispcnt.Read8(1);
+        case GREENSWAP: return lcdRegs.greenSwap.Read8(0);
+        case GREENSWAP+1: return lcdRegs.greenSwap.Read8(1);
+        case DISPSTAT: return lcdRegs.dispstat.Read8(0);
+        case DISPSTAT+1: return lcdRegs.dispstat.Read8(1);
+        case VCOUNT: return lcdRegs.vcount.Read8(0);
+        case VCOUNT+1: return 0;
+
     }
     return bus->OpenBus(address);
 }
@@ -47,7 +54,7 @@ u16 GBA_IO::Read16(u32 address)
 
 u32 GBA_IO::Read32(u32 address) 
 {
-    
+    return (Read16(address + 2) << 16) | Read16(address);
 }
 
 void GBA_IO::Write8(u32 address, u8 value) 

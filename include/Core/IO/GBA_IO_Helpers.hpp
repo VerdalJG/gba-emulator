@@ -3,33 +3,6 @@
 
 #include "Utils/Integers.hpp"
 
-#include <string>
-#include <functional>
-
-// TODO: probably not needed
-// constexpr u32 LCD_END     = 0x04000060;
-// constexpr u32 SOUND_END   = 0x040000B0;
-// constexpr u32 DMA_END     = 0x04000100;
-// constexpr u32 TIMER_END   = 0x04000120;
-// constexpr u32 SIO_END     = 0x04000130;
-// constexpr u32 KEYPAD_END  = 0x04000134;
-// constexpr u32 IRQ_END     = 0x04000300;
-
-using ReadHandler  = std::function<u32(u32 busAddress)>;
-using WriteHandler = std::function<void(u32 busAddress, u32 value)>;
-
-struct IORegister
-{
-    u32 address;
-    AccessSize width;
-    bool readable;
-    bool writeable;
-    u32 value = 0;
-
-    ReadHandler onRead = nullptr;
-    WriteHandler onWrite = nullptr;
-};
-
 struct HalfwordPermissions
 {
     uint readMask;
@@ -44,6 +17,39 @@ struct HalfwordPermissions
     constexpr bool CanReadHalf() const { return readMask == 0b11; }
     constexpr bool CanWriteHalf() const { return writeMask == 0b11; }
 };
+
+namespace IO
+{
+    inline u8 Read8(u16& reg, int byte)
+    {
+        return (reg >> (8 * byte)) & 0xFF;
+    }
+
+    inline void Write8Masked(u16& reg, int byte, u8 value, u16 writeableMask = 0xFFFF)
+    {
+        const int shift = byte * 8;
+
+        u8 old = (reg >> shift) & 0xFF;
+        u8 mask = (writeableMask >> shift) & 0xFF;
+
+        u8 result = (value & mask) | (old & ~mask);
+        
+        reg &= ~(0xFF << shift); // Clear
+        reg |= result << shift;
+    }
+
+    inline void Write16ByBytes(u16& reg, u16 value, u16 writeableMask = 0xFFFF)
+    {
+        Write8Masked(reg, 0, (value & 0xFF), writeableMask);
+        Write8Masked(reg, 1, (value >> 8) & 0xFF, writeableMask);
+    }
+
+    // Should i do write 32 by bytes or halfwords
+    inline void Write32ByBytes(u32& reg, u32 value, u32 writeableMask = 0xFFFFFFFF)
+    {
+        
+    }
+}
 
 struct IO_LCDRegisters
 {

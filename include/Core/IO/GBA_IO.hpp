@@ -32,8 +32,6 @@ public:
     // void ResetSoundRegisters();
     // void ResetOtherIORegisters();
 
-    bool IsValidIORegister(u32 address);
-
 private:
     u8 Read8(u32 address);
     u16 Read16(u32 address);

@@ -3,47 +3,31 @@
 
 #include "Utils/BitOperations.hpp"
 
-DisplayControl::DisplayControl() : IORegisterBase()
-{
-
-}
-
-void DisplayControl::Reset()
-{
-    Write16(0);
-}
-
-void DisplayControl::ResetToPostBIOSValue() 
-{
-    Write16(0x80);
-}
-
-u8 DisplayControl::Read8(int byteToRead) 
+u8 DisplayStatus::Read8(int byteToRead) 
 { 
-    return (value >> (8 * byteToRead)) & 0xFF;
-}
+    u8 byte = IO::Read8(value, byteToRead); 
 
-u16 DisplayControl::Read16() 
-{
-    return (Read8(1) << 8) | Read8(0);
-}
-
-void DisplayControl::Write8(int byteToWrite, u8 value) 
-{   
-    if (byteToWrite == 0)
+    if (byteToRead == 0)
     {
-        // CGB bit is read-only so we preserve it
-        u8 oldLowByte = this->value & 0xFF;
-        value = (value & ~(1 << 3)) | (oldLowByte & (1 << 3)); 
+        byte &= ~0x7; // Keep everything excepts bits 0-2;
+
+        byte |= (ppu->GetState() == PPUState::VBlank);
+        byte |= (ppu->GetState() == PPUState::HBlank) << 1;
+        //byte |= (ppu->vCount == fields.vCountSetting) << 2; TODO: Uncomment once vcount is added
     }
-    
-    this->value &= ~(0xFF << (byteToWrite * 8)); // Clear
-    this->value |= (value << (byteToWrite * 8));
+
+    return byte;
 }
 
-void DisplayControl::Write16(u16 value) 
-{
-    Write8(0, value & 0xFF);
-    Write8(1, (value >> 8) & 0xFF);
-}
+u16 DisplayStatus::Read16() 
+{ 
+    u16 result = value;
 
+    result &= ~0x7; // Keep everything excepts bits 0-2;
+
+    result |= (ppu->GetState() == PPUState::VBlank);
+    result |= (ppu->GetState() == PPUState::HBlank) << 1;
+    //result |= (ppu->vCount == fields.vCountSetting) << 2; TODO: Uncomment once vcount is added
+
+    return result;
+}

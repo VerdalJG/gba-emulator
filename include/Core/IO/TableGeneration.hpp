@@ -195,7 +195,6 @@ constexpr auto BuildIOPermissionTable()
     table[ioIndex(WAITCNT)] = RW;
     table[ioIndex(IME)] = RW;
     table[ioIndex(POSTFLG)] = POSTFLG_HALTCNT;
-    table[ioIndex(IMC)] = RW;
 
     return table;
 }

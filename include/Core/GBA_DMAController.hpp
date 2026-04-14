@@ -22,5 +22,5 @@ public:
 private:
     EmulatorCore* core;
     GBA_Bus& bus;
-    IO_DMARegisters& dmaRegisters;
+    //IO_DMARegisters& dmaRegisters;
 };

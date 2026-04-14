@@ -4,7 +4,7 @@
 #include "Core/CPU/ARMOpcodes.hpp"
 #include "Core/CPU/ThumbOpcodes.hpp"
 #include "Core/CPU/Conditions.hpp"
-#include "Core/GBA_Bus.hpp"
+#include "Core/Memory/BusHelpers.hpp"
 
 #include "Utils/Logger.hpp"
 #include "Utils/Integers.hpp"

@@ -3,7 +3,7 @@
 #include "Core/GBA_Bus.hpp"
 
 #include "Utils/Integers.hpp"
-#include "Utils/Logger.hpp"z
+#include "Utils/Logger.hpp"
 
 EmulatorCore::EmulatorCore(Logger* logger) : 
     logger(logger), 

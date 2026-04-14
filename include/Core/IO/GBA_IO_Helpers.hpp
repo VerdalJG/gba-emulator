@@ -76,58 +76,6 @@ namespace IO
     }
 }
 
-// struct IO_LCDRegisters
-// {
-//     IORegister DISPCNT   { 0x04000000, AccessSize::Halfword, true, true, 0x0080 }; // LCD Control
-//     IORegister GREENSWAP { 0x04000002, AccessSize::Halfword, true, true, 0x0000 }; // Undocumented - Green Swap
-//     IORegister DISPSTAT  { 0x04000004, AccessSize::Halfword, true, true, 0x0000 }; // General LCD Status (STAT, LYC)
-//     IORegister VCOUNT    { 0x04000006, AccessSize::Halfword, true, false, 0x0000 }; // Vertical Counter (LY) (Read-only)
-
-//     IORegister BG0CNT { 0x04000008, AccessSize::Halfword, true, true, 0x0000 }; // BG0 Control
-//     IORegister BG1CNT { 0x0400000A, AccessSize::Halfword, true, true, 0x0000 }; // BG1 Control
-//     IORegister BG2CNT { 0x0400000C, AccessSize::Halfword, true, true, 0x0000 }; // BG2 Control
-//     IORegister BG3CNT { 0x0400000E, AccessSize::Halfword, true, true, 0x0000 }; // BG3 Control
-
-//     IORegister BG0HOFS { 0x04000010, AccessSize::Halfword, false, true, 0x0000 }; // BG0 X-Offset (Write-only)
-//     IORegister BG0VOFS { 0x04000012, AccessSize::Halfword, false, true, 0x0000 }; // BG0 Y-Offset (Write-only)
-//     IORegister BG1HOFS { 0x04000014, AccessSize::Halfword, false, true, 0x0000 }; // BG1 X-Offset (Write-only)
-//     IORegister BG1VOFS { 0x04000016, AccessSize::Halfword, false, true, 0x0000 }; // BG1 Y-Offset (Write-only)
-//     IORegister BG2HOFS { 0x04000018, AccessSize::Halfword, false, true, 0x0000 }; // BG2 X-Offset (Write-only)
-//     IORegister BG2VOFS { 0x0400001A, AccessSize::Halfword, false, true, 0x0000 }; // BG2 Y-Offset (Write-only)
-//     IORegister BG3HOFS { 0x0400001C, AccessSize::Halfword, false, true, 0x0000 }; // BG3 X-Offset (Write-only)
-//     IORegister BG3VOFS { 0x0400001E, AccessSize::Halfword, false, true, 0x0000 }; // BG3 Y-Offset (Write-only)
-
-//     IORegister BG2PA { 0x04000020, AccessSize::Halfword, false, true, 0x0100 }; // BG2 Rotation/Scaling Parameter A (dx)
-//     IORegister BG2PB { 0x04000022, AccessSize::Halfword, false, true, 0x0000 }; // BG2 Rotation/Scaling Parameter B (dmx)
-//     IORegister BG2PC { 0x04000024, AccessSize::Halfword, false, true, 0x0000 }; // BG2 Rotation/Scaling Parameter C (dy)
-//     IORegister BG2PD { 0x04000026, AccessSize::Halfword, false, true, 0x0100 }; // BG2 Rotation/Scaling Parameter D (dmy)
-
-//     IORegister BG2X { 0x04000028, AccessSize::Word, false, true, 0x00000000 }; // BG2 Reference Point X-Coordinate
-//     IORegister BG2Y { 0x0400002C, AccessSize::Word, false, true, 0x00000000 }; // BG2 Reference Point Y-Coordinate
-
-//     IORegister BG3PA { 0x04000030, AccessSize::Halfword, false, true, 0x0100 }; // BG3 Rotation/Scaling Parameter A (dx)
-//     IORegister BG3PB { 0x04000032, AccessSize::Halfword, false, true, 0x0000 }; // BG3 Rotation/Scaling Parameter B (dmx)
-//     IORegister BG3PC { 0x04000034, AccessSize::Halfword, false, true, 0x0000 }; // BG3 Rotation/Scaling Parameter C (dy)
-//     IORegister BG3PD { 0x04000036, AccessSize::Halfword, false, true, 0x0100 }; // BG3 Rotation/Scaling Parameter D (dmy)
-
-//     IORegister BG3X { 0x04000038, AccessSize::Word, false, true, 0x00000000 }; // BG3 Reference Point X-Coordinate
-//     IORegister BG3Y { 0x0400003C, AccessSize::Word, false, true, 0x00000000 }; // BG3 Reference Point Y-Coordinate
-
-//     IORegister WIN0H { 0x04000040, AccessSize::Halfword, false, true, 0x0000 }; // Window 0 Horizontal Dimensions
-//     IORegister WIN1H { 0x04000042, AccessSize::Halfword, false, true, 0x0000 }; // Window 1 Horizontal Dimensions
-//     IORegister WIN0V { 0x04000044, AccessSize::Halfword, false, true, 0x0000 }; // Window 0 Vertical Dimensions
-//     IORegister WIN1V { 0x04000046, AccessSize::Halfword, false, true, 0x0000 }; // Window 1 Vertical Dimensions
-
-//     IORegister WININ  { 0x04000048, AccessSize::Halfword, true, true, 0x0000 }; // Inside of Window 0 and 1
-//     IORegister WINOUT { 0x0400004A, AccessSize::Halfword, true, true, 0x0000 }; // Inside of OBJ Window & Outside of Windows
-
-//     IORegister MOSAIC { 0x0400004C, AccessSize::Halfword, false, true, 0x0000 }; // Mosaic Size
-
-//     IORegister BLDCNT  { 0x04000050, AccessSize::Halfword, true, true, 0x0000 }; // Color Special Effects Selection
-//     IORegister BLDALPHA { 0x04000052, AccessSize::Halfword, true, true, 0x0000 }; // Alpha Blending Coefficients
-//     IORegister BLDY     { 0x04000054, AccessSize::Halfword, false, true, 0x0000 }; // Brightness (Fade-In/Out) Coefficient (Write-only)
-// };
-
 // struct IO_SoundRegisters
 // {
 //     IORegister SOUND1CNT_L { 0x04000060, AccessSize::Halfword, true, true, 0x0000 }; // Channel 1 Sweep register (NR10)

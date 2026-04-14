@@ -1,4 +1,8 @@
 #include "Utils/Integers.hpp"
+#include "Core/Memory/GBA_Memory.hpp"
+#include "Core/IO/GBA_IO.hpp"
+#include "Core/CPU/Shifts.hpp"
+#include "Utils/BitOperations.hpp"
 
 template <typename T>
 T GBA_Bus::Read(u32 address, BusRequester requester)
@@ -24,7 +28,7 @@ T GBA_Bus::Read(u32 address, BusRequester requester)
     address = GetMirroredAddress(address, region);
 
     // Accessing by 32 bits in a 16 bit-bus width region means 2 accesses
-    AccessSize accessSize = std::min(sizeof(T), region->busWidth);
+    AccessSize accessSize = static_cast<AccessSize>(std::min(static_cast<unsigned int>(sizeof(T)), static_cast<unsigned int>(region->busWidth)));
     uint accesses = (sizeof(T) + region->busWidth - 1) / region->busWidth;
 
     // DMA and CPU are the ones that control cycles
@@ -33,7 +37,7 @@ T GBA_Bus::Read(u32 address, BusRequester requester)
     if (accessCostsCycles) 
     {
         // TODO: Implement prefetch here too
-        HandleAccessCycles(originalAddress, region->type, accessSize, accesses, requester);
+        HandleAccessCycles(originalAddress, region, accessSize, accesses, requester);
     }
 
     T readResult;
@@ -44,9 +48,9 @@ T GBA_Bus::Read(u32 address, BusRequester requester)
         case RegionType::EWRAM: readResult = memory.Read<T>(address); break;
         case RegionType::IWRAM: readResult = memory.Read<T>(address); break;
         case RegionType::IO: readResult = io.Read<T>(address); break;
-        case RegionType::PaletteRAM: readResult = ReadPaletteRAM<T>(address); break;
-        case RegionType::VRAM: readResult = ReadVRAM<T>(address); break;
-        case RegionType::OAM: readResult = ReadOAM<T>(address); break;
+        case RegionType::PaletteRAM: readResult = ReadPaletteRAM<T>(address, requester); break;
+        case RegionType::VRAM: readResult = ReadVRAM<T>(address, requester); break;
+        case RegionType::OAM: readResult = ReadOAM<T>(address, requester); break;
 
         // TODO: Implement prefetch
         case RegionType::ROM0:
@@ -61,7 +65,7 @@ T GBA_Bus::Read(u32 address, BusRequester requester)
         default: return OpenBus(originalAddress);
     }
 
-    UpdateLatestAccessValues(readResult, originalAddress, region->type, sizeof(T));
+    UpdateLatestAccessValues(readResult, originalAddress, region->type, static_cast<AccessSize>(sizeof(T)));
     return readResult;
 }
 
@@ -89,7 +93,7 @@ void GBA_Bus::Write(u32 address, T value, BusRequester requester)
     address = GetMirroredAddress(address, region);
 
     // Accessing by 32 bits in a 16 bit-bus width region means 2 accesses
-    AccessSize accessSize = std::min(sizeof(T), region->busWidth);
+    AccessSize accessSize = static_cast<AccessSize>(std::min(static_cast<unsigned int>(sizeof(T)), static_cast<unsigned int>(region->busWidth)));
     uint accesses = (sizeof(T) + region->busWidth - 1) / region->busWidth;
 
     // DMA and CPU are the ones that control cycles
@@ -97,37 +101,37 @@ void GBA_Bus::Write(u32 address, T value, BusRequester requester)
 
     if (accessCostsCycles) 
     {
-        HandleAccessCycles(originalAddress, region->type, accessSize, accesses, requester);
+        HandleAccessCycles(originalAddress, region, accessSize, accesses, requester);
     }
 
     switch(region->type)
     {
-        case RegionType::EWRAM: memory.Write<T>(address); break;
-        case RegionType::IWRAM: memory.Write<T>(address); break;
-        case RegionType::IO: io.Write<T>(address); break;
-        case RegionType::PaletteRAM: WritePaletteRAM<T>(address); break;
-        case RegionType::VRAM: WriteVRAM<T>(address); break;
-        case RegionType::OAM: WriteOAM<T>(address); break;
+        case RegionType::EWRAM: memory.Write<T>(address, value); break;
+        case RegionType::IWRAM: memory.Write<T>(address, value); break;
+        case RegionType::IO: io.Write<T>(address, value); break;
+        case RegionType::PaletteRAM: WritePaletteRAM<T>(address, value); break;
+        case RegionType::VRAM: WriteVRAM<T>(address, value); break;
+        case RegionType::OAM: WriteOAM<T>(address, value); break;
 
         case RegionType::ROM0:
         case RegionType::ROM1:
         case RegionType::ROM2:
         {
-            memory.Write<T>(address);
+            memory.Write<T>(address, value);
             break;
         }
 
-        case RegionType::SRAM: WriteSRAM<T>(address); break;
+        case RegionType::SRAM: WriteSRAM<T>(address, value); break;
         default: return;
     }
 
-    UpdateLatestAccessValues(value, originalAddress, region->type, sizeof(T));
+    UpdateLatestAccessValues(value, originalAddress, region->type, static_cast<AccessSize>(sizeof(T)));
 }
 
 template <typename T>
 T GBA_Bus::ReadBIOS(u32 address)
 {
-    u32 pc = cpu->ReadRegister(15);
+    u32 pc = GetPCFromCPU();
     bool pcWithinBounds = pc <= BIOS_END;
     bool addressWithinBounds = address <= BIOS_END;
 
@@ -147,17 +151,17 @@ T GBA_Bus::ReadBIOS(u32 address)
     }
     else
     {
-        core->Log("Illegal BIOS read: 0x{:08X}", address);
+        Log("Illegal BIOS read: 0x" + address, LogType::Error);
     }
 
     uint shift = (address & 3) * 8;
     u32 readValue = biosLatch >> shift;
 
     if constexpr (sizeof(T) == Byte)
-        return static_cast<u8>(value);
+        return static_cast<u8>(readValue);
 
     if constexpr (sizeof(T) == Halfword)
-        return static_cast<u16>(value);
+        return static_cast<u16>(readValue);
 
     if constexpr (sizeof(T) == Word)
         return biosLatch;
@@ -173,10 +177,10 @@ T GBA_Bus::ReadPaletteRAM(u32 address, BusRequester requester)
         // Can be accessed during H-Blank or V-Blank only 
         // (unless display is disabled by Forced Blank bit in DISPCNT register).
 
-        // bool displayEnabled = ppu->lcdRegisters.DISPCNT.forcedBlank;
-        if (/* !displayEnabled &&*/ ppu->GetState() == PPUState::ActiveDisplay)
+        bool displayEnabled = ppu->GetLCDRegisters().dispcnt.fields.forcedBlank;
+        if (!displayEnabled && ppu->GetState() == PPUState::ActiveDisplay)
         {
-            return OpenBus();
+            return OpenBus(address);
         }
     }
 
@@ -191,10 +195,10 @@ T GBA_Bus::ReadVRAM(u32 address, BusRequester requester)
         // Can be accessed during H-Blank or V-Blank only 
         // (unless display is disabled by Forced Blank bit in DISPCNT register).
 
-        // bool displayEnabled = ppu->lcdRegisters.DISPCNT.forcedBlank;
-        if (/* !displayEnabled &&*/ && ppu->GetState() == PPUState::ActiveDisplay)
+        bool displayEnabled = ppu->GetLCDRegisters().dispcnt.fields.forcedBlank;
+        if (!displayEnabled && ppu->GetState() == PPUState::ActiveDisplay)
         {
-            return OpenBus();
+            return OpenBus(address);
         }
     }
 
@@ -209,10 +213,10 @@ T GBA_Bus::ReadOAM(u32 address, BusRequester requester)
         // TODO: There is an additional restriction for OAM memory: 
         // Accesses during H-Blank are allowed only if 'H-Blank Interval Free' in DISPCNT is set
 
-        //DisplayControl dispcnt = ppu->lcdRegisters.DISPCNT;
-        if (/*!dispcnt.hBlankIntervalFree ||*/ (/*!dispcnt.forcedBlank &&*/ ppu->GetState() == PPUState::ActiveDisplay))
+        DisplayControl dispcnt = ppu->GetLCDRegisters().dispcnt;
+        if (!dispcnt.fields.hBlankIntervalFree || (!dispcnt.fields.forcedBlank && ppu->GetState() == PPUState::ActiveDisplay))
         {
-            return OpenBus();
+            return OpenBus(address);
         }
     }
 
@@ -314,8 +318,7 @@ void GBA_Bus::WriteSRAM(u32 address, T value)
     */
 
     uint shift = (address & (sizeof(T) - 1)) * 8;
-    uint carry = cpu->GetCPSR_C(); // Dummy value
-    ROR(value, shift, carry, false);
+    u8 byte = static_cast<u8>((value >> shift) & 0xFF);
 
-    memory.Write<u8>(address, static_cast<u8>(value & 0xFF))
+    memory.Write<u8>(address, byte);
 }

@@ -41,6 +41,7 @@ private:
     void Write16(u32 address, u16 value);
     void Write32(u32 address, u32 value);
     
+    u32 GetOpenBusValue(u32 address);
 
     EmulatorCore* core;
 

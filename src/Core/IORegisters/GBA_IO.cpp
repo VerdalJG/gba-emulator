@@ -217,6 +217,11 @@ void GBA_IO::Write32(u32 address, u32 value)
     }
 }
 
+u32 GBA_IO::GetOpenBusValue(u32 address) 
+{ 
+    return bus->OpenBus(address); 
+}
+
 // void GBA_IO::SetupLCDReadCallbacks() 
 // {
 //     // DISPCNT — readable, static

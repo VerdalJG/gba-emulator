@@ -18,6 +18,6 @@ public:
 
 private:
     EmulatorCore* core;
-    IO_TimerRegisters timerRegisters;
+    //IO_TimerRegisters timerRegisters;
     uint64_t totalCycles = 0;
 };

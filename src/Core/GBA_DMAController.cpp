@@ -3,10 +3,7 @@
 
 #include <assert.h>
 
-GBA_DMAController::GBA_DMAController(EmulatorCore *core, GBA_Bus& bus, IO_DMARegisters& dmaRegisters) : 
-    core(core),
-    bus(bus),
-    dmaRegisters(dmaRegisters)
+GBA_DMAController::GBA_DMAController(EmulatorCore *core, GBA_Bus& bus) : core(core), bus(bus)
 {
     assert(core != nullptr && "DMA must have valid EmulatorCore object");
 }

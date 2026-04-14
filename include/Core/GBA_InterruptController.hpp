@@ -16,5 +16,5 @@ public:
 
 private:
     EmulatorCore* core;
-    IO_InterruptRegisters interruptRegisters;
+    //IO_InterruptRegisters interruptRegisters;
 };

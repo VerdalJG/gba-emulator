@@ -4,7 +4,7 @@
 #include "Core/Memory/GBA_WaitstateController.hpp"
 #include "Core/GBA_Bus.hpp"
 #include "Core/CPU/Shifts.hpp"
-#include "Core/GBA_IO_Helpers.hpp"
+#include "Core/IO/GBA_IO_Helpers.hpp"
 
 #include "Utils/BitOperations.hpp"
 

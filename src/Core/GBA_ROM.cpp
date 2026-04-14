@@ -1,7 +1,7 @@
 #include "Core/GBA_ROM.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_NintendoLogo.hpp"
-#include "Core/GBA_Memory.hpp"
+#include "Core/Memory/GBA_Memory.hpp"
 
 #include <assert.h>
 

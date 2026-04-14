@@ -1,7 +1,7 @@
 #include "Core/GBA_HLE.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/Memory/GBA_Memory.hpp"
-#include "Core/GBA_IO.hpp"
+#include "Core/IO/GBA_IO.hpp"
 #include "Core/GBA_CPU.hpp"
 
 #include "Utils/Logger.hpp"

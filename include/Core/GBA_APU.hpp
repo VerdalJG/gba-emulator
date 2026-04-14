@@ -17,5 +17,5 @@ public:
 private:
     EmulatorCore* core;
     GBA_Bus& bus;
-    IO_SoundRegisters soundRegisters;
+    //IO_SoundRegisters soundRegisters;
 };

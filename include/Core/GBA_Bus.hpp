@@ -1,8 +1,13 @@
 #pragma once
 #include "Core/Memory/GBA_Memory_Helpers.hpp"
 #include "Core/Memory/GBA_WaitstateController.hpp"
+#include "Core/Memory/BusHelpers.hpp"
+#include "Core/GBA_PPU.hpp"
 
 #include "Utils/Integers.hpp"
+#include "Utils/Logger.hpp"
+
+#include <string>
 
 struct LastBusAccess
 {
@@ -10,24 +15,6 @@ struct LastBusAccess
     u32 address = 0;
     RegionType region = RegionType::Invalid;
     size_t size = AccessSize::Invalid;
-};
-
-enum class BusRequester
-{
-    CPU,
-    PPU,
-    APU,
-    DMA
-};
-
-enum Access : uint
-{
-    Nonsequential = 0,
-    Sequential = 1,
-    Code = 2, // Instruction fetch/prefetch
-    Data = 4, // CPU Load/Store
-    DMA = 8,  // DMA bus request
-    Lock = 16
 };
 
 class EmulatorCore;
@@ -69,10 +56,11 @@ private:
     LastBusAccess lastAccess;
     bool accessForcedNonSequential = false;
 
-    
-    void HandleAccessCycles(u32 address, MemoryRegion* region, AccessSize size, uint accesses, BusRequester requester);
-    u32 GetMirroredAddress(u32 address, MemoryRegion* region);
+    u32 GetPCFromCPU();
+    void HandleAccessCycles(u32 address, const MemoryRegion* region, AccessSize size, uint accesses, BusRequester requester);
+    u32 GetMirroredAddress(u32 address, const MemoryRegion* region);
     const RegionType GetRegionType(u32 address) const;
+    void Log(const std::string& message, LogType logType, const char* functionName = "");
 
     u32 biosLatch = 0;
     

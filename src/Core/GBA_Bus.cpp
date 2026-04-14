@@ -93,7 +93,7 @@ u32 GBA_Bus::OpenBus(u32 address)
         u32 lsw;
         u32 msw;
 
-        u32 pc = cpu->ReadRegister(15);
+        u32 pc = GetPCFromCPU();
 
         switch (region)
         {
@@ -161,7 +161,12 @@ u32 GBA_Bus::OpenBus(u32 address)
     return result >> shift;
 }
 
-void GBA_Bus::HandleAccessCycles(u32 address, MemoryRegion* region, AccessSize size, uint accesses, BusRequester requester) 
+u32 GBA_Bus::GetPCFromCPU() 
+{
+    return cpu->ReadRegister(15);
+}
+
+void GBA_Bus::HandleAccessCycles(u32 address, const MemoryRegion* region, AccessSize size, uint accesses, BusRequester requester) 
 {
     bool sequential;
 
@@ -192,7 +197,7 @@ void GBA_Bus::HandleAccessCycles(u32 address, MemoryRegion* region, AccessSize s
     cpu->AddCycles(cycles);
 }
 
-u32 GBA_Bus::GetMirroredAddress(u32 address, MemoryRegion* region) 
+u32 GBA_Bus::GetMirroredAddress(u32 address, const MemoryRegion* region) 
 {
     if (region->mirroring == Mirroring::Mirror) // EWRAM, IWRAM, OAM, Palette RAM, 
     {
@@ -247,4 +252,9 @@ const RegionType GBA_Bus::GetRegionType(u32 address) const
 
         default: return RegionType::Invalid;
     }
+}
+
+void GBA_Bus::Log(const std::string& message, LogType logType, const char* functionName) 
+{
+    core->Log(message, logType, functionName);
 }

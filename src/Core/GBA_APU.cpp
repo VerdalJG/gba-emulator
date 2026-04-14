@@ -3,10 +3,7 @@
 
 #include <assert.h>
 
-GBA_APU::GBA_APU(EmulatorCore *core, GBA_Bus& bus, IO_SoundRegisters& soundRegisters) : 
-    core(core),
-    bus(bus),
-    soundRegisters(soundRegisters)
+GBA_APU::GBA_APU(EmulatorCore *core, GBA_Bus& bus) : core(core),bus(bus)
 {
     assert(core != nullptr && "APU must have valid EmulatorCore object");
 }

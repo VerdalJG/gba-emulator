@@ -1,7 +1,7 @@
 #include "Core/Memory/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
 #include "Core/GBA_ROM.hpp"
-#include "Core/GBA_IO.hpp"
+#include "Core/IO/GBA_IO.hpp"
 
 #include <stdexcept>
 #include <assert.h>

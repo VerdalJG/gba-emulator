@@ -14,5 +14,5 @@ public:
 
 private:
     EmulatorCore* core;
-    IO_KeypadRegisters keypadRegisters;
+    //IO_KeypadRegisters keypadRegisters;
 };

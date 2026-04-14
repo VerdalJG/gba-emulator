@@ -3,41 +3,7 @@
 #include "Core/IO/GBA_IO_Helpers.hpp"
 #include "Utils/Integers.hpp"
 
-#include <array>
-
 class GBA_PPU;
-
-struct IO_LCDRegisters
-{
-    DisplayControl dispcnt;
-    GreenSwap greenswap;
-    DisplayStatus dispstat;
-    VerticalCounter vcount;
-    std::array<BackgroundControl, 4> bgcnt = { 0, 1, 2, 3}; // ID's for each bgcnt
-
-    std::array<BackgroundOffset, 4> bghofs; // Background X-offsets
-    std::array<BackgroundOffset, 4> bgvofs; // Background Y-offsets
-
-    std::array<BackgroundScalingParameter, 4> bg2Params = { 0, 1, 2, 3}; // BG2 Scaling params A-D
-    BackgroundRefPointCoords bg2XCoord; // BG2 Reference point Coordinates X (low 16 bits and high 12 bits)
-    BackgroundRefPointCoords bg2YCoord; // BG2 Reference point Coordinates Y (low 16 bits and high 12 bits)s
-
-    std::array<BackgroundScalingParameter, 4> bg3Params = { 0, 1, 2, 3}; // BG3 Scaling params A-D
-    BackgroundRefPointCoords bg3XCoord; // BG3 Reference point Coordinates X (low 16 bits and high 12 bits)
-    BackgroundRefPointCoords bg3YCoord; // BG3 Reference point Coordinates Y (low 16 bits and high 12 bits)
-
-    std::array<WindowHorizontalDimensions, 2> winH; // Window 0 and 1 horizontal dimensions (W)
-    std::array<WindowVerticalDimensions, 2> winV; // Window 0 and 1 vertical dimensions (W)
-
-    WindowControl_In winin; // Control of Inside of Window(s) (R/W)
-    WindowControl_Out winout; // Control of Outside of Windows & Inside of OBJ Window (R/W)
-
-    Mosaic mosaic; // Mosaic Size (W)
-
-    BlendControl bldcnt; // Color Special Effects Selection (R/W)
-    BlendAlpha bldalpha; // Alpha Blending Coefficients (R/W)
-    BlendY bldy; // Brightness (Fade-In/Out) Coefficient (W)
-};
 
 struct DisplayControl
 {
@@ -82,7 +48,7 @@ struct GreenSwap
         struct 
         {
             u16 greenSwap : 1; // (0 = Normal, 1 = Swap)
-            u16 unused : 15 = 0;
+            u16 unused : 15;
         } fields;
         u16 value;
     };
@@ -95,6 +61,8 @@ struct DisplayStatus
     void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
     
     void Reset() { value = 0; }
+
+    const u16 writeMask = 0xFF38;
 
     union
     {
@@ -121,8 +89,8 @@ struct DisplayStatus
         */
     };
 
-    const u16 writeMask = 0xFF38;
-    GBA_PPU* ppu = nullptr;
+    
+    GBA_PPU* ppu = nullptr; // TODO: NULL, NEED TO SET
 };
 
 struct VerticalCounter // Read-only
@@ -136,7 +104,7 @@ struct VerticalCounter // Read-only
         struct 
         {
             u16 currentScanline : 8; // (LY) (0-227)
-            u16 unused : 8 = 0; // Hardwired to 0
+            u16 unused : 8; // Hardwired to 0
         } fields;
         u16 value;
 
@@ -159,11 +127,12 @@ struct BackgroundControl // R/W
 
     void Reset() { value = 0; }
 
+    BackgroundControl() = default;
     BackgroundControl(int id) : id(id) {};
 
     const u16 writeMaskBG0_BG1 = 0xDFCF;
     const u16 writeMaskBG2_BG3 = 0xFFCF;
-    const int id;
+    const int id = -1;
 
     union
     {
@@ -171,7 +140,7 @@ struct BackgroundControl // R/W
         {
             u16 bgPriority : 2; // (0-3, 0=Highest) If equal priority then BG0 is the highest, and BG3 the lowest priority.
             u16 characterBaseBlock : 2; // (0-3, in units of 16 KBytes) (=BG Tile Data)
-            u16 unused : 2 = 0; // (must be zero) (except in NDS mode: MSBs of char base)
+            u16 unused : 2; // (must be zero) (except in NDS mode: MSBs of char base)
             u16 mosaic : 1; // (0=Disable, 1=Enable)
             u16 colors : 1; // (0=16/16, 1=256/1)
             u16 screenBaseBlock : 5; // (0-31, in units of 2 KBytes) (=BG Map Data)
@@ -217,7 +186,7 @@ struct BackgroundOffset // Write only
         struct 
         {
             u16 offset : 9; // (0-511)
-            u16 unused : 7 = 0;
+            u16 unused : 7;
         } fields;
         u16 value;
 
@@ -269,7 +238,7 @@ struct BackgroundScalingParameter // Write-only
     void Reset() { value = 0; }
 
     void ResetToPostBIOSValue() { value = (id == 0 || id == 3) ? 0x100 : 0; }
-    const int id;
+    const int id = -1;
 
     union
     {

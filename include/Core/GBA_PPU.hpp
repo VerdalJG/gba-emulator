@@ -1,6 +1,6 @@
 #pragma once    
 #include "Core/IO/GBA_IO_Helpers.hpp"
-#include "Core/IO/LCDRegisters.hpp"
+#include "Core/IO/IORegisters.hpp"
 
 #include <cstdint>
 

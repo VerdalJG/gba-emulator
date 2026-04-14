@@ -4,9 +4,7 @@
 
 #include <assert.h>
 
-GBA_PPU::GBA_PPU(EmulatorCore *core, GBA_Bus& bus) : 
-    core(core), 
-    bus(bus)
+GBA_PPU::GBA_PPU(EmulatorCore *core, GBA_Bus& bus) : core(core), bus(bus)
 {
     assert(core != nullptr && "PPU must have valid EmulatorCore object");
 }
@@ -41,7 +39,7 @@ void GBA_PPU::RenderFrame()
     // Read LCD state
     frameReady = false;
 
-    const uint16_t dispcnt = lcdRegisters.DISPCNT.value;
+    const uint16_t dispcnt = lcdRegisters.dispcnt.value;
     
     if (dispcnt & (1 << 7)) // Check for forced blank
     {
@@ -133,10 +131,10 @@ void GBA_PPU::Step(u32 cycles)
     }
 
     // Update VCOUNT
-    lcdRegisters.VCOUNT.value = scanline;
+    lcdRegisters.vcount.value = scanline;
 
     // Update DISPSTAT flags
-    u16 stat = lcdRegisters.DISPSTAT.value & ~0x7;
+    u16 stat = lcdRegisters.dispstat.value & ~0x7;
 
     if (scanline >= 160)
         stat |= 1;      // VBlank
@@ -144,15 +142,15 @@ void GBA_PPU::Step(u32 cycles)
     if (dotCycle >= 960)
         stat |= 2;      // HBlank
 
-    if (scanline == ((lcdRegisters.DISPSTAT.value >> 8) & 0xFF))
+    if (scanline == ((lcdRegisters.dispstat.value >> 8) & 0xFF))
         stat |= 4;      // VCount match
 
-    lcdRegisters.DISPSTAT.value = stat;
+    lcdRegisters.dispstat.value = stat;
 }
 
 bool GBA_PPU::IsWithinVRAM_OBJBoundary(u32 address) 
 { 
-    uint mode = lcdRegisters.DISPCNT.value & 7;
+    uint mode = lcdRegisters.dispcnt.value & 7;
     u32 vramBoundary = VRAM_START + VRAM_BG_SIZE;
     if (mode >= 3)
     {

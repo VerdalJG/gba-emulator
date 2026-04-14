@@ -34,22 +34,50 @@ u8 GBA_IO::Read8(u32 address)
 
     switch (address)
     {
+        // PPU
         case DISPCNT: return lcdRegs.dispcnt.Read8(0);
         case DISPCNT+1: return lcdRegs.dispcnt.Read8(1);
-        case GREENSWAP: return lcdRegs.greenSwap.Read8(0);
-        case GREENSWAP+1: return lcdRegs.greenSwap.Read8(1);
+
+        case GREENSWAP: return lcdRegs.greenswap.Read8(0);
+        case GREENSWAP+1: return lcdRegs.greenswap.Read8(1);
+
         case DISPSTAT: return lcdRegs.dispstat.Read8(0);
         case DISPSTAT+1: return lcdRegs.dispstat.Read8(1);
+
         case VCOUNT: return lcdRegs.vcount.Read8(0);
         case VCOUNT+1: return 0;
 
+        case BG0CNT: return lcdRegs.bgcnt[0].Read8(0);
+        case BG0CNT+1: return lcdRegs.bgcnt[0].Read8(1);
+        case BG1CNT: return lcdRegs.bgcnt[1].Read8(0);
+        case BG1CNT+1: return lcdRegs.bgcnt[1].Read8(1);
+        case BG2CNT: return lcdRegs.bgcnt[2].Read8(0);
+        case BG2CNT+1: return lcdRegs.bgcnt[2].Read8(1);
+        case BG3CNT: return lcdRegs.bgcnt[3].Read8(0);
+        case BG3CNT+1: return lcdRegs.bgcnt[3].Read8(1);
+
+        case WININ: return lcdRegs.winin.Read8(0);
+        case WININ+1: return lcdRegs.winin.Read8(1);
+
+        case WINOUT: return lcdRegs.winout.Read8(0);
+        case WINOUT+1: return lcdRegs.winout.Read8(1);
+
+        case BLDCNT: return lcdRegs.bldcnt.Read8(0);
+        case BLDCNT+1: return lcdRegs.bldcnt.Read8(1);
+
+        case BLDALPHA: return lcdRegs.bldalpha.Read8(0);
+        case BLDALPHA+1: return lcdRegs.bldalpha.Read8(1);
+        // PPU
+
+        // DMA
+
+        default: return bus->OpenBus(address);
     }
-    return bus->OpenBus(address);
 }
 
 u16 GBA_IO::Read16(u32 address)
 {
-    
+    return (Read8(address + 1) << 8) | Read8(address);
 }
 
 u32 GBA_IO::Read32(u32 address) 
@@ -59,17 +87,134 @@ u32 GBA_IO::Read32(u32 address)
 
 void GBA_IO::Write8(u32 address, u8 value) 
 {
-    
+    IO_LCDRegisters lcdRegs = ppu->GetLCDRegisters();
+
+    switch (address)
+    {
+        // PPU
+        case DISPCNT: return lcdRegs.dispcnt.Write8(0, value);
+        case DISPCNT+1: return lcdRegs.dispcnt.Write8(1, value);
+
+        case GREENSWAP: return lcdRegs.greenswap.Write8(0, value);
+        case GREENSWAP+1: return lcdRegs.greenswap.Write8(1, value);
+
+        case DISPSTAT: return lcdRegs.dispstat.Write8(0, value);
+        case DISPSTAT+1: return lcdRegs.dispstat.Write8(1, value);
+
+        case BG0CNT: return lcdRegs.bgcnt[0].Write8(0, value);
+        case BG0CNT+1: return lcdRegs.bgcnt[0].Write8(1, value);
+        case BG1CNT: return lcdRegs.bgcnt[1].Write8(0, value);
+        case BG1CNT+1: return lcdRegs.bgcnt[1].Write8(1, value);
+        case BG2CNT: return lcdRegs.bgcnt[2].Write8(0, value);
+        case BG2CNT+1: return lcdRegs.bgcnt[2].Write8(1, value);
+        case BG3CNT: return lcdRegs.bgcnt[3].Write8(0, value);
+        case BG3CNT+1: return lcdRegs.bgcnt[3].Write8(1, value);
+
+        case BG0HOFS: return lcdRegs.bghofs[0].Write8(0, value);
+        case BG0HOFS+1: return lcdRegs.bghofs[0].Write8(1, value);
+        case BG1HOFS: return lcdRegs.bghofs[1].Write8(0, value);
+        case BG1HOFS+1: return lcdRegs.bghofs[1].Write8(1, value);
+        case BG2HOFS: return lcdRegs.bghofs[2].Write8(0, value);
+        case BG2HOFS+1: return lcdRegs.bghofs[2].Write8(1, value);
+        case BG3HOFS: return lcdRegs.bghofs[3].Write8(0, value);
+        case BG3HOFS+1: return lcdRegs.bghofs[3].Write8(1, value);
+
+        case BG2PA: return lcdRegs.bg2Params[0].Write8(0, value);
+        case BG2PA+1: return lcdRegs.bg2Params[0].Write8(1, value);
+        case BG2PB: return lcdRegs.bg2Params[1].Write8(0, value);
+        case BG2PB+1: return lcdRegs.bg2Params[1].Write8(1, value);
+        case BG2PC: return lcdRegs.bg2Params[2].Write8(0, value);
+        case BG2PC+1: return lcdRegs.bg2Params[2].Write8(1, value);
+        case BG2PD: return lcdRegs.bg2Params[3].Write8(0, value);
+        case BG2PD+1: return lcdRegs.bg2Params[3].Write8(1, value);
+
+        case BG2X_L: return lcdRegs.bg2XCoord.Write8(0, value);
+        case BG2X_L+1: return lcdRegs.bg2XCoord.Write8(1, value);
+        case BG2X_H: return lcdRegs.bg2XCoord.Write8(2, value);
+        case BG2X_H+1: return lcdRegs.bg2XCoord.Write8(3, value);
+        
+        case BG2Y_L: return lcdRegs.bg2YCoord.Write8(0, value);
+        case BG2Y_L+1: return lcdRegs.bg2YCoord.Write8(1, value);
+        case BG2Y_H: return lcdRegs.bg2YCoord.Write8(2, value);
+        case BG2Y_H+1: return lcdRegs.bg2YCoord.Write8(3, value);
+
+        case BG3PA: return lcdRegs.bg3Params[0].Write8(0, value);
+        case BG3PA+1: return lcdRegs.bg3Params[0].Write8(1, value);
+        case BG3PB: return lcdRegs.bg3Params[1].Write8(0, value);
+        case BG3PB+1: return lcdRegs.bg3Params[1].Write8(1, value);
+        case BG3PC: return lcdRegs.bg3Params[2].Write8(0, value);
+        case BG3PC+1: return lcdRegs.bg3Params[2].Write8(1, value);
+        case BG3PD: return lcdRegs.bg3Params[3].Write8(0, value);
+        case BG3PD+1: return lcdRegs.bg3Params[3].Write8(1, value);
+
+        case BG3X_L: return lcdRegs.bg3XCoord.Write8(0, value);
+        case BG3X_L+1: return lcdRegs.bg3XCoord.Write8(1, value);
+        case BG3X_H: return lcdRegs.bg3XCoord.Write8(2, value);
+        case BG3X_H+1: return lcdRegs.bg3XCoord.Write8(3, value);
+        
+        case BG3Y_L: return lcdRegs.bg3YCoord.Write8(0, value);
+        case BG3Y_L+1: return lcdRegs.bg3YCoord.Write8(1, value);
+        case BG3Y_H: return lcdRegs.bg3YCoord.Write8(2, value);
+        case BG3Y_H+1: return lcdRegs.bg3YCoord.Write8(3, value);
+
+        case WIN0H: return lcdRegs.winH[0].Write8(0, value);
+        case WIN0H+1: return lcdRegs.winH[0].Write8(1, value);
+        case WIN1H: return lcdRegs.winH[1].Write8(0, value);
+        case WIN1H+1: return lcdRegs.winH[1].Write8(1, value);
+
+        case WIN0V: return lcdRegs.winV[0].Write8(0, value);
+        case WIN0V+1: return lcdRegs.winV[0].Write8(1, value);
+        case WIN1V: return lcdRegs.winV[1].Write8(0, value);
+        case WIN1V+1: return lcdRegs.winV[1].Write8(1, value);
+
+        case WININ: return lcdRegs.winin.Write8(0, value);
+        case WININ+1: return lcdRegs.winin.Write8(1, value);
+
+        case WINOUT: return lcdRegs.winout.Write8(0, value);
+        case WINOUT+1: return lcdRegs.winout.Write8(1, value);
+
+        case MOSAIC: return lcdRegs.mosaic.Write8(0, value);
+        case MOSAIC+1: return lcdRegs.mosaic.Write8(1, value);
+
+        case BLDCNT: return lcdRegs.bldcnt.Write8(0, value);
+        case BLDCNT+1: return lcdRegs.bldcnt.Write8(1, value);
+
+        case BLDALPHA: return lcdRegs.bldalpha.Write8(0, value);
+        case BLDALPHA+1: return lcdRegs.bldalpha.Write8(1, value);
+
+        case BLDY: return lcdRegs.bldy.Write8(0, value);
+        case BLDY+1: return lcdRegs.bldy.Write8(1, value);
+        // PPU
+
+        // DMA
+
+        default: return;
+    }
 }
 
 void GBA_IO::Write16(u32 address, u16 value) 
 {
-    
+    switch (address)
+    {
+        default:
+        {
+            Write8(address + 1, (value << 8) & 0xFF);
+            Write8(address, value & 0xFF);
+            return;
+        }
+    }
 }
 
 void GBA_IO::Write32(u32 address, u32 value) 
 {
-    
+    switch (address)
+    {
+        default:
+        {
+            Write16(address + 2, (value << 16) & 0xFFFF);
+            Write16(address, value & 0xFFFF);
+        }
+    }
 }
 
 // void GBA_IO::SetupLCDReadCallbacks() 

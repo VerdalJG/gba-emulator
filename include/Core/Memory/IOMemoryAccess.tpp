@@ -112,17 +112,14 @@ void GBA_IO::Write(u32 address, T value)
             bool loAllowed = loPerms.CanWriteHalf();
             bool hiAllowed = hiPerms.CanWriteHalf();
 
-            if (loAllowed)
-            {
-                Write16(address, value);
-            }
+            if (!loAllowed) return;
             
-            if (hiAllowed)
+            if (!hiAllowed)
             {
-                Write16(address + 2, value);
+                return Write16(address, value);
             }
 
-            break;
+            return Write32(address, value);
         }
     }
 }

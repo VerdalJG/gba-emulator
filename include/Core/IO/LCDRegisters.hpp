@@ -10,7 +10,7 @@ class GBA_PPU;
 struct IO_LCDRegisters
 {
     DisplayControl dispcnt;
-    GreenSwap greenSwap;
+    GreenSwap greenswap;
     DisplayStatus dispstat;
     VerticalCounter vcount;
     std::array<BackgroundControl, 4> bgcnt = { 0, 1, 2, 3}; // ID's for each bgcnt
@@ -18,24 +18,36 @@ struct IO_LCDRegisters
     std::array<BackgroundOffset, 4> bghofs; // Background X-offsets
     std::array<BackgroundOffset, 4> bgvofs; // Background Y-offsets
 
-    BackgroundRefPointCoords bg2Coords; // BG2 Reference point Coordinates (low 16 bits and high 12 bits)
-    BackgroundScalingParameters bg2Params; // BG2 Scaling params A-D
-    
-    BackgroundRefPointCoords bg3Coords; // BG3 Reference point Coordinates (low 16 bits and high 12 bits)
-    BackgroundScalingParameters bg3Params; // BG3 Scaling params A-D
+    std::array<BackgroundScalingParameter, 4> bg2Params = { 0, 1, 2, 3}; // BG2 Scaling params A-D
+    BackgroundRefPointCoords bg2XCoord; // BG2 Reference point Coordinates X (low 16 bits and high 12 bits)
+    BackgroundRefPointCoords bg2YCoord; // BG2 Reference point Coordinates Y (low 16 bits and high 12 bits)s
 
+    std::array<BackgroundScalingParameter, 4> bg3Params = { 0, 1, 2, 3}; // BG3 Scaling params A-D
+    BackgroundRefPointCoords bg3XCoord; // BG3 Reference point Coordinates X (low 16 bits and high 12 bits)
+    BackgroundRefPointCoords bg3YCoord; // BG3 Reference point Coordinates Y (low 16 bits and high 12 bits)
+
+    std::array<WindowHorizontalDimensions, 2> winH; // Window 0 and 1 horizontal dimensions (W)
+    std::array<WindowVerticalDimensions, 2> winV; // Window 0 and 1 vertical dimensions (W)
+
+    WindowControl_In winin; // Control of Inside of Window(s) (R/W)
+    WindowControl_Out winout; // Control of Outside of Windows & Inside of OBJ Window (R/W)
+
+    Mosaic mosaic; // Mosaic Size (W)
+
+    BlendControl bldcnt; // Color Special Effects Selection (R/W)
+    BlendAlpha bldalpha; // Alpha Blending Coefficients (R/W)
+    BlendY bldy; // Brightness (Fade-In/Out) Coefficient (W)
 };
 
 struct DisplayControl
 {
     u8 Read8(int byteToRead) { return IO::Read8(value, byteToRead); }
-    u16 Read16() { return value; }
-
     void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
-    void Write16(u16 value) { IO::Write16ByBytes(this->value, value, writeMask); }
 
-    void Reset() { Write16(0); }
-    void ResetToPostBIOSValue() { Write16(0x80); }
+    void Reset() { value = 0; }
+    void ResetToPostBIOSValue() { value = 0x80; }
+
+    const u16 writeMask = 0xFFF7;
 
     union
     {
@@ -54,19 +66,16 @@ struct DisplayControl
         } fields;
         u16 value;
     };
-
-    const u16 writeMask = 0xFFF7;
 };
 
 struct GreenSwap
 {
     u8 Read8(int byteToRead) { return IO::Read8(value, byteToRead); }
-    u16 Read16() { return value; }
-
     void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); } 
-    void Write16(u16 value) { IO::Write16ByBytes(this->value, value, writeMask); }
 
-    void Reset() { Write16(0); }
+    void Reset() { value = 0; }
+    
+    const u16 writeMask = 0x1;
 
     union
     {
@@ -77,19 +86,15 @@ struct GreenSwap
         } fields;
         u16 value;
     };
-
-    const u16 writeMask = 0x1;
 };
 
 struct DisplayStatus
 {
     u8 Read8(int byteToRead);
-    u16 Read16();
 
-    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); } 
-    void Write16(u16 value) { IO::Write16ByBytes(this->value, value, writeMask); }
+    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
     
-    void Reset() { Write16(0); }
+    void Reset() { value = 0; }
 
     union
     {
@@ -123,9 +128,8 @@ struct DisplayStatus
 struct VerticalCounter // Read-only
 {
     u8 Read8(int byteToRead) { return IO::Read8(value, byteToRead); }
-    u16 Read16() { return value & 0xFF; } // Clear top byte
 
-    void Reset() { value = 0;}
+    void Reset() { value = 0; }
 
     union
     {
@@ -146,16 +150,19 @@ struct VerticalCounter // Read-only
 struct BackgroundControl // R/W
 {
     u8 Read8(int byteToRead) { return IO::Read8(value, byteToRead); }
-    u16 Read16() { return value; }
 
-    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
-    void Write16(u16 value) { IO::Write16ByBytes(this->value, value, writeMask); }
+    void Write8(int byteToWrite, u8 value) 
+    {
+        u16 mask = id < 2 ? writeMaskBG0_BG1 : writeMaskBG2_BG3;
+        IO::Write8Masked(this->value, byteToWrite, value, mask); 
+    }
 
-    void Reset() { Write16(0); }
+    void Reset() { value = 0; }
 
     BackgroundControl(int id) : id(id) {};
 
-    const u16 writeMask = 0xFFCF;
+    const u16 writeMaskBG0_BG1 = 0xDFCF;
+    const u16 writeMaskBG2_BG3 = 0xFFCF;
     const int id;
 
     union
@@ -200,9 +207,8 @@ struct BackgroundControl // R/W
 struct BackgroundOffset // Write only
 {
     void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
-    void Write16(u16 value) { IO::Write16ByBytes(this->value, value, writeMask); }
 
-    void Reset() { Write16(0); }
+    void Reset() { value = 0; }
 
     const u16 writeMask = 0x01FF;
 
@@ -230,8 +236,9 @@ struct BackgroundOffset // Write only
 struct BackgroundRefPointCoords // Write-only
 {
     void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
-    void Write16(u16 value) { IO::Write16ByBytes(this->value, value, writeMask); }
-    void Write32(u32 value) { IO::Write32}
+    void Reset() { value = 0; }
+
+    const u32 writeMask = 0x0FFFFFFF;
 
     union
     {
@@ -256,10 +263,339 @@ struct BackgroundRefPointCoords // Write-only
     };
 };
 
-struct BackgroundScalingParameters // Write-only
+struct BackgroundScalingParameter // Write-only
 {
+    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value); }
+    void Reset() { value = 0; }
 
+    void ResetToPostBIOSValue() { value = (id == 0 || id == 3) ? 0x100 : 0; }
+    const int id;
+
+    union
+    {
+        struct 
+        {
+            u16 fraction : 8;
+            u16 integer : 7;
+            u16 sign : 1;
+        } fields;
+        u16 value;
+
+        /*
+            dx (PA) and dy (PC)
+            When transforming a horizontal line, dx and dy specify the resulting gradient and magnification for that line. 
+            For example: 
+            Horizontal line, length=100, dx=1, and dy=1. 
+            The resulting line would be drawn at 45 degrees, f(y)=1/1*x. 
+            Note that this would involve that line is magnified, the new length is SQR(100^2+100^2)=141.42. 
+            That's the old a^2 + b^2 = c^2 formula.
+
+            dmx (PB) and dmy (PD)
+            These values define the resulting gradient and magnification for transformation of vertical lines. 
+            However, when rotating a square area (which is surrounded by horizontal and vertical lines), 
+            then the desired result should be usually a rotated <square> area (ie. not a parallelogram, for example).
+            Thus, dmx and dmy must be defined in direct relationship to dx and dy, taking the example above, 
+            we'd have to set dmx=-1, and dmy=1, f(x)=-1/1*y.
+
+            Area Overflow
+            In result of rotation/scaling it may often happen that areas outside of the actual BG area
+            become moved into the LCD viewport. Depending of the Area Overflow bit (BG2CNT and BG3CNT, Bit 13) 
+            these areas may be either displayed (by wrapping the BG area), or may be displayed transparent.
+
+            This works only in BG modes 1 and 2. The area overflow is ignored in Bitmap modes (BG modes 3-5), 
+            the outside of the Bitmaps is always transparent.
+
+            --- more details and confusing or helpful formulas ---
+
+            The following parameters are required for Rotation/Scaling
+            Rotation Center X and Y Coordinates (x0,y0)
+            Rotation Angle                      (alpha)
+            Magnification X and Y Values        (xMag,yMag)
+            The display is rotated by 'alpha' degrees around the center.
+            The displayed picture is magnified by 'xMag' along x-Axis (Y=y0) and 'yMag' along y-Axis (X=x0).
+
+            Calculating Rotation/Scaling Parameters A-D
+            A = Cos (alpha) / xMag    ;distance moved in direction x, same line
+            B = Sin (alpha) / xMag    ;distance moved in direction x, next line
+            C = Sin (alpha) / yMag    ;distance moved in direction y, same line
+            D = Cos (alpha) / yMag    ;distance moved in direction y, next line
+
+            Calculating the position of a rotated/scaled dot
+            Using the following expressions,
+            x0,y0    Rotation Center
+            x1,y1    Old Position of a pixel (before rotation/scaling)
+            x2,y2    New position of above pixel (after rotation scaling)
+            A,B,C,D  BG2PA-BG2PD Parameters (as calculated above)
+            the following formula can be used to calculate x2,y2:
+            x2 = A(x1-x0) + B(y1-y0) + x0
+            y2 = C(x1-x0) + D(y1-y0) + y0
+
+        */
+    };
 };
 
+struct WindowHorizontalDimensions // Write-only
+{
+    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value); }
+    void Reset() { value = 0; }
+
+    union
+    {
+        struct 
+        {
+            u16 x2 : 8; // Rightmost coordinate of window, plus 1
+            u16 x1 : 8; // Leftmost coordinate of window
+        } fields;
+        u16 value;
+
+        // Garbage values of X2>240 or X1>X2 are interpreted as X2=240.
+    };
+};
+
+struct WindowVerticalDimensions // Write-only
+{
+    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value); }
+    void Reset() { value = 0; }
+
+    union
+    {
+        struct 
+        {
+            u16 y2 : 8; // Bottom-most coordinate of window, plus 1
+            u16 y1 : 8; // Top-most coordinate of window
+        } fields;
+        u16 value;
+
+        // Garbage values of Y2>160 or Y1>Y2 are interpreted as Y2=160.
+    };
+};
+
+struct WindowControl_In // Read/Write
+{
+    u8 Read8(int byteToRead) { return IO::Read8(value, byteToRead); }
+    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
+    void Reset() { value = 0; }
+
+    const u16 writeMask = 0x3F3F;
+    
+    union
+    {
+        struct 
+        {
+            u16 bgEnable_0 : 4; // Window 0 BG0-BG3 Enable Bits  (0=No Display, 1=Display)
+            u16 objEnable_0 : 1; // Window 0 OBJ Enable Bit      (0=No Display, 1=Display)
+            u16 colorSFX_0 : 1; // Window 0 Color Special Effect (0=Disable, 1=Enable)
+            u16 unused : 2;
+            u16 bgEnable_1 : 4; // Window 0 BG0-BG3 Enable Bits  (0=No Display, 1=Display)
+            u16 objEnable_1 : 1; // Window 0 OBJ Enable Bit      (0=No Display, 1=Display)
+            u16 colorSFX_1 : 1; // Window 0 Color Special Effect (0=Disable, 1=Enable)
+            u16 unused2 : 2;
+        } fields;
+        u16 value;
+
+        /*
+            The OBJ Window
+            The dimension of the OBJ Window is specified by OBJs which are having the "OBJ Mode" 
+            attribute being set to "OBJ Window". Any non-transparent dots of any such OBJs are 
+            marked as OBJ Window area. The OBJ itself is not displayed.
+
+            The color, palette, and display priority of these OBJs are ignored. Both DISPCNT Bits 
+            12 and 15 must be set when defining OBJ Window region(s).
+
+            Window Priority
+            In case that more than one window is enabled, and that these windows do overlap, 
+            Window 0 has the highest priority, Window 1 medium, and Obj Window lowest priority. 
+            Outside of Window has zero priority, it is used for all dots which are not inside of any window region.
+        */ 
+    };
+};
+
+struct WindowControl_Out // Read/Write
+{
+    u8 Read8(int byteToRead) { return IO::Read8(value, byteToRead); }
+    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
+    void Reset() { value = 0; }
+
+    const u16 writeMask = 0x3F3F;
+    
+    union
+    {
+        struct 
+        {
+            u16 bgEnable_Out : 4; // Window 0 BG0-BG3 Enable Bits  (0=No Display, 1=Display)
+            u16 objEnable_Out : 1; // Window 0 OBJ Enable Bit      (0=No Display, 1=Display)
+            u16 colorSFX_Out : 1; // Window 0 Color Special Effect (0=Disable, 1=Enable)
+            u16 unused : 2;
+            u16 bgEnable_Obj : 4; // Window 0 BG0-BG3 Enable Bits  (0=No Display, 1=Display)
+            u16 objEnable_Obj : 1; // Window 0 OBJ Enable Bit      (0=No Display, 1=Display)
+            u16 colorSFX_Obj : 1; // Window 0 Color Special Effect (0=Disable, 1=Enable)
+            u16 unused2 : 2;
+        } fields;
+        u16 value;
+
+        /*
+            The OBJ Window
+            The dimension of the OBJ Window is specified by OBJs which are having the "OBJ Mode" 
+            attribute being set to "OBJ Window". Any non-transparent dots of any such OBJs are 
+            marked as OBJ Window area. The OBJ itself is not displayed.
+
+            The color, palette, and display priority of these OBJs are ignored. Both DISPCNT Bits 
+            12 and 15 must be set when defining OBJ Window region(s).
+
+            Window Priority
+            In case that more than one window is enabled, and that these windows do overlap, 
+            Window 0 has the highest priority, Window 1 medium, and Obj Window lowest priority. 
+            Outside of Window has zero priority, it is used for all dots which are not inside of any window region.
+        */ 
+    };
+};
+
+struct Mosaic // Write-only
+{
+    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value); }
+    void Reset() { value = 0; }
+
+    union
+    {
+        struct 
+        {
+            u16 bgHSize : 4; // (minus 1)
+            u16 bgVSize : 4; // (minus 1)
+            u16 objHSize : 4; // (minus 1)
+            u16 objVSize : 4; // (minus 1)
+        } fields;
+        u16 value;
+
+        /*
+            The Mosaic function can be separately enabled/disabled for BG0-BG3 by BG0CNT-BG3CNT Registers, 
+            as well as for each OBJ0-127 by OBJ attributes in OAM memory. 
+            Also, setting all of the bits below to zero effectively disables the mosaic function.
+
+            Example: When setting H-Size to 5, then pixels 0-5 of each display row are colorized as pixel 0, 
+            pixels 6-11 as pixel 6, pixels 12-17 as pixel 12, and so on.
+
+            Normally, a 'mosaic-pixel' is colorized by the color of the upperleft covered pixel. 
+            In many cases it might be more desireful to use the color of the pixel in the center of the covered area - 
+            this effect may be gained by scrolling the background (or by adjusting the OBJ position, 
+            as far as upper/left rows/columns of OBJ are transparent).
+        
+        */
+    };
+};
+
+struct BlendControl // Read/Write
+{
+    u8 Read8(int byteToRead) { return IO::Read8(value, byteToRead); }
+    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
+    void Reset() { value = 0; }
+
+    const u16 writeMask = 0x3FFF;
+
+    union
+    {
+        struct 
+        {
+            u16 bg0Target1 : 1; // BG0 1st Target Pixel (Background 0)
+            u16 bg1Target1 : 1; // BG1 1st Target Pixel (Background 1)
+            u16 bg2Target1 : 1; // BG2 1st Target Pixel (Background 2)
+            u16 bg3Target1 : 1; // BG3 1st Target Pixel (Background 3)
+            u16 objTarget1 : 1; // OBJ 1st Target Pixel (Top-most OBJ pixel)
+            u16 backdropTarget1 : 1; // BD 1st Target Pixel (Backdrop)
+            u16 colorSFX : 2; // Color Special Effect 
+            // 0 = None                (Special effects disabled)
+            // 1 = Alpha Blending      (1st+2nd Target mixed)
+            // 2 = Brightness Increase (1st Target becomes whiter)
+            // 3 = Brightness Decrease (1st Target becomes blacker)
+            u16 bg0Target2 : 1; // BG0 2nd Target Pixel (Background 0)
+            u16 bg1Target2 : 1; // BG1 2nd Target Pixel (Background 1)
+            u16 bg2Target2 : 1; // BG2 2nd Target Pixel (Background 2)
+            u16 bg3Target2 : 1; // BG3 2nd Target Pixel (Background 3)
+            u16 objTarget2 : 1; // OBJ 2nd Target Pixel (Top-most OBJ pixel)
+            u16 backdropTarget2 : 1; // BD 2nd Target Pixel (Backdrop)
+        } fields;
+        u16 value;
+
+        /*
+            Selects the 1st Target layer(s) for special effects. For Alpha Blending/Semi-Transparency, 
+            it does also select the 2nd Target layer(s), which should have next lower display priority as the 1st Target.
+            However, any combinations are possible, including that all layers may be selected as both 1st+2nd target, 
+            in that case the top-most pixel will be used as 1st target, and the next lower pixel as 2nd target.
+        */
+    };
+};
+
+struct BlendAlpha // (Read/Write) - Used for Color Special Effects Mode 1, and for Semi-Transparent OBJs.
+{
+    u8 Read8(int byteToRead) { return IO::Read8(value, byteToRead); }
+    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
+    void Reset() { value = 0; }
+
+    const u16 writeMask = 0x1F1F;
+
+    union 
+    {
+        struct 
+        {
+            u16 evaCoefficient : 5; // EVA Coefficient (1st Target) (0..16 = 0/16..16/16, 17..31=16/16)
+            u16 unused : 3;
+            u16 evbCoefficient : 5; // EVB Coefficient (2nd Target) (0..16 = 0/16..16/16, 17..31=16/16)
+            u16 unused2 : 3;
+        } fields;
+        u16 value;
+
+        /*
+            For this effect, the top-most non-transparent pixel must be selected as 1st Target, 
+            and the next-lower non-transparent pixel must be selected as 2nd Target, if so - and only if so, 
+            then color intensities of 1st and 2nd Target are mixed together by using the 
+            parameters in BLDALPHA register, for each pixel each R, G, B intensities are calculated separately:
+
+            I = MIN ( 31, I1st*EVA + I2nd*EVB )
+            Otherwise - for example, if only one target exists, or if a non-transparent non-2nd-target pixel is moved 
+            between the two targets, or if 2nd target has higher display priority than 1st target - 
+            then only the top-most pixel is displayed (at normal intensity, regardless of BLDALPHA).
+        */
+    };
+    
+};
+
+struct BlendY // (Write-only) - Used for Color Special Effects Modes 2 and 3.
+{
+    void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
+    void Reset() { value = 0; }
+
+    const u16 writeMask = 0x1F1F;
+
+    union 
+    {
+        struct 
+        {
+            u16 evyCoefficient : 5; // EVY Coefficient (Brightness) (0..16 = 0/16..16/16, 17..31=16/16)
+            u16 unused : 11;
+        } fields;
+        u16 value;
+
+        /*
+            For each pixel each R, G, B intensities are calculated separately:
+            I = I1st + (31-I1st)*EVY   ;For Brightness Increase
+            I = I1st - (I1st)*EVY      ;For Brightness Decrease
+            The color intensities of any selected 1st target surface(s) are increased or decreased by using 
+            the parameter in BLDY register.
+
+            Semi-Transparent OBJs
+            OBJs that are defined as 'Semi-Transparent' in OAM memory are always selected as 1st Target 
+            (regardless of BLDCNT Bit 4), and are always using Alpha Blending mode (regardless of BLDCNT Bit 6-7).
+            The BLDCNT register may be used to perform Brightness effects on the OBJ (and/or other BG/BD layers). 
+            However, if a semi-transparent OBJ pixel does overlap a 2nd target pixel, then semi-transparency 
+            becomes priority, and the brightness effect will not take place (neither on 1st, nor 2nd target).
+
+            The OBJ Layer
+            Before special effects are applied, the display controller computes the OBJ priority ordering, and 
+            isolates the top-most OBJ pixel. In result, only the top-most OBJ pixel is recursed at the time when 
+            processing special effects. Ie. alpha blending and semi-transparency can be used for OBJ-to-BG or 
+            BG-to-OBJ , but not for OBJ-to-OBJ.
+        */
+    };
+    
+};
 
 

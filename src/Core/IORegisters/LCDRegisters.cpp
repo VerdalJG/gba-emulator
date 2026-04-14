@@ -18,16 +18,3 @@ u8 DisplayStatus::Read8(int byteToRead)
 
     return byte;
 }
-
-u16 DisplayStatus::Read16() 
-{ 
-    u16 result = value;
-
-    result &= ~0x7; // Keep everything excepts bits 0-2;
-
-    result |= (ppu->GetState() == PPUState::VBlank);
-    result |= (ppu->GetState() == PPUState::HBlank) << 1;
-    //result |= (ppu->vCount == fields.vCountSetting) << 2; TODO: Uncomment once vcount is added
-
-    return result;
-}

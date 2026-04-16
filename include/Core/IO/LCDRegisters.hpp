@@ -13,7 +13,7 @@ struct DisplayControl
     void Reset() { value = 0; }
     void ResetToPostBIOSValue() { value = 0x80; }
 
-    const u16 writeMask = 0xFFF7;
+    const u16 writeMask = 0xFFFF; // TODO: only bios opcodes can write cgb bit
 
     union
     {
@@ -88,7 +88,6 @@ struct DisplayStatus
             Although the drawing time is only 960 cycles (240*4), the H-Blank flag is "0" for a total of 1006 cycles.
         */
     };
-
     
     GBA_PPU* ppu = nullptr; // TODO: NULL, NEED TO SET
 };

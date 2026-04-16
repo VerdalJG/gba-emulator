@@ -17,6 +17,7 @@ public:
     Logger(const std::string& filename = "log.txt");
     ~Logger();
     void Log(const std::string& message, LogType logType, const std::string funcName = "");
+    
 
 private:
     std::map<LogType, std::string> logTypeStrings = 
@@ -28,4 +29,5 @@ private:
     };
 
     std::ofstream file;
+    bool productionSafe = false;
 };

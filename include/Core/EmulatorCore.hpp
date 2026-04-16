@@ -16,6 +16,8 @@
 #include <vector>
 #include <functional>
 
+
+
 class Logger;
 
 class EmulatorCore
@@ -44,7 +46,7 @@ public:
     void Render();
     void HandleSDLEvents();
     void PostStatus(const std::string& message);
-    void Log(const std::string& message, LogType logType, const char* functionName = "");
+    void Log(const std::string& message, LogType logType, const std::string functionName = "");
 
 
 protected:

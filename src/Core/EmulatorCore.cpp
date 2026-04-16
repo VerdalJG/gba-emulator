@@ -23,7 +23,7 @@ EmulatorCore::EmulatorCore(Logger* logger) :
     if (logger)
     {
         // Logging file
-        logger->Log("Emulator started", LogType::Info);
+        logger->Log("Emulator started, EmuCore created", LogType::Info);
     }
 
     io.AttachSubsystems(
@@ -184,7 +184,7 @@ void EmulatorCore::SetPostStatusCallback(std::function<void(const std::string&)>
     postStatusCallback = std::move(callback);
 }
 
-void EmulatorCore::Log(const std::string& message, LogType logType, const char *functionName)
+void EmulatorCore::Log(const std::string& message, LogType logType, const std::string functionName)
 {
     if (logger)
     {

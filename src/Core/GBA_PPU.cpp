@@ -7,6 +7,8 @@
 GBA_PPU::GBA_PPU(EmulatorCore *core, GBA_Bus& bus) : core(core), bus(bus)
 {
     assert(core != nullptr && "PPU must have valid EmulatorCore object");
+
+    lcdRegisters.dispstat.ppu = this;
 }
 
 uint8_t GBA_PPU::Read8_Bus(uint32_t address) 
@@ -134,18 +136,22 @@ void GBA_PPU::Step(u32 cycles)
     lcdRegisters.vcount.value = scanline;
 
     // Update DISPSTAT flags
-    u16 stat = lcdRegisters.dispstat.value & ~0x7;
+    // u16 stat = lcdRegisters.dispstat.value & ~0x7;
 
-    if (scanline >= 160)
-        stat |= 1;      // VBlank
+    // if (scanline >= 160) // VBlank
+    // {
+    //     stat |= 1;
+    //     state = PPUState::VBlank;      
+    // }
+        
 
-    if (dotCycle >= 960)
-        stat |= 2;      // HBlank
+    // if (dotCycle >= 960)
+    //     stat |= 2;      // HBlank
 
-    if (scanline == ((lcdRegisters.dispstat.value >> 8) & 0xFF))
-        stat |= 4;      // VCount match
+    // if (scanline == ((lcdRegisters.dispstat.value >> 8) & 0xFF))
+    //     stat |= 4;      // VCount match
 
-    lcdRegisters.dispstat.value = stat;
+    // lcdRegisters.dispstat.value = stat;
 }
 
 bool GBA_PPU::IsWithinVRAM_OBJBoundary(u32 address) 

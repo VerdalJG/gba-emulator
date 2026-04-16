@@ -3,6 +3,8 @@
 
 #include "Utils/Integers.hpp"
 
+#include <string>
+
 enum ARM_Opcode : u8
 {
     // --- Data Processing Class ---
@@ -56,3 +58,42 @@ enum class ARM_ALUOp
     BIC = 14, 
     MVN = 15
 };
+
+inline std::string ArmOpToString(u8 opcode)
+{
+    switch (static_cast<ARM_Opcode>(opcode))
+    {
+        // --- Data Processing Class ---
+        case ARM_DataProcessing:        return "ARM_DataProcessing";
+
+        // --- PSR Transfers ---
+        case ARM_PSRTransfer:           return "ARM_PSRTransfer";
+
+        // --- Multiply ---
+        case ARM_Multiply:              return "ARM_Multiply";
+        case ARM_MultiplyLong:          return "ARM_MultiplyLong";
+
+        // --- Memory ---
+        case ARM_SingleDataTransfer:    return "ARM_SingleDataTransfer";
+        case ARM_HalfwordDataTransfer:  return "ARM_HalfwordDataTransfer";
+        case ARM_BlockDataTransfer:     return "ARM_BlockDataTransfer";
+        case ARM_SingleDataSwap:        return "ARM_SingleDataSwap";
+
+        // --- Branch ---
+        case ARM_Branch:                return "ARM_Branch";
+        case ARM_BranchAndExchange:     return "ARM_BranchAndExchange";
+
+        // --- Exceptions ---
+        case ARM_SoftwareInterrupt:     return "ARM_SoftwareInterrupt";
+        case ARM_UndefinedInstruction:  return "ARM_UndefinedInstruction";
+
+        // --- Coprocessor ---
+        case ARM_Coprocessor:           return "ARM_Coprocessor";
+
+        case ARM_Invalid:               return "ARM_Invalid";
+        case ARM_Suppressed:            return "ARM_Suppressed";
+        case ARM_Opcode_Count:          return "ARM_Opcode_Count";
+
+        default:                        return "Unknown ARM Opcode";
+    }
+}

@@ -124,7 +124,7 @@ void GBA_IO::Write(u32 address, T value)
             break;
         }
 
-        case AccessSize::Word: return Write32(address, value);
+        case AccessSize::Word:
         {
             HalfwordPermissions loPerms = ioPermissions[(address - IO_START) >> 1];
             HalfwordPermissions hiPerms = ioPermissions[(address + 2 - IO_START) >> 1];

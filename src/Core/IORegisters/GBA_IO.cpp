@@ -87,7 +87,7 @@ u32 GBA_IO::Read32(u32 address)
 
 void GBA_IO::Write8(u32 address, u8 value) 
 {
-    IO_LCDRegisters lcdRegs = ppu->GetLCDRegisters();
+    IO_LCDRegisters& lcdRegs = ppu->GetLCDRegisters();
 
     switch (address)
     {
@@ -198,7 +198,7 @@ void GBA_IO::Write16(u32 address, u16 value)
     {
         default:
         {
-            Write8(address + 1, (value << 8) & 0xFF);
+            Write8(address + 1, (value >> 8) & 0xFF);
             Write8(address, value & 0xFF);
             return;
         }
@@ -211,7 +211,7 @@ void GBA_IO::Write32(u32 address, u32 value)
     {
         default:
         {
-            Write16(address + 2, (value << 16) & 0xFFFF);
+            Write16(address + 2, (value >> 16) & 0xFFFF);
             Write16(address, value & 0xFFFF);
         }
     }

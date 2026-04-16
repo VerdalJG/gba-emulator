@@ -77,7 +77,7 @@ u32 GBA_Bus::OpenBus(u32 address)
 { 
     RegionType region = GetRegionType(address);
 
-    const std::string message = "Open bus read at address: " + std::to_string(address);
+    std::string message = "Open bus read at address: 0x" + IntToHex(address);
     core->Log(message, LogType::Warning);
 
     // Calculate shift in case of mis-aligned address (word alignment)

@@ -3,6 +3,8 @@
 
 #include "Utils/Integers.hpp"
 
+#include <string>
+
 enum Thumb_Opcode : u8
 {
     // --- Register Operations ---
@@ -56,3 +58,43 @@ enum class Thumb_ALUOp {
     BIC = 14,
     MVN = 15
 };
+
+inline std::string ThumbOpToString(u8 opcode)
+{
+    switch (static_cast<Thumb_Opcode>(opcode))
+    {
+        // --- Register Operations ---
+        case Thumb_MoveShiftedRegister:     return "Thumb_MoveShiftedRegister";
+        case Thumb_AddSubtract:             return "Thumb_AddSubtract";
+        case Thumb_ImmediateOp:             return "Thumb_ImmediateOp";
+        case Thumb_ALU:                     return "Thumb_ALU";
+        case Thumb_HiRegisterOp:            return "Thumb_HiRegisterOp";
+
+        // --- Memory ---
+        case Thumb_LoadPCRelative:          return "Thumb_LoadPCRelative";
+        case Thumb_LoadStoreRegisterOffset: return "Thumb_LoadStoreRegisterOffset";
+        case Thumb_LoadStoreSignExtended:   return "Thumb_LoadStoreSignExtended";
+        case Thumb_LoadStoreImmediateOffset:return "Thumb_LoadStoreImmediateOffset";
+        case Thumb_LoadStoreHalfword:       return "Thumb_LoadStoreHalfword";
+        case Thumb_LoadStoreSPRelative:     return "Thumb_LoadStoreSPRelative";
+
+        // --- Address Calculation ---
+        case Thumb_GetRelativeAddress:      return "Thumb_GetRelativeAddress";
+        case Thumb_AddOffsetToStackPointer: return "Thumb_AddOffsetToStackPointer";
+
+        // --- Memory Multiple Transfer ---
+        case Thumb_PushPopRegisters:        return "Thumb_PushPopRegisters";
+        case Thumb_LoadStoreMultiple:       return "Thumb_LoadStoreMultiple";
+
+        // --- Jumps and Calls ---
+        case Thumb_ConditionalBranch:       return "Thumb_ConditionalBranch";
+        case Thumb_UnconditionalBranch:     return "Thumb_UnconditionalBranch";
+        case Thumb_LongBranchWithLink:      return "Thumb_LongBranchWithLink";
+        case Thumb_SoftwareInterrupt:       return "Thumb_SoftwareInterrupt";
+
+        case Thumb_Invalid:                 return "Thumb_Invalid";
+        case Thumb_Opcode_Count:            return "Thumb_Opcode_Count";
+
+        default:                           return "Unknown Thumb Opcode";
+    }
+}

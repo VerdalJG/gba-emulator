@@ -49,7 +49,7 @@ public:
     void SetHalted(bool shouldHalt) { halted = shouldHalt; }
     
     EmulatorCore* GetCore();
-    void Log(const std::string& message, LogType logType, const char* functionName = nullptr);
+    void Log(const std::string& message, LogType logType, const std::string functionName = "");
 
     // Memory access
     u32 Read8(u32 address, uint access);
@@ -172,6 +172,8 @@ private:
     inline static const std::array<bool, 256> conditionTable = GenerateConditionTable(); // Condition lookup table, precomputed
     inline static const std::array<ARM_Handler, ARM_Opcode_Count> armDispatchTable = GenerateARMInstructionTable(); // ARM instruction lookup table, precomputed
     inline static const std::array<Thumb_Handler, Thumb_Opcode_Count> thumbDispatchTable = GenerateThumbInstructionTable(); // Thumb instruction lookup table, precomputed
+
+    bool logInstructions = true;
 };
 
 #include "Core/CPU/TableGeneration.inl"

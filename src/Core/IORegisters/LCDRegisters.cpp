@@ -11,9 +11,9 @@ u8 DisplayStatus::Read8(int byteToRead)
     {
         byte &= ~0x7; // Keep everything excepts bits 0-2;
 
-        byte |= (ppu->GetState() == PPUState::VBlank);
-        byte |= (ppu->GetState() == PPUState::HBlank) << 1;
-        //byte |= (ppu->vCount == fields.vCountSetting) << 2; TODO: Uncomment once vcount is added
+        byte |= static_cast<u8>(ppu->InVBlank());
+        byte |= static_cast<u8>(ppu->InHBlank()) << 1;
+        byte |= static_cast<u8>((ppu->GetVCount() == fields.vCountSetting)) << 2;
     }
 
     return byte;

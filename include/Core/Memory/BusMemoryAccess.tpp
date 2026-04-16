@@ -151,7 +151,8 @@ T GBA_Bus::ReadBIOS(u32 address)
     }
     else
     {
-        Log("Illegal BIOS read: 0x" + address, LogType::Error);
+        std::string message = "Illegal BIOS read: 0x" + IntToHex(address);       
+        Log(message, LogType::Error);
     }
 
     uint shift = (address & 3) * 8;

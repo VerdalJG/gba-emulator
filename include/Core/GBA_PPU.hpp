@@ -37,6 +37,9 @@ public:
 
     void Step(u32 cycles);
     PPUState GetState() const { return state; }
+    bool InVBlank() const { return scanline >= 160;}
+    bool InHBlank() const { return dotCycle >= 960;}
+    u32 GetVCount() const { return scanline; }
     bool IsForcedBlankEnabled() { return lcdRegisters.dispcnt.value & (1 << 7); }
     bool IsAccessingVideoMemory() const { return state == PPUState::ActiveDisplay; }
 

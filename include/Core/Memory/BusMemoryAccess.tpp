@@ -146,7 +146,7 @@ T GBA_Bus::ReadBIOS(u32 address)
     // reading will return the most recent successfully fetched BIOS opcode
     if (pcWithinBounds)
     {
-        u32 wordAligned = address & 3;
+        u32 wordAligned = address & ~3;
         biosLatch = memory.Read<T>(wordAligned);
     }
     else
@@ -173,13 +173,12 @@ T GBA_Bus::ReadBIOS(u32 address)
 template <typename T>
 T GBA_Bus::ReadPaletteRAM(u32 address, BusRequester requester)
 {
-    if (requester == BusRequester::PPU)
+    if (requester != BusRequester::CPU)
     {
         // Can be accessed during H-Blank or V-Blank only 
         // (unless display is disabled by Forced Blank bit in DISPCNT register).
 
-        bool displayEnabled = ppu->GetLCDRegisters().dispcnt.fields.forcedBlank;
-        if (!displayEnabled && ppu->GetState() == PPUState::ActiveDisplay)
+        if (!ppu->ForcedBlank() && !ppu->InHBlank() && !ppu->InVBlank())
         {
             return OpenBus(address);
         }
@@ -191,13 +190,12 @@ T GBA_Bus::ReadPaletteRAM(u32 address, BusRequester requester)
 template <typename T>
 T GBA_Bus::ReadVRAM(u32 address, BusRequester requester)
 {
-    if (requester == BusRequester::PPU)
+    if (requester != BusRequester::CPU)
     {
         // Can be accessed during H-Blank or V-Blank only 
         // (unless display is disabled by Forced Blank bit in DISPCNT register).
 
-        bool displayEnabled = ppu->GetLCDRegisters().dispcnt.fields.forcedBlank;
-        if (!displayEnabled && ppu->GetState() == PPUState::ActiveDisplay)
+        if (!ppu->ForcedBlank() && !ppu->InHBlank() && !ppu->InVBlank())
         {
             return OpenBus(address);
         }

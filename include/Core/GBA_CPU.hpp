@@ -173,7 +173,7 @@ private:
     inline static const std::array<ARM_Handler, ARM_Opcode_Count> armDispatchTable = GenerateARMInstructionTable(); // ARM instruction lookup table, precomputed
     inline static const std::array<Thumb_Handler, Thumb_Opcode_Count> thumbDispatchTable = GenerateThumbInstructionTable(); // Thumb instruction lookup table, precomputed
 
-    bool logInstructions = true;
+    bool logInstructions = false;
 };
 
 #include "Core/CPU/TableGeneration.inl"

@@ -242,8 +242,8 @@ void GBA_CPU::Execute()
 
     if (logInstructions)
     {
-        std::string pc = "PC is at:" + IntToHex(cpuState.r15);
-        std::string bits = ", Bits= " + IntToHex(pipeline.stage[2].rawBits);
+        std::string pc = "PC is at:" + IntToHexString(cpuState.r15);
+        std::string bits = ", Bits= " + IntToHexString(pipeline.stage[2].rawBits);
         std::string opcode = ", Opcode= " + (IsThumbMode() ? 
         ThumbOpToString(pipeline.stage[2].opcode) : 
         ArmOpToString(pipeline.stage[2].opcode));
@@ -524,73 +524,4 @@ DIV routine is now fine, at 0x080017b8 - m_text_pos 60, 76, line 102 of macros.i
 
 0x080016f0 is right after branching to m_test_eval (stmfd sp!, \{r0-r12\}), line 66 in macros.inc
 
-[INFO]: PC is at:080016F0, Bits= E8BD0003, Opcode= ARM_BlockDataTransfer
-[INFO]: PC is at:080016F4, Bits= E92D1FFF, Opcode= ARM_BlockDataTransfer
-[INFO]: PC is at:080016F8, Bits= E1B0C00C, Opcode= ARM_DataProcessing
-[INFO]: PC is at:08001700, Bits= 1A000022, Opcode= ARM_Branch
-[INFO]: PC is at:08001790, Bits= E3A0B403, Opcode= ARM_DataProcessing
-[INFO]: PC is at:08001794, Bits= E1A0000C, Opcode= ARM_DataProcessing
-[INFO]: PC is at:08001798, Bits= E3A01064, Opcode= ARM_DataProcessing
-[INFO]: PC is at:0800179C, Bits= EF060000, Opcode= ARM_SoftwareInterrupt
-
-[INFO]: PC is at:00000010, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000078, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000000E0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000148, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000001B0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000218, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000280, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000002E8, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000350, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000003B8, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000420, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000488, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000004F0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000558, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000005C0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000628, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000690, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000006F8, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000760, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000007C8, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000830, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000898, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000900, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000968, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000009D0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000A38, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000AA0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000B08, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000B70, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000BD8, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000C40, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000CA8, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000D10, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000D78, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000DE0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000E48, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000EB0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000F18, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000F80, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00000FE8, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001050, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000010B8, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001120, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001188, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000011F0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001258, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000012C0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001328, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001390, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000013F8, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001460, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000014C8, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001530, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001598, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001600, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001668, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000016D0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001738, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:000017A0, Bits= EA000018, Opcode= ARM_Branch
-[INFO]: PC is at:00001808, Bits= EA000018, Opcode= ARM_Branch
 */

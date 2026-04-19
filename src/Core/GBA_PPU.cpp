@@ -134,24 +134,6 @@ void GBA_PPU::Step(u32 cycles)
 
     // Update VCOUNT
     lcdRegisters.vcount.value = scanline;
-
-    // Update DISPSTAT flags
-    // u16 stat = lcdRegisters.dispstat.value & ~0x7;
-
-    // if (scanline >= 160) // VBlank
-    // {
-    //     stat |= 1;
-    //     state = PPUState::VBlank;      
-    // }
-        
-
-    // if (dotCycle >= 960)
-    //     stat |= 2;      // HBlank
-
-    // if (scanline == ((lcdRegisters.dispstat.value >> 8) & 0xFF))
-    //     stat |= 4;      // VCount match
-
-    // lcdRegisters.dispstat.value = stat;
 }
 
 bool GBA_PPU::IsWithinVRAM_OBJBoundary(u32 address) 

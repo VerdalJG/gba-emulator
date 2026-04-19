@@ -59,10 +59,11 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
     const u32 rdIndex = ExtractBits<15, 12>(instruction); // Source/Destination register
     const u32 rmIndex = ExtractBits<3, 0>(instruction); // Offset register
 
-    u32 rn = ReadRegister(rnIndex);
-    
+    u32 baseAddress = ReadRegister(rnIndex);
+    u32 effectiveAddress = baseAddress;
+    u32 writebackValue;
+
     u32 offset;
-    u32 address = rn;
 
     // Address calculation
     if (immediate)
@@ -92,13 +93,17 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
 
     if (pre_indexed)
     {
-        address += offset;
+        effectiveAddress = baseAddress + offset;
+        writebackValue = effectiveAddress;
 
         if (rmUsingPC); // UNPREDICTABLE
         if (writeback && (rnUsingPC || (!immediate && rnIndex == rmIndex))); // UNPREDICTABLE
     }
     else
     {
+        effectiveAddress = baseAddress;
+        writebackValue = baseAddress + offset;
+        
         if (rnUsingPC || rmUsingPC || (!immediate && rnIndex == rmIndex)); // UNPREDICTABLE
     }
 
@@ -108,11 +113,11 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
 
         if (byte) // LDRB
         {
-            readValue = Read8(address, Access::Data | Access::Nonsequential);
+            readValue = Read8(effectiveAddress, Access::Data | Access::Nonsequential);
         }
         else // LDR
         {
-            readValue = Read32_Rotated(address, Access::Data | Access::Nonsequential);
+            readValue = Read32_Rotated(effectiveAddress, Access::Data | Access::Nonsequential);
         }
 
         // Align if rdIndex == PC
@@ -129,12 +134,12 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
         if (byte) // STRB
         {
             uint8_t byte = rd & 0xFF;
-            Write8(address, byte, Access::Data | Access::Nonsequential);
+            Write8(effectiveAddress, byte, Access::Data | Access::Nonsequential);
         }
         else // STR
         {
             // (ARM7TDMI / GBA): misaligned address is forcibly aligned
-            uint32_t alignedAddress = address & ~3;
+            uint32_t alignedAddress = effectiveAddress & ~3;
             Write32(alignedAddress, rd, Access::Data | Access::Nonsequential);
         }
 
@@ -144,7 +149,7 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
     // Post-Indexed update
     if (writeback || !pre_indexed)
     {
-        cpuState.registers[rnIndex] = rn + offset;
+        cpuState.registers[rnIndex] = writebackValue;
     }
 
     // Program counter increment/flush
@@ -172,8 +177,9 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
     const bool signed_flag = IsBitSet<6>(instruction);
     const bool halfword = IsBitSet<5>(instruction);
 
-    u32 rn = ReadRegister(rnIndex);
-    u32 address = rn;
+    u32 baseAddress = ReadRegister(rnIndex);
+    u32 effectiveAddress;
+    u32 writebackValue;
 
     u32 offset;
 
@@ -194,13 +200,24 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
 
     if (pre_indexed)
     {
-        address += offset;
+        effectiveAddress = baseAddress + offset;
+        writebackValue = effectiveAddress;
 
-        if (writeback && load && rdIndex == rnIndex); // UNPREDICTABLE
+        if (writeback && load && rdIndex == rnIndex)
+        {
+            // UNPREDICTABLE
+            Log("UNPREDICTABLE - Pre-Indexed load, writeback rd == rn", LogType::Warning, __func__);
+        } 
     }
     else
     {
-        if (writeback); // UNPREDICTABLE
+        effectiveAddress = baseAddress;
+        writebackValue = baseAddress + offset;
+
+        if (writeback) // UNPREDICTABLE
+        {
+            Log("UNPREDICTABLE - Post-Indexed with Writeback!", LogType::Warning, __func__);
+        }
     }
 
     if (load)
@@ -209,15 +226,15 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
 
         if (signed_flag && halfword) // LDRSH
         {
-            readValue = Read16_Signed(address, Access::Data | Access::Nonsequential);
+            readValue = Read16_Signed(effectiveAddress, Access::Data | Access::Nonsequential);
         }
         else if (halfword) // LDRH
         {
-            readValue = Read16_Rotated(address, Access::Data | Access::Nonsequential);
+            readValue = Read16_Rotated(effectiveAddress, Access::Data | Access::Nonsequential);
         }
         else if (signed_flag) // LDRSB
         {
-            readValue = Read8_Signed(address, Access::Data | Access::Nonsequential);
+            readValue = Read8_Signed(effectiveAddress, Access::Data | Access::Nonsequential);
         }
 
         cpuState.registers[rdIndex] = readValue;
@@ -236,7 +253,7 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
         uint16_t storeValue = static_cast<uint16_t>(rd);
 
         // ARM7TDMI (GBA): misaligned STRH is forcibly aligned
-        uint32_t alignedAddress = address & ~1;
+        uint32_t alignedAddress = effectiveAddress & ~1;
         Write16(alignedAddress, storeValue, Access::Data | Access::Nonsequential);
 
         pipeline.access = Access::Code | Access::Nonsequential;
@@ -244,7 +261,7 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
 
     if (writeback || !pre_indexed)
     {
-        cpuState.registers[rnIndex] = address;
+        cpuState.registers[rnIndex] = writebackValue;
     }
 
     // Program counter increment/flush

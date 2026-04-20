@@ -10,7 +10,7 @@ inline u32 GBA_CPU::ADD(u32 op1, u32 op2, bool set_flags)
     if (set_flags) // Update CPSR
     {
         UpdateNZFlags(result);
-        UpdateCFlag(op1, op2, false);
+        UpdateCFlag_Add(op1, op2);
         UpdateVFlag(op1, op2, result, false);
     }
 
@@ -24,7 +24,7 @@ inline u32 GBA_CPU::SUB(u32 op1, u32 op2, bool set_flags)
     if (set_flags) // Update CPSR
     {
         UpdateNZFlags(result);
-        UpdateCFlag(op1, op2, true);
+        UpdateCFlag_Sub(op1, op2);
         UpdateVFlag(op1, op2, result, true);
     }
 
@@ -39,7 +39,7 @@ inline u32 GBA_CPU::ADC(u32 op1, u32 op2, bool set_flags)
     if (set_flags)
     {
         UpdateNZFlags(result);
-        UpdateCFlag(op1, op2, false, carry);
+        UpdateCFlag_Add(op1, op2, carry);
         UpdateVFlag(op1, op2, result, false);   
     }
 
@@ -49,12 +49,13 @@ inline u32 GBA_CPU::ADC(u32 op1, u32 op2, bool set_flags)
 inline u32 GBA_CPU::SBC(u32 op1, u32 op2, bool set_flags)
 {
     uint carry = GetCPSR_C();
-    u32 result = op1 - op2 - carry;
+    uint borrow = (1 - carry);
+    u32 result = op1 - op2 - borrow;
 
     if (set_flags)
     {
         UpdateNZFlags(result);
-        UpdateCFlag(op1, op2, true, carry);
+        UpdateCFlag_Sub(op1, op2, borrow);
         UpdateVFlag(op1, op2, result, true);   
     }
 
@@ -67,18 +68,18 @@ inline void GBA_CPU::UpdateNZFlags(u32 result)
     cpuState.cpsr.fields.z = (result == 0);
 }
 
-inline void GBA_CPU::UpdateCFlag(u32 op1, u32 op2, bool isSub, u32 carry)
+inline void GBA_CPU::UpdateCFlag_Add(u32 op1, u32 op2, u32 carryIn) 
 {
-    if (isSub) // C = 1 if no borrow (op1 >= op2 + carryIn)
-    {
-        u64 fullBorrow = (static_cast<u64>(op2) + (carry ? 0 : 1));
-        cpuState.cpsr.fields.c = (op1 >= fullBorrow);
-    }
-    else
-    {
-        u64 fullResult = static_cast<u64>(op1) + static_cast<u64>(op2) + carry;
-        cpuState.cpsr.fields.c = (fullResult >> 32);
-    }
+    u64 fullResult = static_cast<u64>(op1) + static_cast<u64>(op2) + carryIn;
+    cpuState.cpsr.fields.c = (fullResult >> 32) & 1;
+}
+
+inline void GBA_CPU::UpdateCFlag_Sub(u32 op1, u32 op2, u32 borrowIn) 
+{
+    // For subtraction, C = 1 means no borrow.
+    // Compare op1 against op2 + borrow_in.
+    u64 fullBorrow = (static_cast<u64>(op2) + borrowIn);
+    cpuState.cpsr.fields.c = (op1 >= fullBorrow);
 }
 
 inline void GBA_CPU::UpdateVFlag(u32 op1, u32 op2, u32 result, bool isSub)

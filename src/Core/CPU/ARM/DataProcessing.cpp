@@ -52,6 +52,14 @@ void GBA_CPU::ARM_DataProcessing(u32 instruction)
             u32 shiftRegisterIndex = ExtractBits<11, 8>(instruction);
             shift = ReadRegister(shiftRegisterIndex) & 0xFF; // only lower byte used
 
+            /*
+                Using R15 (PC)
+                When using R15 as operand (Rm or Rn), the returned value depends on the instruction: 
+                PC+12 if I=0,R=1 (shift by register), otherwise PC+8 (shift by immediate).
+            */
+            if (rmIndex == 15) rm += 4;
+            if (rnIndex == 15) rn += 4;
+
             AdvanceProgramCounter();
 
             AddInternalCycles(1);

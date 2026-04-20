@@ -5,12 +5,15 @@ void LSL(u32& value, u32 shift, u32& carry)
 {
     // Calculate shift
     const u32 shiftAmount = std::min<u32>(shift, 33);
-    const u32 result = static_cast<u32>((static_cast<u64>(value) << shiftAmount));
-    value = result;
-
+    const u64 result = static_cast<u64>(value) << shiftAmount;
+    
     // Calculate carry-out
-    if (shiftAmount == 0) return;
-    carry = static_cast<u32>((static_cast<u64>(value) << (shiftAmount - 1)) >> 31);
+    if (shiftAmount != 0)
+    {
+        carry = (result >> 32) & 1u;
+    }
+
+    value = static_cast<u32>(result);
 }
 
 void LSR(u32& value, u32 shift, u32& carry, bool immediate) 
@@ -23,12 +26,18 @@ void LSR(u32& value, u32 shift, u32& carry, bool immediate)
 
     // Calculate shift
     const u32 shiftAmount = std::min<u32>(shift, 33);
-    const u32 result = static_cast<u32>((static_cast<u64>(value) >> shiftAmount));
-    value = result;
 
+    // Casting to u64 allows us to shift by greater than 32 without causing undefined behavior
+    // Undefined behavior happens because we would be shifting by >= 32 in a u32. (C++ quirk)
+    const u64 result = static_cast<u64>(value) >> shiftAmount;
+    
     // Calculate carry-out
-    if (shiftAmount == 0) return;
-    carry = static_cast<u32>((static_cast<u64>(value) >> (shiftAmount - 1)) & 1u);
+    if (shiftAmount != 0)
+    {
+        carry = static_cast<u32>(static_cast<u64>(value) >> (shiftAmount - 1) & 1u);
+    }
+
+    value = result;
 }
 
 void ASR(u32& value, u32 shift, u32& carry, bool immediate) 

@@ -26,9 +26,9 @@ uint32_t GBA_PPU::Read32_Bus(uint32_t address)
     return bus.Read<u32>(address, BusRequester::PPU);
 }
 
-void GBA_PPU::RenderFrame() 
+void GBA_PPU::RenderFrame()
 {
-    /* 
+    /*
     Read LCD state (DISPCNT)
     If forced blank → output black
     If not Mode 4 → do nothing (for now)

@@ -215,7 +215,7 @@ void GBA_CPU::Execute()
     }
 
     // Check condition for ARM
-    if (!IsThumbMode())
+    if (!IsThumbMode()) 
     {
         Condition condition = GetConditionType(pipeline.stage[2].rawBits);
 
@@ -523,5 +523,10 @@ DIV routine is now fine, at 0x080017b8 - m_text_pos 60, 76, line 102 of macros.i
 0x080016d0 is right after branching to eval
 
 0x080016f0 is right after branching to m_test_eval (stmfd sp!, \{r0-r12\}), line 66 in macros.inc
+
+Progress - ON TEST 363, hex = 0xe51f0008  = ldr     r0, [pc, -8]
+
+test failed - pc at 0x08001074, test #256 (WRONG, test doesnt exist)
+0800 105C - testing this instruction 
 
 */

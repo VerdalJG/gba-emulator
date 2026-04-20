@@ -112,15 +112,8 @@ void GBA_Bus::Write(u32 address, T value, BusRequester requester)
         case RegionType::PaletteRAM: WritePaletteRAM<T>(address, value); break;
         case RegionType::VRAM: WriteVRAM<T>(address, value); break;
         case RegionType::OAM: WriteOAM<T>(address, value); break;
-
-        case RegionType::ROM0:
-        case RegionType::ROM1:
-        case RegionType::ROM2:
-        {
-            memory.Write<T>(address, value);
-            break;
-        }
-
+        // TODO: Add ROM.write for EEPROM, GPIO, FLASH, writes do not affect actual rom, only 
+        // other peripherals
         case RegionType::SRAM: WriteSRAM<T>(address, value); break;
         default: return;
     }
@@ -321,3 +314,4 @@ void GBA_Bus::WriteSRAM(u32 address, T value)
 
     memory.Write<u8>(address, byte);
 }
+

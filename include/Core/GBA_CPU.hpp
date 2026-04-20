@@ -162,7 +162,8 @@ private:
     void SaveCPSRIntoSPSR(ExceptionBank bankIndex);
 
     void UpdateNZFlags(u32 result);
-    void UpdateCFlag(u32 op1, u32 op2, bool isSub, u32 carry = 0);
+    void UpdateCFlag_Add(u32 op1, u32 op2, u32 carryIn = 0);
+    void UpdateCFlag_Sub(u32 op1, u32 op2, u32 borrowIn = 0);
     void UpdateVFlag(u32 op1, u32 op2, u32 result, bool isSub);
 
     static constexpr std::array<ARM_Handler, ARM_Opcode_Count> GenerateARMInstructionTable();

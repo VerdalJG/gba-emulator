@@ -77,10 +77,7 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
         uint shiftOp = ExtractBits<6, 5>(instruction);
         
         offset = ReadRegister(rmIndex);
-        if (shiftAmount != 0)
-        {
-            ApplyShift(shiftOp, offset, shiftAmount, carry, true); 
-        }
+        ApplyShift(shiftOp, offset, shiftAmount, carry, true); 
     }
 
     if (!add)
@@ -94,7 +91,6 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
     if (pre_indexed)
     {
         effectiveAddress = baseAddress + offset;
-        writebackValue = effectiveAddress;
 
         if (rmUsingPC); // UNPREDICTABLE
         if (writeback && (rnUsingPC || (!immediate && rnIndex == rmIndex))); // UNPREDICTABLE
@@ -102,10 +98,12 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
     else
     {
         effectiveAddress = baseAddress;
-        writebackValue = baseAddress + offset;
         
         if (rnUsingPC || rmUsingPC || (!immediate && rnIndex == rmIndex)); // UNPREDICTABLE
     }
+
+    writebackValue = baseAddress + offset;
+    AdvanceProgramCounter();
 
     if (load)
     {
@@ -118,6 +116,13 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
         else // LDR
         {
             readValue = Read32_Rotated(effectiveAddress, Access::Data | Access::Nonsequential);
+        }
+
+        // Post-Indexed update
+        if ((writeback || !pre_indexed))
+        {
+            cpuState.registers[rnIndex] = writebackValue;
+            if (rnIndex == 15) FlushPipeline();
         }
 
         // Align if rdIndex == PC
@@ -143,23 +148,20 @@ void GBA_CPU::ARM_SingleDataTransfer(u32 instruction)
             Write32(alignedAddress, rd, Access::Data | Access::Nonsequential);
         }
 
-        pipeline.access = Access::Code | Access::Nonsequential;
-    }
+        // Post-Indexed update
+        if ((writeback || !pre_indexed))
+        {
+            cpuState.registers[rnIndex] = writebackValue;
+            if (rnIndex == 15) FlushPipeline();
+        }
 
-    // Post-Indexed update
-    if (writeback || !pre_indexed)
-    {
-        cpuState.registers[rnIndex] = writebackValue;
+        pipeline.access = Access::Code | Access::Nonsequential;
     }
 
     // Program counter increment/flush
     if (load && rdIndex == 15)
     {
         FlushPipeline();
-    }
-    else
-    {
-        AdvanceProgramCounter();
     }
 }
 
@@ -247,6 +249,7 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
         if (signed_flag); // UNPREDICTABLE
 
         uint32_t rd = ReadRegister(rdIndex);
+        if (rdIndex == 15) rd += 4;
 
         // GBA SPECIFIC: ARM7TDMI (GBA) misaligned STRH does NOT fault.
         // The low address bit is ignored and the store is forced to an aligned address.

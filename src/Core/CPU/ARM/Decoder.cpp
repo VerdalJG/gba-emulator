@@ -44,7 +44,9 @@ ARM_Opcode GBA_CPU::Decode_ARM_Pattern00(u32 instruction)
         }
 
         // ARM 5. Single data swap (SWP/SWPB)
-        if ((instruction >> 20) & 0b11011 == 0b10000 && ExtractBits<11, 8>(instruction) == 0)
+        if (ExtractBits<27, 23>(instruction) == 0b00010 && 
+            ExtractBits<21, 20>(instruction) == 0 &&
+            ExtractBits<11, 8>(instruction) == 0)
         {
             return ARM_Opcode::ARM_SingleDataSwap;
         }

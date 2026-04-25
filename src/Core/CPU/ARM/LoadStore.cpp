@@ -222,6 +222,8 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
         }
     }
 
+    AdvanceProgramCounter();
+
     if (load)
     {
         u32 readValue;
@@ -239,6 +241,11 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
             readValue = Read8_Signed(effectiveAddress, Access::Data | Access::Nonsequential);
         }
 
+        if (writeback || !pre_indexed)
+        {
+            cpuState.registers[rnIndex] = writebackValue;
+        }
+
         cpuState.registers[rdIndex] = readValue;
 
         AddInternalCycles(1);
@@ -249,7 +256,6 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
         if (signed_flag); // UNPREDICTABLE
 
         uint32_t rd = ReadRegister(rdIndex);
-        if (rdIndex == 15) rd += 4;
 
         // GBA SPECIFIC: ARM7TDMI (GBA) misaligned STRH does NOT fault.
         // The low address bit is ignored and the store is forced to an aligned address.
@@ -259,24 +265,21 @@ void GBA_CPU::ARM_HalfwordDataTransfer(u32 instruction)
         uint32_t alignedAddress = effectiveAddress & ~1;
         Write16(alignedAddress, storeValue, Access::Data | Access::Nonsequential);
 
+        if (writeback || !pre_indexed)
+        {
+            cpuState.registers[rnIndex] = writebackValue;
+        }
+
         pipeline.access = Access::Code | Access::Nonsequential;
     }
 
-    if (writeback || !pre_indexed)
-    {
-        cpuState.registers[rnIndex] = writebackValue;
-    }
+
 
     // Program counter increment/flush
     if (load && rdIndex == 15)
     {
         FlushPipeline();
     }
-    else
-    {
-        AdvanceProgramCounter();
-    }
-
 }
 
 void GBA_CPU::ARM_BlockDataTransfer(u32 instruction)
@@ -334,7 +337,7 @@ void GBA_CPU::ARM_BlockDataTransfer(u32 instruction)
      * LDM with PC → false
      */
 
-    const bool shouldSwitchMode = forceUserMode && (!load || pcInRegisterList) && !CurrentModeHasSPSR();
+    const bool shouldSwitchMode = forceUserMode && (!load || !pcInRegisterList) && CurrentModeHasSPSR();
 
     if (shouldSwitchMode)
     {
@@ -366,6 +369,8 @@ void GBA_CPU::ARM_BlockDataTransfer(u32 instruction)
     
     int accessType = Access::Data | Access::Nonsequential;
 
+    AdvanceProgramCounter();
+
     for (int i = first; i <= 15; i++)
     {
         if (~registerList & (1 << i)) continue;
@@ -377,7 +382,7 @@ void GBA_CPU::ARM_BlockDataTransfer(u32 instruction)
 
         if (load)
         {
-            u32 readValue = Read32(address, accessType);
+           u32 readValue = Read32(address, accessType);
             if (writeback && i == first)
             {
                 WriteRegister(rnIndex, newBaseAddress);
@@ -399,11 +404,6 @@ void GBA_CPU::ARM_BlockDataTransfer(u32 instruction)
         }
 
         accessType = Access::Sequential;
-    }
-
-    if (!load || !pcInRegisterList)
-    {
-        AdvanceProgramCounter();
     }
 
     if (load)
@@ -433,4 +433,4 @@ void GBA_CPU::ARM_BlockDataTransfer(u32 instruction)
     {
         SwitchMode(currentMode);
     }
-}
+} 

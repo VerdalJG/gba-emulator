@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/IO/GBA_IO_Helpers.hpp"
-#include "Core/IO/IO_Addresses.hpp"
+#include "Core/IO/Addresses.hpp"
 
 #include <array>
 

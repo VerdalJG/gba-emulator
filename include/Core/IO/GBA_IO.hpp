@@ -67,7 +67,7 @@ public:
     void Write(u32 address, T value);
 };
 
-#include "Core/Memory/IOMemoryAccess.tpp"
+#include "Core/IO/MemoryAccess.tpp"
 
 
 /* Found:

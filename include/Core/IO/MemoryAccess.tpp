@@ -1,5 +1,5 @@
 #include "Utils/Integers.hpp"
-#include "Core/IO/IO_Addresses.hpp"
+#include "Core/IO/Addresses.hpp"
 #include "Core/Memory/GBA_Memory_Helpers.hpp"
 
 template <typename T>

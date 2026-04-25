@@ -186,7 +186,7 @@ void GBA_CPU::Fetch()
 {
     u32 address = cpuState.r15 & (IsThumbMode() ? ~1u : ~3u);
     u32 fetched = IsThumbMode() ? Read16(address, pipeline.access) : Read32(address, pipeline.access);
-    pipeline.stage[0] = { fetched, ARM_Suppressed, true };
+    pipeline.stage[0] = { fetched, (IsThumbMode() ? Thumb_Invalid : ARM_Suppressed), true };
     pipeline.access = Access::Code | Access::Sequential;
 }
 

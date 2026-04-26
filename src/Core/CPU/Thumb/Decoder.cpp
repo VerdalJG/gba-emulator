@@ -96,7 +96,7 @@ Thumb_Opcode GBA_CPU::Decode_Thumb(u16 instruction)
     }
 
     // 16. Conditional branch
-    if (ExtractBits<15, 12>(instruction) < 0b11011111)
+    if (ExtractBits<15, 8>(instruction) < 0b11011111)
     {
         return Thumb_Opcode::Thumb_ConditionalBranch;
     }
@@ -104,19 +104,19 @@ Thumb_Opcode GBA_CPU::Decode_Thumb(u16 instruction)
     // 17. Software Interrupt
     if (ExtractBits<15, 8>(instruction) == 0b11011111)
     {
-        return Thumb_Opcode::Thumb_UnconditionalBranch;
+        return Thumb_Opcode::Thumb_SoftwareInterrupt;
     }
 
     // 18. Unconditional branch
     if (ExtractBits<15, 11>(instruction) == 0b11100)
     {
-        return Thumb_Opcode::Thumb_LongBranchWithLink;
+        return Thumb_Opcode::Thumb_UnconditionalBranch;
     }
 
     // 19. Long branch with link
     if (ExtractBits<15, 12>(instruction) == 0b11110)
     {
-        return Thumb_Opcode::Thumb_SoftwareInterrupt;
+        return Thumb_Opcode::Thumb_LongBranchWithLink;
     }
 
     return Thumb_Opcode::Thumb_Invalid;

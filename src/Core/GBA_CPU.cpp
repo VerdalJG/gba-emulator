@@ -186,7 +186,8 @@ void GBA_CPU::Fetch()
 {
     u32 address = cpuState.r15 & (IsThumbMode() ? ~1u : ~3u);
     u32 fetched = IsThumbMode() ? Read16(address, pipeline.access) : Read32(address, pipeline.access);
-    pipeline.stage[0] = { fetched, (IsThumbMode() ? Thumb_Invalid : ARM_Suppressed), true };
+    u8 initialOpcode = static_cast<u8>(IsThumbMode() ? Thumb_Invalid : ARM_Suppressed);
+    pipeline.stage[0] = { fetched, initialOpcode, true };
     pipeline.access = Access::Code | Access::Sequential;
 }
 
@@ -257,7 +258,7 @@ void GBA_CPU::Execute()
     if (IsThumbMode())
     {
         Thumb_Handler function = thumbDispatchTable[pipeline.stage[2].opcode];
-        (this->*function)(pipeline.stage[2].rawBits);
+        (this->*function)(pipeline.stage[2].rawBits & 0xFFFF);
     }
     else
     {

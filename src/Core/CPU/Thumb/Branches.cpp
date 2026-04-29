@@ -79,14 +79,15 @@ void GBA_CPU::Thumb_LongBranchWithLink(u16 instruction)
 
     if (secondInstruction)
     {
-        // Get the PC of the currently executing instruction
-        u32 currentPC = cpuState.r15 - 4;
+        // Get the next executing instruction. PC is already +4 so the next one would be -2 from the 
+        // visible PC
+        u32 nextInstructionAddress = cpuState.r15 - 2;
 
-        // Save the next instruction address (+2 in thumb)
-        cpuState.r14 = (currentPC + 2) | 1;
+        // Modify R15
+        cpuState.r15 = cpuState.r14 + (offset_11 << 1) & ~1;
 
-        // Modify R15 and flush pipeline
-        cpuState.r15 = cpuState.r14 + (offset_11 << 1);
+        // Save the next instruction address (+2 in thumb) and flush pipeline
+        cpuState.r14 = nextInstructionAddress | 1;
         FlushPipeline();
     }
     else

@@ -114,7 +114,7 @@ Thumb_Opcode GBA_CPU::Decode_Thumb(u16 instruction)
     }
 
     // 19. Long branch with link
-    if (ExtractBits<15, 12>(instruction) == 0b11110)
+    if (ExtractBits<15, 12>(instruction) == 0b1111)
     {
         return Thumb_Opcode::Thumb_LongBranchWithLink;
     }

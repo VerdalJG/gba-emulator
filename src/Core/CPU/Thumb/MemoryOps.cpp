@@ -105,7 +105,7 @@ void GBA_CPU::Thumb_LoadStoreSignExtended(u16 instruction)
 
         case 2: // LDRH
         {
-            cpuState.registers[rdIndex] = Read32_Rotated(address, Access::Data | Access::Nonsequential);
+            cpuState.registers[rdIndex] = Read16_Rotated(address, Access::Data | Access::Nonsequential);
             AddInternalCycles(1);
             break;
         }
@@ -153,23 +153,27 @@ void GBA_CPU::Thumb_LoadStoreImmediateOffset(u16 instruction)
         case 0: // STR 
         {
             Write32(address, rd, Access::Data | Access::Nonsequential);
+            break;
         }
 
         case 1: // LDR
         {
             cpuState.registers[rdIndex] = Read32_Rotated(address, Access::Data | Access::Nonsequential);
             AddInternalCycles(1);
+            break;
         }
 
         case 2: // STRB
         {
             Write8(address, rd, Access::Data | Access::Nonsequential);
+            break;
         }
 
         case 3: // LDRB
         {
             cpuState.registers[rdIndex] = Read8(address, Access::Data | Access::Nonsequential);
             AddInternalCycles(1);
+            break;
         }
     }
 
@@ -224,16 +228,16 @@ void GBA_CPU::Thumb_LoadStoreSPRelative(u16 instruction)
 
     u32 address = cpuState.r13 + offset_8;
 
-    if (load) // STR
-    {
-        Write32(address, rd, Access::Data | Access::Nonsequential);
-        pipeline.access = Access::Code | Access::Nonsequential;
-    }
-    else // LDR
+    if (load) // LDR
     {
         cpuState.registers[rdIndex] = Read32_Rotated(address, Access::Data | Access::Nonsequential);
         pipeline.access = Access::Code | Access::Sequential;
         AddInternalCycles(1);
+    }
+    else // STR
+    {
+        Write32(address, rd, Access::Data | Access::Nonsequential);
+        pipeline.access = Access::Code | Access::Nonsequential;
     }
 
     AdvanceProgramCounter();

@@ -81,7 +81,6 @@ private:
     Pipeline pipeline;
     
     bool halted = false;
-    bool skipBios = true;
 
     void Fetch();
     void Decode();
@@ -174,7 +173,8 @@ private:
     inline static const std::array<ARM_Handler, ARM_Opcode_Count> armDispatchTable = GenerateARMInstructionTable(); // ARM instruction lookup table, precomputed
     inline static const std::array<Thumb_Handler, Thumb_Opcode_Count> thumbDispatchTable = GenerateThumbInstructionTable(); // Thumb instruction lookup table, precomputed
 
-    bool logInstructions = false;
+    bool skipBios = false;
+    bool logInstructions = true;
 };
 
 #include "Core/CPU/TableGeneration.inl"
@@ -185,6 +185,7 @@ private:
 
 /* TODO NEXT:
 
+- SIZE CHECK ON ROM READ
 - Centralize Read and Write functions with a templated version in the bus
 - Do everything necessary for png183 tests
 

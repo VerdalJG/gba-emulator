@@ -243,13 +243,14 @@ void GBA_CPU::Execute()
 
     if (logInstructions)
     {
+        std::string mode = IsThumbMode() ? "[THUMB] " : "[ARM] ";
         std::string pc = "PC is at:" + IntToHexString(cpuState.r15);
         std::string bits = ", Bits= " + IntToHexString(pipeline.stage[2].rawBits);
         std::string opcode = ", Opcode= " + (IsThumbMode() ? 
         ThumbOpToString(pipeline.stage[2].opcode) : 
         ArmOpToString(pipeline.stage[2].opcode));
         
-        std::string message = pc + bits + opcode;
+        std::string message = mode + pc + bits + opcode;
 
         Log(message, LogType::Info);
     }

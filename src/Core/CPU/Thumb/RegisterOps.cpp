@@ -164,13 +164,13 @@ void GBA_CPU::Thumb_ALU(u16 instruction)
             
         case Thumb_ALUOp::ADC:
         {
-            rd = ADC(rd, rs, true); // CPSR flags handled inside ADC()
+            cpuState.registers[rdIndex] = ADC(rd, rs, true); // CPSR flags handled inside ADC()
             break;
         }
             
         case Thumb_ALUOp::SBC:
         {
-            rd = SBC(rd, rs, true); // CPSR flags handled inside SBC()
+            cpuState.registers[rdIndex] = SBC(rd, rs, true); // CPSR flags handled inside SBC()
             break;
         }
             

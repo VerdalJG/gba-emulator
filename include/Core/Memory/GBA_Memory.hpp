@@ -51,9 +51,6 @@ private:
     std::unique_ptr<std::vector<u8>> paletteRam;
     std::unique_ptr<std::vector<u8>> vram;
     std::unique_ptr<std::vector<u8>> oam;
-    std::span<const u8> rom0View;
-    std::span<const u8> rom1View;
-    std::span<const u8> rom2View;
     std::unique_ptr<std::vector<u8>> sram;
     
     // General internal memory

@@ -34,7 +34,7 @@ EmulatorCore::EmulatorCore(Logger* logger) :
         &timerController, 
         &interruptController, 
         &keypad, 
-        &bus.GetWaitstateController(),
+        &bus.GetWaitcnt(),
         &bus
     );
 
@@ -42,13 +42,16 @@ EmulatorCore::EmulatorCore(Logger* logger) :
         &ppu,
         &apu,
         &dmaController,
-        &cpu
+        &cpu,
+        &rom
     );
+
+    io.ResetIORegisters(skipBios);
 }
 
 bool EmulatorCore::InitializeCPU()
 {
-    cpu.Reset();
+    cpu.Reset(skipBios);
 
     // SDL_SetAppMetadata("GBAEmu", "Version 0.1", "GBAEmulator");
 

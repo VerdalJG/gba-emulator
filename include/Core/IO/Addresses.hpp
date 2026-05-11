@@ -166,15 +166,16 @@ constexpr u32 JOY_RECV    = 0x04000150;
 constexpr u32 JOY_TRANS   = 0x04000154;
 constexpr u32 JOYSTAT     = 0x04000158;
 
-// Interrupts / System Control
+// Interrupts / 
 
 constexpr u32 IE        = 0x04000200;
 constexpr u32 IF        = 0x04000202;
 constexpr u32 WAITCNT   = 0x04000204;
 constexpr u32 IME       = 0x04000208;
 
-// HALT / POST
+// System Control
 
 constexpr u32 POSTFLG   = 0x04000300;
 constexpr u32 HALTCNT   = 0x04000301;
+constexpr u32 UNKNOWN   = 0x04000410;
 constexpr u32 IMC       = 0x04000800; // Internal Memory Control

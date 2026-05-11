@@ -2,11 +2,14 @@
 #include "Core/EmulatorCore.hpp"
 #include "Core/IO/GBA_IO_Helpers.hpp"
 #include "Core/GBA_CPU.hpp"
-#include "Core/Memory/GBA_WaitstateController.hpp"
 #include "Core/Memory/GBA_Memory_Helpers.hpp"
 #include "Core/IO/Addresses.hpp"
 #include "Core/IO/TableGeneration.hpp"
 #include "Core/GBA_Bus.hpp"
+
+#include "Core/IO/Registers/LCDRegisters.hpp"
+#include "Core/IO/Registers/SystemControlRegisters.hpp"
+#include "Core/IO/Registers/InterruptRegisters.hpp"
 
 GBA_IO::GBA_IO(EmulatorCore* core) : core(core)
 {
@@ -15,22 +18,36 @@ GBA_IO::GBA_IO(EmulatorCore* core) : core(core)
 
 void GBA_IO::AttachSubsystems(GBA_CPU* cpu, GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, 
     GBA_TimerController* timers, GBA_InterruptController* interrupts, GBA_Keypad* keypad,
-    GBA_WaitstateController* waitstates, GBA_Bus* bus) 
+    WaitstateControl* waitstates, GBA_Bus* bus) 
 {
     this->cpu = cpu;
     this->ppu = ppu;
     this->apu = apu;
-    this->dma = dma;
-    this->timers = timers;
-    this->interrupts = interrupts;
+    this->dmaController = dma;
+    this->timerController = timers;
+    this->interruptController = interrupts;
     this->keypad = keypad;
     this->waitstates = waitstates;
     this->bus = bus;
 }
 
+void GBA_IO::ResetIORegisters(bool skipBios) 
+{
+    bus->GetWaitcnt().Reset(skipBios);
+    cpu->GetSystemControlRegisters().Reset(skipBios);
+    ppu->GetLCDRegisters().Reset(skipBios);
+    apu->GetSoundRegisters().Reset(skipBios);
+    interruptController->GetInterruptRegisters().Reset();
+
+}
+
 u8 GBA_IO::Read8(u32 address) 
 {
-    IO_LCDRegisters lcdRegs = ppu->GetLCDRegisters();
+    IO_LCDRegisters& lcdRegs = ppu->GetLCDRegisters();
+    IO_SoundRegisters& soundRegs = apu->GetSoundRegisters();
+    IO_InterruptRegisters& interruptRegs = interruptController->GetInterruptRegisters();
+    IO_SystemControlRegisters& systemControlRegs = cpu->GetSystemControlRegisters();
+
 
     switch (address)
     {
@@ -69,7 +86,36 @@ u8 GBA_IO::Read8(u32 address)
         case BLDALPHA+1: return lcdRegs.bldalpha.Read8(1);
         // PPU
 
+        // APU
+        case SOUNDCNT_X: return soundRegs.soundcnt_x.Read8(0);
+        case SOUNDCNT_X+1: return soundRegs.soundcnt_x.Read8(1);
+
+        case SOUNDBIAS: return soundRegs.soundBias.Read8(0);
+        case SOUNDBIAS+1: return soundRegs.soundBias.Read8(1);
+
+        // APU
+
         // DMA
+
+        // Interrupts / System Control
+        case IE: return interruptRegs.ie.Read8(0);
+        case IE+1: return interruptRegs.ie.Read8(1);
+        case IF: return interruptRegs.irf.Read8(0);
+        case IF+1: return interruptRegs.irf.Read8(1);
+
+        case WAITCNT: return bus->GetWaitcnt().Read8(0);
+        case WAITCNT+1: return bus->GetWaitcnt().Read8(1);
+
+        case IME: return interruptRegs.ime.Read8(0);
+        case IME+1: return interruptRegs.ime.Read8(1);
+
+        case POSTFLG: return systemControlRegs.postflg.Read8();
+        case UNKNOWN: return systemControlRegs.undocumentedReg;
+        
+        case IMC: return systemControlRegs.imemcnt.Read8(0);
+        case IMC+1: return systemControlRegs.imemcnt.Read8(1);
+        case IMC+2: return systemControlRegs.imemcnt.Read8(2);
+        case IMC+3: return systemControlRegs.imemcnt.Read8(3);
 
         default: return bus->OpenBus(address);
     }
@@ -88,6 +134,10 @@ u32 GBA_IO::Read32(u32 address)
 void GBA_IO::Write8(u32 address, u8 value) 
 {
     IO_LCDRegisters& lcdRegs = ppu->GetLCDRegisters();
+    IO_SoundRegisters& soundRegs = apu->GetSoundRegisters();
+    IO_InterruptRegisters& interruptRegs = interruptController->GetInterruptRegisters();
+    IO_SystemControlRegisters& systemControlRegs = cpu->GetSystemControlRegisters();
+
 
     switch (address)
     {
@@ -186,7 +236,38 @@ void GBA_IO::Write8(u32 address, u8 value)
         case BLDY+1: return lcdRegs.bldy.Write8(1, value);
         // PPU
 
+        // APU
+        case SOUNDCNT_X: return soundRegs.soundcnt_x.Write8(0, value);
+        case SOUNDCNT_X+1: return soundRegs.soundcnt_x.Write8(1, value);
+
+        case SOUNDBIAS: return soundRegs.soundBias.Write8(0, value);
+        case SOUNDBIAS+1: return soundRegs.soundBias.Write8(1, value);
+
+        // APU
+
         // DMA
+
+
+        // Interrupts / System Control
+        case IE: return interruptRegs.ie.Write8(0, value);
+        case IE+1: return interruptRegs.ie.Write8(1, value);
+        case IF: return interruptRegs.irf.Write8(0, value);
+        case IF+1: return interruptRegs.irf.Write8(1, value);
+
+        case WAITCNT: return bus->GetWaitcnt().Write8(0, value);
+        case WAITCNT+1: return bus->GetWaitcnt().Write8(1, value);
+
+        case IME: return interruptRegs.ime.Write8(0, value);
+        case IME+1: return interruptRegs.ime.Write8(1, value);
+
+        case POSTFLG: return systemControlRegs.postflg.Write8(value);
+        case HALTCNT: return systemControlRegs.haltcnt.Write8(value);
+        case UNKNOWN: systemControlRegs.undocumentedReg = value; return;
+
+        case IMC: return systemControlRegs.imemcnt.Write8(0, value);
+        case IMC+1: return systemControlRegs.imemcnt.Write8(1, value);
+        case IMC+2: return systemControlRegs.imemcnt.Write8(2, value);
+        case IMC+3: return systemControlRegs.imemcnt.Write8(3, value);
 
         default: return;
     }

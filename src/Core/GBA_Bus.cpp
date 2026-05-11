@@ -7,6 +7,7 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/IO/GBA_IO.hpp"
 #include "Core/EmulatorCore.hpp"
+#include "Core/GBA_ROM.hpp"
 
 
 GBA_Bus::GBA_Bus(EmulatorCore* core, GBA_Memory& memory, GBA_IO& io) : core(core), memory(memory), io(io)
@@ -14,12 +15,13 @@ GBA_Bus::GBA_Bus(EmulatorCore* core, GBA_Memory& memory, GBA_IO& io) : core(core
     
 }
 
-void GBA_Bus::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, GBA_CPU* cpu) 
+void GBA_Bus::AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, GBA_CPU* cpu, GBA_ROM* rom) 
 {
     this->ppu = ppu;
     this->apu = apu;
     this->dma = dma;
     this->cpu = cpu;
+    this->rom = rom;
 }
 
 void GBA_Bus::UpdateLatestAccessValues(u32 value, u32 address, RegionType region, AccessSize accessSize) 
@@ -180,7 +182,7 @@ void GBA_Bus::HandleAccessCycles(u32 address, const MemoryRegion* region, Access
         sequential = IsSequential(address, size, region->type);
     }
     
-    u32 cycles = waitstateController.GetCycles(region->type, sequential);
+    u32 cycles = waitcnt.GetCycles(region->type, sequential);
 
     // The CPU must wait 1 cycle if the ppu is currently accessing video memory
     if (requester == BusRequester::CPU && ppu->IsAccessingVideoMemory()) 
@@ -191,7 +193,7 @@ void GBA_Bus::HandleAccessCycles(u32 address, const MemoryRegion* region, Access
     // Sometimes an access can be split up into 4 8-bit reads or 2 16-bit reads 
     for (uint i = 1; i < accesses; i++)
     {
-        cycles += waitstateController.GetCycles(region->type, true);
+        cycles += waitcnt.GetCycles(region->type, true);
     }
 
     cpu->AddCycles(cycles);

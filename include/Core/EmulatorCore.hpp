@@ -71,4 +71,6 @@ protected:
     GBA_Keypad keypad;
     GBA_CPU cpu;
     GBA_HLE hle;
+
+    bool skipBios = false;
 };

@@ -7,11 +7,10 @@
 void GBA_CPU::Thumb_LoadPCRelative(u16 instruction)
 {   
     const u16 rdIndex = ExtractBits<10, 8>(instruction);
-    const u16 offset_8 = ExtractBits<7, 0>(instruction); 
-    const u32 address = (cpuState.r15 & ~ 2) + (offset_8 << 2); // Offset is in steps of 4 (0-1020)
+    const u16 offset_8 = ExtractBits<7, 0>(instruction) << 2; // Offset is in steps of 4 (0-1020)
+    const u32 address = (cpuState.r15 & ~2) + offset_8; 
 
     // Load the value
-    u32 rd = cpuState.registers[rdIndex];
     cpuState.registers[rdIndex] = Read32(address, Access::Data | Access::Nonsequential);
 
     pipeline.access = Access::Code | Access::Sequential;

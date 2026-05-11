@@ -5,6 +5,7 @@
 #include "Core/CPU/ThumbOpcodes.hpp"
 #include "Core/CPU/Conditions.hpp"
 #include "Core/Memory/BusHelpers.hpp"
+#include "Core/IO/Registers/SystemControlRegisters.hpp"
 
 #include "Utils/Logger.hpp"
 #include "Utils/Integers.hpp"
@@ -22,7 +23,7 @@ public:
     GBA_CPU(EmulatorCore* core, GBA_Bus& bus);
     ~GBA_CPU() = default;
 
-    void Reset();            // Reset to CPU initial state
+    void Reset(bool skipBios); // Reset to CPU initial state
     void Step();             // Fetch, decode, and execute loop
     void RequestInterrupt(); // Triggered by emulator core
 
@@ -75,10 +76,12 @@ public:
     // TODO: In the future may have interactions with DMA?
     void AddCycles(u32 cycles);
     void AddInternalCycles(uint numCycles) { cycles += numCycles; }
+    IO_SystemControlRegisters& GetSystemControlRegisters() { return systemControlRegisters; }
 
 private:
     CPU_Registers cpuState;
     Pipeline pipeline;
+    IO_SystemControlRegisters systemControlRegisters;
     
     bool halted = false;
 
@@ -173,7 +176,6 @@ private:
     inline static const std::array<ARM_Handler, ARM_Opcode_Count> armDispatchTable = GenerateARMInstructionTable(); // ARM instruction lookup table, precomputed
     inline static const std::array<Thumb_Handler, Thumb_Opcode_Count> thumbDispatchTable = GenerateThumbInstructionTable(); // Thumb instruction lookup table, precomputed
 
-    bool skipBios = false;
     bool logInstructions = true;
 };
 

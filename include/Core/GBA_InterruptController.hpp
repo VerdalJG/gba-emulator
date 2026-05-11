@@ -1,5 +1,6 @@
 #pragma once  
 #include "Core/IO/GBA_IO_Helpers.hpp"
+#include "Core/IO/Registers/InterruptRegisters.hpp"
 
 #include <cstdint>
 
@@ -13,8 +14,9 @@ public:
     ~GBA_InterruptController() = default;
 
     void Step(uint32_t cycles);
+    IO_InterruptRegisters& GetInterruptRegisters() { return interruptRegisters; }
 
 private:
     EmulatorCore* core;
-    //IO_InterruptRegisters interruptRegisters;
+    IO_InterruptRegisters interruptRegisters;
 };

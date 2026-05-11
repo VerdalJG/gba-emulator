@@ -11,9 +11,9 @@ constexpr auto BuildIOPermissionTable()
     constexpr HalfwordPermissions RW  = {0b11, 0b11};
     constexpr HalfwordPermissions RO  = {0b11, 0b00};
     constexpr HalfwordPermissions WO  = {0b00, 0b11};
-    constexpr HalfwordPermissions POSTFLG_HALTCNT{0b01, 0b10};
+    constexpr HalfwordPermissions POSTFLG_HALTCNT = {0b01, 0b10};
 
-    std::array<HalfwordPermissions, IO_SIZE / 2> table{};
+    std::array<HalfwordPermissions, IO_TABLE_SIZE / 2> table{};
     table.fill(DEFAULT);
 
     auto ioIndex = [](u32 address) -> uint 
@@ -111,37 +111,37 @@ constexpr auto BuildIOPermissionTable()
     table[ioIndex(WAVE_RAM3_L)] = RW;
     table[ioIndex(WAVE_RAM3_H)] = RW;
 
-    table[ioIndex(FIFO_A) + 2]  = WO;
-    table[ioIndex(FIFO_B) + 2]  = WO;
+    table[ioIndex(FIFO_A + 2)]  = WO;
+    table[ioIndex(FIFO_B + 2)]  = WO;
 
     ///
     // DMA Registers
     ///
     table[ioIndex(DMA0SAD)]     = WO;
-    table[ioIndex(DMA0SAD) + 2] = WO;
+    table[ioIndex(DMA0SAD + 2)] = WO;
     table[ioIndex(DMA0DAD)]     = WO;
-    table[ioIndex(DMA0DAD) + 2] = WO;
+    table[ioIndex(DMA0DAD + 2)] = WO;
     table[ioIndex(DMA0CNT_L)]   = WO;
     table[ioIndex(DMA0CNT_H)]   = RW;
 
     table[ioIndex(DMA1SAD)]     = WO;
-    table[ioIndex(DMA1SAD) + 2] = WO;
+    table[ioIndex(DMA1SAD + 2)] = WO;
     table[ioIndex(DMA1DAD)]     = WO;
-    table[ioIndex(DMA1DAD) + 2] = WO;
+    table[ioIndex(DMA1DAD + 2)] = WO;
     table[ioIndex(DMA1CNT_L)]   = WO;
     table[ioIndex(DMA1CNT_H)]   = RW;
 
     table[ioIndex(DMA2SAD)]     = WO;
-    table[ioIndex(DMA2SAD) + 2] = WO;
+    table[ioIndex(DMA2SAD + 2)] = WO;
     table[ioIndex(DMA2DAD)]     = WO;
-    table[ioIndex(DMA2DAD) + 2] = WO;
+    table[ioIndex(DMA2DAD + 2)] = WO;
     table[ioIndex(DMA2CNT_L)]   = WO;
     table[ioIndex(DMA2CNT_H)]   = RW;
 
     table[ioIndex(DMA3SAD)]     = WO;
-    table[ioIndex(DMA3SAD) + 2] = WO;
+    table[ioIndex(DMA3SAD + 2)] = WO;
     table[ioIndex(DMA3DAD)]     = WO;
-    table[ioIndex(DMA3DAD) + 2] = WO;
+    table[ioIndex(DMA3DAD + 2)] = WO;
     table[ioIndex(DMA3CNT_L)]   = WO;
     table[ioIndex(DMA3CNT_H)]   = RW;
 
@@ -182,9 +182,9 @@ constexpr auto BuildIOPermissionTable()
     table[ioIndex(RCNT)]            = RW;
     table[ioIndex(JOYCNT)]          = RW;
     table[ioIndex(JOY_RECV)]        = RW;
-    table[ioIndex(JOY_RECV) + 2]    = RW;
+    table[ioIndex(JOY_RECV + 2)]    = RW;
     table[ioIndex(JOY_TRANS)]       = RW;
-    table[ioIndex(JOY_TRANS) + 2]   = RW;
+    table[ioIndex(JOY_TRANS + 2)]   = RW;
     table[ioIndex(JOYSTAT)]         = RO;
 
     ///
@@ -195,6 +195,9 @@ constexpr auto BuildIOPermissionTable()
     table[ioIndex(WAITCNT)] = RW;
     table[ioIndex(IME)] = RW;
     table[ioIndex(POSTFLG)] = POSTFLG_HALTCNT;
+    table[ioIndex(UNKNOWN)] = {0b01, 0b01};
+    table[ioIndex(IMC)]     = RW;
+    table[ioIndex(IMC + 2)] = RW;
 
     return table;
 }

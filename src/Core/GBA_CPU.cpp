@@ -1,10 +1,10 @@
 #include "Core/GBA_CPU.hpp"
 #include "Core/Memory/GBA_Memory.hpp"
 #include "Core/EmulatorCore.hpp"
-#include "Core/Memory/GBA_WaitstateController.hpp"
 #include "Core/GBA_Bus.hpp"
 #include "Core/CPU/Shifts.hpp"
 #include "Core/IO/GBA_IO_Helpers.hpp"
+#include "Core/IO/Addresses.hpp"
 
 #include "Utils/Logger.hpp"
 #include "Utils/BitOperations.hpp"
@@ -17,7 +17,7 @@ GBA_CPU::GBA_CPU(EmulatorCore* core, GBA_Bus& bus) : core(core), bus(bus)
     assert(core && "CPU must have valid EmulatorCore object");
 }
 
-void GBA_CPU::Reset()
+void GBA_CPU::Reset(bool skipBios)
 {
     if (skipBios)
     {
@@ -31,7 +31,7 @@ void GBA_CPU::Reset()
         cpuState.bankedR13_R14[BANK_IRQ][BANK_R13] = 0x03007FA0;
         cpuState.r15 = 0x08000000;
         FlushPipeline();
-        Write16(0x04000000, 0, 0); // Set DISPCNT to 0
+        Write16(DISPCNT, 0, 0); // Set DISPCNT to 0
         return;
     }
     
@@ -42,6 +42,10 @@ void GBA_CPU::Reset()
 
     globalCycles = 0;
     cycles = 0;
+
+    // Write32(0x04230800, 0xFFFFFFFF, 0);
+    // u32 value = Read32(0x04900800, 0);
+    // Log("IMC value: " + IntToHexString(value), LogType::Info);
 }
 
 void GBA_CPU::Step()
@@ -243,10 +247,16 @@ void GBA_CPU::Execute()
 
     if (logInstructions)
     {
+        // std::string r0 = " r0: " + IntToHexString(cpuState.r0);
+        // std::string r5 = " r5: " + IntToHexString(cpuState.r5);
+        // std::string trackedRegs = "Regs after instruction: " + r0 + r5;
+
+        // Log(trackedRegs, LogType::Info);
+
         std::string mode = IsThumbMode() ? "[THUMB] " : "[ARM] ";
-        std::string pc = "PC is at:" + IntToHexString(cpuState.r15);
-        std::string bits = ", Bits= " + IntToHexString(pipeline.stage[2].rawBits);
-        std::string opcode = ", Opcode= " + (IsThumbMode() ? 
+        std::string pc = "Executing at: " + IntToHexString(cpuState.r15 - (IsThumbMode() ? 4 : 8));
+        std::string bits = ", Instruction = " + IntToHexString(pipeline.stage[2].rawBits);
+        std::string opcode = ", Opcode = " + (IsThumbMode() ? 
         ThumbOpToString(pipeline.stage[2].opcode) : 
         ArmOpToString(pipeline.stage[2].opcode));
         
@@ -433,101 +443,41 @@ cpuState.r15 == 0x1928
 */
 
 /*
+mapping:
 
-macro m_test_init 
-{
-        m_text_init
-        {
-            stmfd   sp!, {r0-r1, lr}
-            mov     r0, 4                   ; Background mode 4
-            orr     r0, 1 shl 10            ; Background 2
-            mov     r1, MEM_IO
-            strh    r0, [r1, REG_DISPCNT]
-            ldmfd   sp!, {r0-r1, pc}
-        }
+from b4c goes to bl line 822
+from b9c (line 871) goes to bx r3 (line 876 and ARM)
+next branch is to LR (line 884) -> beq (line 823)
+goes to blo (line 826) -> lsr (line 843)
+goes to blo (line 845) -> cmp (line 856)
+crash happens on 858 because r5 == 0 and r0 == 0x0bfe1fe0 and we try to load at that address.
 
-        m_text_color 0xFFFF, 0
-        {
-            m_half  r0, color
-            {
-                mov     reg (r0), color (0xFFFF) and 0xFF
-                orr     reg (r0), color (0xFFFF) and 0xFF00
-            }
-            mov     r1, index (0)
-            bl      text_color
-            {
-                ; r0:   color
-                ; r1:   index
-                stmfd   sp!, {r0-r2, lr}
-                lsl     r1, 1
-                mov     r2, MEM_PALETTE
-                strh    r0, [r2, r1]
-                ldmfd   sp!, {r0-r2, pc}
-            }
-        }
 
-        m_text_color 0x0000, 1
-        {
-            m_half  r0, color
-            {
-                mov     reg (r0), color (0x0000) and 0xFF
-                orr     reg (r0), color (0x0000) and 0xFF00
-            }
-            mov     r1, index (1)
-            bl      text_color
-            {
-                ; r0:   color
-                ; r1:   index
-                stmfd   sp!, {r0-r2, lr}
-                lsl     r1, 1
-                mov     r2, MEM_PALETTE
-                strh    r0, [r2, r1]
-                ldmfd   sp!, {r0-r2, pc}
-            }
-        }
-
-        m_text_color 0xFFFF, 2
-        {
-            m_half  r0, color
-            {
-                mov     reg (r0), color (0xFFFF) and 0xFF
-                orr     reg (r0), color (0xFFFF) and 0xFF00
-            }
-            mov     r1, index (2)
-            bl      text_color
-            {
-                ; r0:   color
-                ; r1:   index
-                stmfd   sp!, {r0-r2, lr}
-                lsl     r1, 1
-                mov     r2, MEM_PALETTE
-                strh    r0, [r2, r1]
-                ldmfd   sp!, {r0-r2, pc}
-            }
-        }
-}
-
-swi at failed test line 95: pc == 0x0800179c
-0x08001798 is return address from swi
-0x190 is return from exception handler line 199 bios
-0x080017a8 is return address from second swi
-
-cpuState.r15 == 0x3bc first instruction of DIV routine
-
-cpuState.r15 == 0x3c4 eors ip line 406
-
-test 104 fails
-
-DIV routine is now fine, at 0x080017b8 - m_text_pos 60, 76, line 102 of macros.inc
-
-0x080017c0 m_text char first in failed tests
-
-0x080016d0 is right after branching to eval
-
-0x080016f0 is right after branching to m_test_eval (stmfd sp!, \{r0-r12\}), line 66 in macros.inc
-
-Progress - ON TEST 510, 0xE92B8001, ldmdb(fd) r11! {r0, pc}
-
-ON TEST 512 - PC = 0X8001308 - FAIL AT LINE 203 OF BLOCK TRANSFER ASM
-
+BIOS latest logs:
+[INFO]: [THUMB] Current instruction address: 00000890, Bits= 0000F000, Opcode= Thumb_LongBranchWithLink 
+[INFO]: [THUMB] Current instruction address: 00000892, Bits= 0000F95C, Opcode= Thumb_LongBranchWithLink 
+[INFO]: [THUMB] Current instruction address: 00000B4C, Bits= 0000B530, Opcode= Thumb_PushPopRegisters 
+[INFO]: [THUMB] Current instruction address: 00000B4E, Bits= 000002D4, Opcode= Thumb_MoveShiftedRegister 
+[INFO]: [THUMB] Current instruction address: 00000B50, Bits= 00000A64, Opcode= Thumb_MoveShiftedRegister 
+[INFO]: [THUMB] Current instruction address: 00000B52, Bits= 0000F000, Opcode= Thumb_LongBranchWithLink 
+[INFO]: [THUMB] Current instruction address: 00000B54, Bits= 0000F823, Opcode= Thumb_LongBranchWithLink 
+[INFO]: [THUMB] Current instruction address: 00000B9C, Bits= 0000A301, Opcode= Thumb_GetRelativeAddress 
+[INFO]: [THUMB] Current instruction address: 00000B9E, Bits= 000046A4, Opcode= Thumb_HiRegisterOp 
+[INFO]: [THUMB] Current instruction address: 00000BA0, Bits= 00004718, Opcode= Thumb_HiRegisterOp 
+[INFO]: [ARM] Current instruction address: 00000BA4, Bits= E35C0000, Opcode= ARM_DataProcessing 
+[INFO]: [ARM] Current instruction address: 00000BAC, Bits= E3CCC4FE, Opcode= ARM_DataProcessing 
+[INFO]: [ARM] Current instruction address: 00000BB0, Bits= E080C00C, Opcode= ARM_DataProcessing 
+[INFO]: [ARM] Current instruction address: 00000BB4, Bits= E310040E, Opcode= ARM_DataProcessing 
+[INFO]: [ARM] Current instruction address: 00000BB8, Bits= 131C040E, Opcode= ARM_DataProcessing 
+[INFO]: [ARM] Current instruction address: 00000BBC, Bits= E12FFF1E, Opcode= ARM_BranchAndExchange 
+[INFO]: [THUMB] Current instruction address: 00000B56, Bits= 0000D01E, Opcode= Thumb_ConditionalBranch 
+[INFO]: [THUMB] Current instruction address: 00000B58, Bits= 00002500, Opcode= Thumb_ImmediateOp 
+[INFO]: [THUMB] Current instruction address: 00000B5A, Bits= 00000ED3, Opcode= Thumb_MoveShiftedRegister 
+[INFO]: [THUMB] Current instruction address: 00000B5C, Bits= 0000D30C, Opcode= Thumb_ConditionalBranch 
+[INFO]: [THUMB] Current instruction address: 00000B78, Bits= 00000864, Opcode= Thumb_MoveShiftedRegister
+[INFO]: [THUMB] Current instruction address: 00000B7A, Bits= 00000E53, Opcode= Thumb_MoveShiftedRegister 
+[INFO]: [THUMB] Current instruction address: 00000B7C, Bits= 0000D305, Opcode= Thumb_ConditionalBranch 
+[INFO]: [THUMB] Current instruction address: 00000B8A, Bits= 000042A5, Opcode= Thumb_ALU 
+[INFO]: [THUMB] Current instruction address: 00000B8C, Bits= 0000DA03, Opcode= Thumb_ConditionalBranch 
+[INFO]: [THUMB] Current instruction address: 00000B8E, Bits= 00005B43, Opcode= Thumb_LoadStoreSignExtended
 */

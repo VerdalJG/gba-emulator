@@ -177,7 +177,6 @@ struct BackgroundControl // R/W
 struct BackgroundOffset // Write only
 {
     void Write8(int byteToWrite, u8 value) { IO::Write8Masked(this->value, byteToWrite, value, writeMask); }
-
     void Reset() { value = 0; }
 
     const u16 writeMask = 0x01FF;
@@ -570,25 +569,29 @@ struct BlendY // (Write-only) - Used for Color Special Effects Modes 2 and 3.
 
 struct IO_LCDRegisters
 {
+    static const int BG_COUNT = 4;
+    static const int PARAMS_COUNT = 4;
+    static const int WINDOWS_COUNT = 2;
+    
     DisplayControl dispcnt;
     GreenSwap greenswap;
     DisplayStatus dispstat;
     VerticalCounter vcount;
-    std::array<BackgroundControl, 4> bgcnt = { 0, 1, 2, 3 }; // ID's for each bgcnt
+    std::array<BackgroundControl, BG_COUNT> bgcnt = { 0, 1, 2, 3 }; // ID's for each bgcnt
 
-    std::array<BackgroundOffset, 4> bghofs; // Background X-offsets
-    std::array<BackgroundOffset, 4> bgvofs; // Background Y-offsets
+    std::array<BackgroundOffset, BG_COUNT> bghofs; // Background X-offsets
+    std::array<BackgroundOffset, BG_COUNT> bgvofs; // Background Y-offsets
 
-    std::array<BackgroundScalingParameter, 4> bg2Params = { 0, 1, 2, 3 }; // BG2 Scaling params A-D
+    std::array<BackgroundScalingParameter, PARAMS_COUNT> bg2Params = { 0, 1, 2, 3 }; // BG2 Scaling params A-D
     BackgroundRefPointCoords bg2XCoord; // BG2 Reference point Coordinates X (low 16 bits and high 12 bits)
     BackgroundRefPointCoords bg2YCoord; // BG2 Reference point Coordinates Y (low 16 bits and high 12 bits)s
 
-    std::array<BackgroundScalingParameter, 4> bg3Params = { 0, 1, 2, 3 }; // BG3 Scaling params A-D
+    std::array<BackgroundScalingParameter, PARAMS_COUNT> bg3Params = { 0, 1, 2, 3 }; // BG3 Scaling params A-D
     BackgroundRefPointCoords bg3XCoord; // BG3 Reference point Coordinates X (low 16 bits and high 12 bits)
     BackgroundRefPointCoords bg3YCoord; // BG3 Reference point Coordinates Y (low 16 bits and high 12 bits)
 
-    std::array<WindowHorizontalDimensions, 2> winH; // Window 0 and 1 horizontal dimensions (W)
-    std::array<WindowVerticalDimensions, 2> winV; // Window 0 and 1 vertical dimensions (W)
+    std::array<WindowHorizontalDimensions, WINDOWS_COUNT> winH; // Window 0 and 1 horizontal dimensions (W)
+    std::array<WindowVerticalDimensions, WINDOWS_COUNT> winV; // Window 0 and 1 vertical dimensions (W)
 
     WindowControl_In winin; // Control of Inside of Window(s) (R/W)
     WindowControl_Out winout; // Control of Outside of Windows & Inside of OBJ Window (R/W)
@@ -598,4 +601,56 @@ struct IO_LCDRegisters
     BlendControl bldcnt; // Color Special Effects Selection (R/W)
     BlendAlpha bldalpha; // Alpha Blending Coefficients (R/W)
     BlendY bldy; // Brightness (Fade-In/Out) Coefficient (W)
+
+
+    void Reset(bool skipBios)
+    {
+        if (skipBios)
+        {
+            dispcnt.ResetToPostBIOSValue();
+            for (int i = 0; i < PARAMS_COUNT; i++)
+            {
+                bg2Params[i].ResetToPostBIOSValue();
+                bg3Params[i].ResetToPostBIOSValue();
+            }
+        }
+        else
+        {
+            dispcnt.Reset();
+            for (int i = 0; i < PARAMS_COUNT; i++)
+            {
+                bg2Params[i].Reset();
+                bg3Params[i].Reset();
+            }
+        }
+        
+        greenswap.Reset();
+        dispstat.Reset();
+        vcount.Reset();
+        
+        for (int i = 0; i < BG_COUNT; i++)
+        {
+            bgcnt[i].Reset();
+            bghofs[i].Reset();
+            bgvofs[i].Reset();
+        }
+
+        bg2XCoord.Reset();
+        bg2YCoord.Reset();
+        bg3XCoord.Reset();
+        bg3YCoord.Reset();
+
+        for (int i = 0; i < WINDOWS_COUNT; i++)
+        {
+            winH[i].Reset();
+            winV[i].Reset();
+        }
+
+        winin.Reset();
+        winout.Reset();
+        mosaic.Reset();
+        bldcnt.Reset();
+        bldalpha.Reset();
+        bldy.Reset(); 
+    }
 };

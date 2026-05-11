@@ -1,8 +1,8 @@
 #pragma once
 #include "Core/Memory/GBA_Memory_Helpers.hpp"
-#include "Core/Memory/GBA_WaitstateController.hpp"
 #include "Core/Memory/BusHelpers.hpp"
 #include "Core/GBA_PPU.hpp"
+#include "Core/IO/Registers/SystemControlRegisters.hpp"
 
 #include "Utils/Integers.hpp"
 #include "Utils/Logger.hpp"
@@ -24,12 +24,13 @@ class GBA_APU;
 class GBA_DMAController;
 class GBA_IO;
 class GBA_CPU;
+class GBA_ROM;
 
 class GBA_Bus
 {
 public:
     GBA_Bus(EmulatorCore* core, GBA_Memory& memory, GBA_IO& io);
-    void AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, GBA_CPU* cpu);
+    void AttachSubsystems(GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, GBA_CPU* cpu, GBA_ROM* rom);
 
     // Open bus tracking
     void UpdateLatestAccessValues(u32 value, u32 address, RegionType regionType, AccessSize accessSize);
@@ -44,7 +45,7 @@ public:
     */ 
     void InvalidateSequentiality();
 
-    GBA_WaitstateController& GetWaitstateController() { return waitstateController; }
+    WaitstateControl& GetWaitcnt() { return waitcnt; }
     u32 OpenBus(u32 address);
 
 private:
@@ -69,9 +70,10 @@ private:
     GBA_PPU* ppu;
     GBA_APU* apu;
     GBA_DMAController* dma;
+    GBA_ROM* rom;
     GBA_Memory& memory;
     GBA_IO& io;
-    GBA_WaitstateController waitstateController;
+    WaitstateControl waitcnt;
 
     // Templated Memory Accessors:
 public:
@@ -101,6 +103,9 @@ private:
 
     template <typename T>
     T ReadOAM(u32 address, BusRequester requester);
+
+    template <typename T>
+    T ReadROM(u32 address);
     
     template <typename T>
     T ReadSRAM(u32 address);
@@ -113,6 +118,9 @@ private:
 
     template <typename T>
     void WriteOAM(u32 address, T value);
+    
+    template <typename T>
+    void WriteROM(u32 address, T value);
 
     template <typename T>
     void WriteSRAM(u32 address, T value);

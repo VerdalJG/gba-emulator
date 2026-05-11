@@ -14,7 +14,7 @@ class GBA_DMAController;
 class GBA_TimerController;
 class GBA_InterruptController;
 class GBA_Keypad;
-class GBA_WaitstateController;
+class WaitstateControl;
 class GBA_Bus;
 
 class GBA_IO
@@ -26,7 +26,9 @@ public:
 
     void AttachSubsystems(GBA_CPU* cpu, GBA_PPU* ppu, GBA_APU* apu, GBA_DMAController* dma, 
         GBA_TimerController* timers, GBA_InterruptController* interrupts, GBA_Keypad* keypad, 
-        GBA_WaitstateController* waitstates, GBA_Bus* bus);
+        WaitstateControl* waitstates, GBA_Bus* bus);
+
+    void ResetIORegisters(bool skipBios);
 
     // void ResetSIORegisters();
     // void ResetSoundRegisters();
@@ -49,15 +51,15 @@ private:
     GBA_CPU* cpu;
     GBA_PPU* ppu;
     GBA_APU* apu;
-    GBA_DMAController* dma;
-    GBA_TimerController* timers;
-    GBA_InterruptController* interrupts;
+    GBA_DMAController* dmaController;
+    GBA_TimerController* timerController;
+    GBA_InterruptController* interruptController;
     GBA_Keypad* keypad;
-    GBA_WaitstateController* waitstates;
+    WaitstateControl* waitstates;
     GBA_Bus* bus;
 
-    // Halfwords = IO_SIZE / 2;
-    std::array<HalfwordPermissions, IO_SIZE / 2> ioPermissions;
+    // Halfwords = IO_TABLE_SIZE / 2;
+    std::array<HalfwordPermissions, IO_TABLE_SIZE / 2> ioPermissions;
 
 public:
     template <typename T>

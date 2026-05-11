@@ -7,17 +7,10 @@ T GBA_IO::Read(u32 address)
 {
     AccessSize access = static_cast<AccessSize>(sizeof(T));
 
-    // Special case: IMC
+    // Special case: IMC mirroring
     if (((address & ~3) & 0xFFFF) == 0x0800) // Is it an IMC mirror?
     {
-        address &= IMC + 3; // Handle special case mirroring
-
-        switch (access)
-        {
-            case AccessSize::Byte: return Read8(address);
-            case AccessSize::Halfword: return Read16(address);
-            case AccessSize::Word: return Read32(address);
-        }
+        address &= IMC + 3; // Normalize address
     }
     
     switch (access)
@@ -88,13 +81,6 @@ void GBA_IO::Write(u32 address, T value)
     if (((address & ~3) & 0xFFFF) == 0x0800) // Is it an IMC mirror?
     {
         address &= IMC + 3; // Handle special case mirroring
-
-        switch (access)
-        {
-            case AccessSize::Byte: return Write8(address, value); 
-            case AccessSize::Halfword: return Write16(address, value);
-            case AccessSize::Word: return Write32(address, value);
-        }
     }
 
     switch (access)

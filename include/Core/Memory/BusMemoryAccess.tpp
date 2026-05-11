@@ -3,6 +3,7 @@
 #include "Core/IO/GBA_IO.hpp"
 #include "Core/CPU/Shifts.hpp"
 #include "Utils/BitOperations.hpp"
+#include "Core/GBA_ROM.hpp"
 
 template <typename T>
 T GBA_Bus::Read(u32 address, BusRequester requester)
@@ -57,7 +58,8 @@ T GBA_Bus::Read(u32 address, BusRequester requester)
         case RegionType::ROM1:
         case RegionType::ROM2:
         {
-            readResult = memory.Read<T>(address);
+            // TODO: Implement open-bus behavior for ROM on addresses outside of span.size()
+            readResult = ReadROM<T>(address);
             break;
         }
 
@@ -140,7 +142,7 @@ T GBA_Bus::ReadBIOS(u32 address)
     if (pcWithinBounds)
     {
         u32 wordAligned = address & ~3;
-        biosLatch = memory.Read<T>(wordAligned);
+        biosLatch = memory.Read<u32>(wordAligned);
     }
     else
     {
@@ -213,6 +215,32 @@ T GBA_Bus::ReadOAM(u32 address, BusRequester requester)
     }
 
     return memory.Read<T>(address); 
+}
+
+template <typename T> 
+T GBA_Bus::ReadROM(u32 address) 
+{
+    u32 offset = address & (ROM_BANK_SIZE - 1); // 32MB - 1
+    if (offset + sizeof(T) > rom->GetSize())
+    {
+        return OpenBus(address);
+    }
+
+    if constexpr (sizeof(T) == Byte)
+    {
+        uint shift = (address & 1) * 8;
+        return rom->Read16(offset) >> shift;
+    }
+
+    if constexpr (sizeof(T) == Halfword)
+    {
+        return rom->Read16(offset);
+    }
+
+    if constexpr (sizeof(T) == Word)
+    {
+        return rom->Read32(offset);
+    }
 }
 
 template <typename T>
@@ -299,6 +327,12 @@ void GBA_Bus::WriteOAM(u32 address, T value)
     {
         memory.Write<T>(address, value);
     }
+}
+
+template <typename T>
+void GBA_Bus::WriteROM(u32 address, T value) 
+{
+
 }
 
 template <typename T> 

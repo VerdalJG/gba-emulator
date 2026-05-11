@@ -70,9 +70,6 @@ std::span<const u8> GBA_Memory::GetRegionData(RegionType type) const
         case RegionType::PaletteRAM: return *paletteRam;
         case RegionType::VRAM: return *vram;
         case RegionType::OAM: return *oam;
-        case RegionType::ROM0: return rom0View;
-        case RegionType::ROM1: return rom1View;
-        case RegionType::ROM2: return rom2View;
         case RegionType::SRAM: return *sram;
 
         default: return {}; // Empty span
@@ -89,9 +86,6 @@ std::span<u8> GBA_Memory::GetRegionDataMutable(RegionType type)
         case RegionType::PaletteRAM: return *paletteRam;
         case RegionType::VRAM: return *vram;
         case RegionType::OAM: return *oam;
-        case RegionType::ROM0: return {}; // ROM is not mutable
-        case RegionType::ROM1: return {}; // ROM is not mutable
-        case RegionType::ROM2: return {}; // ROM is not mutable
         case RegionType::SRAM: return *sram;
 
         default: return {}; // Empty span
@@ -100,12 +94,6 @@ std::span<u8> GBA_Memory::GetRegionDataMutable(RegionType type)
 
 void GBA_Memory::InitROMBanks()
 {
-    const std::span<const u8>& romData = *rom.GetROMData();
-
-    rom0View = romData;
-    rom1View = romData;
-    rom2View = romData;
-
     rom0Region.physicalSize = rom.GetSize();
     rom1Region.physicalSize = rom.GetSize();
     rom2Region.physicalSize = rom.GetSize();

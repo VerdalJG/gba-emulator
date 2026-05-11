@@ -25,6 +25,11 @@ namespace IO
         return (reg >> (8 * byte)) & 0xFF;
     }
 
+    inline u8 Read8(u32& reg, int byte)
+    {
+        return (reg >> (8 * byte)) & 0xFF;
+    }
+
     inline void Write8Masked(u16& reg, int byte, u8 value, u16 writeableMask = 0xFFFF)
     {
         const int shift = byte * 8;

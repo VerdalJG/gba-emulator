@@ -84,7 +84,8 @@ void GBA_CPU::Thumb_LongBranchWithLink(u16 instruction)
         u32 nextInstructionAddress = cpuState.r15 - 2;
 
         // Modify R15
-        cpuState.r15 = cpuState.r14 + (offset_11 << 1) & ~1;
+        u32 target = cpuState.r14 + (offset_11 << 1);
+        cpuState.r15 = target & ~1;
 
         // Save the next instruction address (+2 in thumb) and flush pipeline
         cpuState.r14 = nextInstructionAddress | 1;

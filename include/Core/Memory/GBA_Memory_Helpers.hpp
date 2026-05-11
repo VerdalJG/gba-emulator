@@ -46,6 +46,7 @@ constexpr size_t BIOS_SIZE = 0x4000; // 16KB
 constexpr size_t EWRAM_SIZE = 0x40000; // External work RAM / On GBA mainboard RAM - 256KB
 constexpr size_t IWRAM_SIZE = 0x8000; // Internal work RAM / On CPU chip RAM - 32KB - Fastest RAM
 constexpr size_t IO_SIZE = 0x3FF; // I/O Registers - 1024 bytes - documentation is specifically 0x3FF
+constexpr size_t IO_TABLE_SIZE = 0x804; // I/O Registers - 2056 bytes, includes IMC and undocumented register at 0x04000410
 constexpr size_t PALETTE_RAM_SIZE = 0x400; // Palette RAM - 1KB
 constexpr size_t VRAM_BG_SIZE = 0x10000; // 64KB
 constexpr size_t VRAM_OBJ_SIZE = 0x8000; // 32KB
